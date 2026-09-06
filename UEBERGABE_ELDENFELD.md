@@ -96,3 +96,18 @@ Stack: Vite, React 18, three, @react-three/fiber, @react-three/drei (nur für `u
 ## 6. Kontext zur Person
 
 Hendrik, Copywriter bei Adveritas (Bern). Kommunikation direkt, editorisch präzise, deutsch. Keine Füllsätze, keine Selbstlob-Formulierungen im Code oder in Commit-Messages. Commits auf Deutsch, Imperativ, eine Zeile. Er will das Spiel selbst spielen, also nach jedem Meilenstein eine lauffähige Version mit `npm run dev`.
+
+## 7. Stand nach der ersten Session
+
+Erledigt: Schritt 1 komplett, Schritt 2 als erste lauffähige Fassung (ungetestet im Browser, siehe unten).
+
+- Repo mit Vite, React 18, three. Logik in `src/game/` als reine ESM-Module, Prototyp unter `legacy/`.
+- 23 Tests in `tests/` (Node-Test-Runner statt Vitest, weil in der Session kein npm-Registry erreichbar war): Seltenheitsverteilung über 10.000 Rolls, Deklination, Drop-Raten, Mitte jedes Bildschirms begehbar, Dungeons verbunden, 30 Kills im Grasland ohne Tod, Speicher-Migration.
+- 3D-Renderer in `src/render3d/` direkt auf Three.js, ohne react-three-fiber und drei. Terrain, Dekor, Held, Monster, Drops, Effekte, Kamera-Slide, Licht und Nebel pro Region, Dungeon mit Punktlicht.
+- Schwachstellen aus Abschnitt 5 behoben: Landeposition wird vor dem Wechsel geprüft, Monster weichen bei Blockade aus, `saveVersion: 1` mit Migration.
+
+Offen, in dieser Reihenfolge:
+
+1. `npm install && npm run dev` und im Browser prüfen. Der Renderer wurde nur per Syntaxcheck und Smoke-Test gegen ein Fake von three geprüft, nicht mit echtem WebGL. Erwartbare Nacharbeit: Farben, Lichtstärken, Kameradistanz, Schattenausschnitt.
+2. Balance-Simulation der drei Bosse (Schritt 3).
+3. Assets, Sound, Tag-Nacht-Zyklus.
