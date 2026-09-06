@@ -28,9 +28,9 @@ Voraussetzung: Node 20 oder neuer.
 
 ## Spielstände
 
-Beim Start wählst du einen Spielstand oder legst einen neuen mit Namen an, jeder hat seine eigene Welt. Bis zu 12 Spielstände pro Gerät, gespeichert im Browser (localStorage). Gespeichert wird automatisch bei jedem Bildschirmwechsel, beim Schließen eines Panels und über „Speichern und zum Titel“ im Ausrüstungsmenü.
+Beim Start stehen fünf Konten zur Auswahl. Ein freies Konto bekommt einen Namen und eine eigene Welt, ein belegtes wird mit „Spielen“ fortgesetzt. Gespeichert wird automatisch in das gewählte Konto: bei jedem Bildschirmwechsel, beim Schließen eines Panels und über „Speichern und zum Titel“ im Ausrüstungsmenü. Die Konten liegen im Browser des Geräts (localStorage).
 
-„Als Datei sichern“ legt einen Spielstand als JSON-Datei ab. „Spielstand aus Datei laden“ liest sie auf einem anderen Gerät wieder ein, als neuer Eintrag, nichts wird überschrieben.
+Hinter „…“ bei jedem Konto: Umbenennen, „Als Datei sichern“ (JSON-Datei), „Aus Datei laden“ (überschreibt dieses Konto, mit Rückfrage), Zurücksetzen. Ein freies Konto kann direkt eine Datei laden. So wandert ein Spielstand auf ein anderes Handy.
 
 ## Struktur
 

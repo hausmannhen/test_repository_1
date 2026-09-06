@@ -3,7 +3,9 @@ import { REGIONS, VILLAGES, DUNGEONS, regionAt } from "./constants.js";
 
 export const STORE_KEY = "eldenfeld_saves";
 export const SAVE_VERSION = 1;
-export const MAX_SLOTS = 12;
+export const ACCOUNT_COUNT = 5;
+export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
+export const MAX_SLOTS = ACCOUNT_COUNT;
 const LEGACY_KEYS = ["eldenfeld_save", "eldenfeld_save_v1"];
 
 function storage() {
@@ -57,7 +59,8 @@ function readStore() {
       const raw = s.getItem(k);
       if (raw) {
         const slot = migrate(JSON.parse(raw));
-        if (slot) { slot.name = "Spielstand 1"; store.slots.push(slot); store.active = slot.id; }
+        const free = ACCOUNT_IDS.find(id => !store.slots.some(x => x.id === id));
+        if (slot && free) { slot.id = free; slot.name = "Spieler 1"; store.slots.push(slot); store.active = slot.id; }
         s.removeItem(k);
         writeStore(store);
       }
@@ -77,19 +80,22 @@ export function listSaves() {
 export function loadSlot(id) {
   return listSaves().find(x => x.id === id) || null;
 }
-export function makeSlot(name, seed, P) {
-  return { id: newSlotId(), name: name || "Spielstand", saveVersion: SAVE_VERSION, seed, P, savedAt: now() };
+export function makeSlot(name, seed, P, id = null) {
+  return { id: id || newSlotId(), name: name || "Spielstand", saveVersion: SAVE_VERSION, seed, P, savedAt: now() };
 }
 export function writeSlot(slot) {
+  if (!ACCOUNT_IDS.includes(slot.id)) return false;
   const store = readStore();
   const i = store.slots.findIndex(x => x.id === slot.id);
   if (i >= 0) store.slots[i] = slot;
-  else {
-    if (store.slots.length >= MAX_SLOTS) return false;
-    store.slots.push(slot);
-  }
+  else store.slots.push(slot);
   store.active = slot.id;
   return writeStore(store);
+}
+/* Die fünf Konten in fester Reihenfolge, leer oder belegt */
+export function listAccounts() {
+  const saves = listSaves();
+  return ACCOUNT_IDS.map((id, i) => ({ id, index: i + 1, slot: saves.find(x => x.id === id) || null }));
 }
 export function deleteSlot(id) {
   const store = readStore();
@@ -122,13 +128,13 @@ export function fileNameFor(slot) {
   const safe = String(slot.name || "spielstand").toLowerCase().replace(/[^a-z0-9äöüß]+/gi, "-").replace(/^-|-$/g, "") || "spielstand";
   return `eldenfeld-${safe}-stufe-${slot.P.level || 1}.json`;
 }
-/* Liefert einen neuen Slot (eigene ID, damit nichts überschrieben wird) oder wirft einen Fehler mit Erklärung */
-export function importSave(text) {
+/* Liefert einen Slot für das Konto accountId oder wirft einen Fehler mit Erklärung */
+export function importSave(text, accountId = null) {
   let data;
   try { data = JSON.parse(text); } catch (e) { throw new Error("Das ist keine gültige Spielstand-Datei."); }
   const slot = migrate(data);
   if (!slot || typeof slot.P.level !== "number" || !slot.P.equip || !Array.isArray(slot.P.inventory)) throw new Error("Die Datei enthält keinen Eldenfeld-Spielstand.");
-  slot.id = newSlotId();
+  slot.id = accountId || newSlotId();
   slot.savedAt = now();
   return slot;
 }

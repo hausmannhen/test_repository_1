@@ -91,6 +91,8 @@ body { -webkit-text-size-adjust: 100%; }
 }
 
 /* Spielstände */
+.save-row.empty-slot { background: transparent; border: 1px dashed var(--line); }
+.save-row.empty-slot .save-name { color: var(--dim); }
 .save-row { background: var(--panel); border-radius: 8px; padding: 10px 12px; text-align: left; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .save-main { flex: 1; min-width: 140px; cursor: pointer; }
 .save-name { font-size: 16px; color: var(--text); }

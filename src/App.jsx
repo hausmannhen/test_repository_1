@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createGame, startGame, update, respawn, locationName } from "./game/engine.js";
 import { derive, xpNeed, usePotion } from "./game/player.js";
-import { saveGame, listSaves, makeSlot, writeSlot, deleteSlot } from "./game/save.js";
+import { saveGame, listAccounts, makeSlot, writeSlot, deleteSlot, renameSlot } from "./game/save.js";
 import { newPlayer } from "./game/player.js";
 import { createInput, readInput, bindKeyboard } from "./game/input.js";
 import Scene from "./render3d/Scene.jsx";
@@ -18,7 +18,7 @@ import Death from "./ui/Death.jsx";
 
 export default function App() {
   const [phase, setPhase] = useState("title");
-  const [saves, setSaves] = useState(() => listSaves());
+  const [accounts, setAccounts] = useState(() => listAccounts());
   const [panel, setPanel] = useState(null);
   const [ui, setUi] = useState(null);
   const [, force] = useState(0);
@@ -49,19 +49,20 @@ export default function App() {
     startGame(G);
     setPanel(null); setPhase("game");
   }, []);
-  const newSave = useCallback((name) => {
+  const newSave = useCallback((accountId, name) => {
     const seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
-    const slot = makeSlot(name, seed, newPlayer(seed));
+    const slot = makeSlot(name, seed, newPlayer(seed), accountId);
     writeSlot(slot);
     start(slot);
   }, [start]);
-  const importSlot = useCallback((slot) => { writeSlot(slot); setSaves(listSaves()); }, []);
-  const removeSlot = useCallback((slot) => { deleteSlot(slot.id); setSaves(listSaves()); }, []);
+  const importSlot = useCallback((slot) => { writeSlot(slot); setAccounts(listAccounts()); }, []);
+  const resetAccount = useCallback((id) => { deleteSlot(id); setAccounts(listAccounts()); }, []);
+  const renameAccount = useCallback((id, name) => { renameSlot(id, name); setAccounts(listAccounts()); }, []);
   const quitToTitle = useCallback(() => {
     const G = gRef.current;
     if (G && !G.dead) saveGame(G);
     gRef.current = null; rendererRef.current = null;
-    setPanel(null); setUi(null); setSaves(listSaves()); setPhase("title");
+    setPanel(null); setUi(null); setAccounts(listAccounts()); setPhase("title");
   }, []);
 
   // Tastatur
@@ -99,7 +100,7 @@ export default function App() {
   }, []);
 
   if (phase === "title") {
-    return <Title saves={saves} onContinue={start} onNew={newSave} onDelete={removeSlot} onImport={importSlot} />;
+    return <Title accounts={accounts} onContinue={start} onNew={newSave} onRename={renameAccount} onReset={resetAccount} onImport={importSlot} />;
   }
 
   const G = gRef.current;
