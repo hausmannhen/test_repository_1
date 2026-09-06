@@ -120,6 +120,7 @@ export default function Title({ accounts, onContinue, onNew, onRename, onReset, 
         <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: "none" }} onChange={doImportFile} />
         {error && <div className="red" style={{ fontSize: 13, marginTop: 8 }}>{error}</div>}
 
+        <div className="dim" style={{ fontSize: 11, marginTop: 10 }}>Stand {typeof __BUILD__ !== "undefined" ? __BUILD__ : "Entwicklung"}. Zeigt der Titel einen älteren Stand als erwartet: Seite ganz schließen, neu öffnen.</div>
         <div className="title-help">
           <b>So spielst du</b><br />
           Steuerkreuz links, Schwert rechts. Trank-Knopf heilt automatisch mit dem passenden Trank. Im Menü legst du Beute an, die Karte zeigt erkundete Gebiete.<br />
