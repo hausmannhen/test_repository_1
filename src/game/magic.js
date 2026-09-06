@@ -1,6 +1,6 @@
 /* Magie: Zauber wirken, Kosten, Effekte. Blutmagie zahlt mit Leben. */
 import { SPELLS, ELEMENTS } from "../data/spells.js";
-import { derive, flash } from "./player.js";
+import { derive, flash, emit } from "./player.js";
 import { spellRankMult, knownSpells } from "./skills.js";
 export { SPELLS, ELEMENTS };
 
@@ -72,6 +72,7 @@ export function castSpell(G, spellId = G.P.activeSpell) {
     G.pending.push({ type: "chain", x: P.x, y: P.y, range: sp.range, jumps: sp.jumps, color: el.color, ...hit });
   }
   G.castT = 0.25;
+  emit(G, "spell", { element: sp.element, kind: sp.kind });
   G.dirty = true;
   return true;
 }

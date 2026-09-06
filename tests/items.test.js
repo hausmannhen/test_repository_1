@@ -73,13 +73,13 @@ describe("Items", () => {
   });
 
   it("Tränke stapeln", () => {
-    const p = makePotion("heiltrank_k", 2);
+    const p = makePotion("heiltrank", 2);
     assert.equal(p.kind, "trank"); assert.equal(p.qty, 2); assert.ok(p.value > 0);
   });
 });
 
 describe("Drops", () => {
-  it("Gold immer, Item rund 22 %, Trank rund 14 %", () => {
+  it("Gold immer, Item rund 13 %, Trank rund 12 %", () => {
     const r = mulberry32(42);
     const mob = makeMob("wolf", 3, 0, 0);
     let items = 0, pots = 0;
@@ -89,8 +89,8 @@ describe("Drops", () => {
       if (d.some(x => x.type === "item")) items++;
       if (d.some(x => x.type === "potion")) pots++;
     }
-    assert.ok(items > 1900 && items < 2500, "items " + items);
-    assert.ok(pots > 1150 && pots < 1650, "pots " + pots);
+    assert.ok(items > 1100 && items < 1500, "items " + items);
+    assert.ok(pots > 1000 && pots < 1400, "pots " + pots);
   });
   it("Bosse: zwei Items, eines mindestens Episch, Großer Heiltrank", () => {
     const r = mulberry32(7);
@@ -100,7 +100,7 @@ describe("Drops", () => {
       const items = d.filter(x => x.type === "item");
       assert.equal(items.length, 2);
       assert.ok(["episch", "legendaer"].includes(items[0].item.rarity));
-      assert.ok(d.some(x => x.type === "potion" && x.id === "heiltrank_g"));
+      assert.ok(d.some(x => x.type === "potion" && x.id === "heiltrank"));
     }
   });
   it("Monster skalieren mit Stufe", () => {

@@ -13,7 +13,7 @@ export function newPlayer(seed) {
   delete sword.range; delete sword.rate; delete sword.projSpeed; delete sword.proj; delete sword.blood;
   return {
     level: 1, xp: 0, gold: 30, hp: 60, mana: 30, hearts: 0, kills: 0,
-    inventory: [makePotion("heiltrank_k", 3)],
+    inventory: [makePotion("heiltrank", 3)],
     equip: { waffe: sword, kopf: null, rumpf: null, schild: null, amulett: null, ring: null },
     area: "over", sx: +START_VILLAGE.split(",")[0], sy: +START_VILLAGE.split(",")[1], x: 7 * TS + 8, y: 8 * TS + 8, dir: "up",
     cleared: {}, chests: {}, lastVillage: START_VILLAGE, visits: {}, buffT: 0,
@@ -68,36 +68,33 @@ function consume(P, pot) {
   pot.qty -= 1;
   if (pot.qty <= 0) P.inventory = P.inventory.filter(i => i !== pot);
 }
-/* Heiltrank: kleinster Trank, der das fehlende Leben deckt, sonst der größte */
+export function emit(G, type, data = null) { if (G.events) G.events.push(data ? { type, ...data } : { type }); }
+/* Heiltrank: heilt einen Anteil des maximalen Lebens */
 export function usePotion(G) {
   const P = G.P;
-  const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].heal).sort((a, b) => POTIONS[a.potId].heal - POTIONS[b.potId].heal);
-  if (!pots.length) { flash(G, "Keine Heiltränke", "#ffb347"); return false; }
+  const pot = P.inventory.find(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].healPct);
+  if (!pot) { flash(G, "Kein Heiltrank", "#ffb347"); return false; }
   const d = derive(P);
   if (P.hp >= d.maxHp) { flash(G, "Volles Leben", "#9ad"); return false; }
-  const missing = d.maxHp - P.hp;
-  const pot = pots.find(p => POTIONS[p.potId].heal >= missing) || pots[pots.length - 1];
-  const def = POTIONS[pot.potId];
-  const heal = Math.min(missing, def.heal);
+  const heal = Math.min(d.maxHp - P.hp, Math.max(1, Math.round(d.maxHp * POTIONS[pot.potId].healPct)));
   P.hp += heal;
-  if (def.mana) P.mana = d.maxMana;
   consume(P, pot);
   G.fx.push({ kind: "num", x: P.x, y: P.y - 12, rise: 0, text: "+" + heal, color: "#6fe28a", t: 1 });
+  emit(G, "potion");
   G.dirty = true;
   return true;
 }
 export function useManaPotion(G) {
   const P = G.P;
-  const pot = P.inventory.find(i => i.kind === "trank" && POTIONS[i.potId].mana && !POTIONS[i.potId].heal) || P.inventory.find(i => i.kind === "trank" && POTIONS[i.potId].mana);
+  const pot = P.inventory.find(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].manaPct);
   if (!pot) { flash(G, "Kein Manatrank", "#ffb347"); return false; }
   const d = derive(P);
   if (P.mana >= d.maxMana) { flash(G, "Mana voll", "#9ad"); return false; }
-  const def = POTIONS[pot.potId];
-  const gain = Math.min(d.maxMana - P.mana, def.mana);
+  const gain = Math.min(d.maxMana - P.mana, Math.max(1, Math.round(d.maxMana * POTIONS[pot.potId].manaPct)));
   P.mana += gain;
-  if (def.heal) P.hp = Math.min(d.maxHp, P.hp + def.heal);
   consume(P, pot);
-  G.fx.push({ kind: "num", x: P.x, y: P.y - 12, rise: 0, text: "+" + gain + " Mana", color: "#5aa7ff", t: 1 });
+  G.fx.push({ kind: "num", x: P.x, y: P.y - 12, rise: 0, text: "+" + Math.round(gain) + " Mana", color: "#5aa7ff", t: 1 });
+  emit(G, "potion");
   G.dirty = true;
   return true;
 }

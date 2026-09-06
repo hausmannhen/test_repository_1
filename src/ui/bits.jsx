@@ -2,6 +2,7 @@
 import React from "react";
 import { clamp } from "../game/rng.js";
 import { RARITY_BY_ID, POTIONS, STAT_NAMES, WEAPON_TYPES, potionDesc } from "../game/items.js";
+import ItemIcon from "./ItemIcon.jsx";
 
 export function Btn({ children, onClick, tone = "default", small, disabled, className = "", style }) {
   return (
@@ -35,14 +36,19 @@ export function StatLine({ stats, compare }) {
     </div>
   );
 }
-export function ItemRow({ item, selected, onClick, right }) {
+/* Zeile mit Icon; ist sie ausgewählt, klappt darunter das Detail (children) auf */
+export function ItemRow({ item, selected, onClick, right, children, tag }) {
   return (
-    <div onClick={onClick} className={`item-row${selected ? " selected" : ""}`}>
-      <div>
-        <ItemName item={item} className="item-row-name" />
-        <div className="item-row-sub">{item.kind === "gear" ? `${item.slot === "waffe" ? WEAPON_TYPES[item.type || "nah"] : SLOT_LABEL[item.slot]}, Stufe ${item.ilvl}, ${RARITY_BY_ID[item.rarity].name}` : potionDesc(item.potId)}</div>
+    <div className={`item-row${selected ? " selected" : ""}`}>
+      <div className="item-row-head" onClick={onClick}>
+        <ItemIcon item={item} />
+        <div className="item-row-text">
+          <ItemName item={item} className="item-row-name" />
+          <div className="item-row-sub">{item.kind === "gear" ? `${item.slot === "waffe" ? WEAPON_TYPES[item.type || "nah"] : SLOT_LABEL[item.slot]}, Stufe ${item.ilvl}, ${RARITY_BY_ID[item.rarity].name}` : potionDesc(item.potId)}{tag ? <span className="dim"> · {tag}</span> : null}</div>
+        </div>
+        {right}
       </div>
-      {right}
+      {selected && children ? <div className="item-row-detail">{children}</div> : null}
     </div>
   );
 }

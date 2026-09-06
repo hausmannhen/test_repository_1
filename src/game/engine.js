@@ -4,7 +4,7 @@ import { mulberry32, rint, clamp } from "./rng.js";
 import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
-import { newPlayer, derive, xpNeed, addToInventory, flash } from "./player.js";
+import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
 import { castSpell, aimAt, ELEMENTS } from "./magic.js";
 import { onKill as questKill } from "./quests.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
@@ -18,7 +18,7 @@ export function createGame(seed, P = null, slot = null) {
     seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
-    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0,
+    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [],
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -134,6 +134,7 @@ export function damageMob(G, m, dmg, crit, kx, ky, color = null) {
   if (m.dead) return;
   m.hp -= dmg; m.hitT = 0.18;
   m.vx += kx * 160; m.vy += ky * 160;
+  emit(G, "hit", { crit });
   G.fx.push({ kind: "num", x: m.x, y: m.y - m.size, rise: 0, text: String(dmg), color: crit ? "#ffd23f" : (color || "#fff"), t: 0.8, big: crit });
   if (m.hp <= 0) killMob(G, m);
 }
@@ -157,6 +158,7 @@ export function killMob(G, m) {
   const P = G.P;
   m.dead = true;
   P.kills++;
+  emit(G, "kill", { boss: !!(m.boss || m.mini) });
   for (let i = 0; i < 8; i++) G.fx.push({ kind: "part", x: m.x, y: m.y, vx: (Math.random() - 0.5) * 90, vy: (Math.random() - 0.5) * 90, color: m.color, t: 0.5 });
   const d = derive(P);
   const r = mulberry32((Math.random() * 1e9) | 0);
@@ -173,12 +175,14 @@ export function killMob(G, m) {
     G.drops.push({ type: "item", item: extra, x: m.x + 8, y: m.y, vx: 30, vy: 0, t: 0 });
     G.drops.push({ type: "gold", amount: rint(r, m.level * 6, m.level * 12), x: m.x - 8, y: m.y, vx: -30, vy: 0, t: 0 });
     G.banner = { text: m.name + " besiegt", sub: "Das Revier ist frei", t: 3.5 };
+    emit(G, "fanfare");
   }
   gainXp(G, m.xp);
   if (m.boss) {
     const dId = G.screen.dungeonRoom.d.id;
     P.cleared[dId] = true; P.hearts += 1; P.hp = derive(P).maxHp;
     G.banner = { text: m.name + " besiegt", sub: "Herzcontainer erhalten", t: 4 };
+    emit(G, "fanfare");
   }
   questKill(G, m);
 }
@@ -191,6 +195,7 @@ export function gainXp(G, amount) {
     const d = derive(P);
     P.hp = d.maxHp; P.mana = d.maxMana;
     G.banner = { text: "Stufe " + P.level, sub: "Neuer Fertigkeitspunkt", t: 3 };
+    emit(G, "levelup");
   }
   G.dirty = true;
 }
@@ -202,6 +207,7 @@ export function hurtPlayer(G, amount) {
   P.hp -= dmg; G.invT = 0.8;
   G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "-" + dmg, color: "#ff5f6d", t: 0.9 });
   G.shake = 0.15;
+  emit(G, "hurt");
   if (P.hp <= 0) { P.hp = 0; G.dead = true; }
   G.dirty = true;
 }
@@ -272,6 +278,7 @@ export function update(G, dt, input) {
     if (input.attack && G.shootCd <= 0) {
       G.shootCd = d.rate;
       G.attack = { t: 0.15, dir: P.dir, hit: new Set(), maxT: 0.15, ranged: true };
+      emit(G, "shoot");
       let [dx, dy] = DIRV[P.dir];
       const aim = aimAt(G, dx, dy, d.range);
       if (aim) { dx = aim.x; dy = aim.y; }
@@ -285,6 +292,7 @@ export function update(G, dt, input) {
     }
   } else if (input.attack && G.attack.t <= -0.08 / atkSpeed) {
     G.attack = { t: 0.2 / atkSpeed, dir: P.dir, hit: new Set(), maxT: 0.2 / atkSpeed, ranged: false };
+    emit(G, "swing");
   }
   if (G.attack.t > 0 && !G.attack.ranged) {
     const reach = d.reach;
@@ -425,12 +433,12 @@ export function update(G, dt, input) {
     dr.x += dr.vx * dt; dr.y += dr.vy * dt; dr.vx *= 0.9; dr.vy *= 0.9;
     dr.x = clamp(dr.x, 4, W - 4); dr.y = clamp(dr.y, 4, H - 4);
     const dist = Math.hypot(dr.x - P.x, dr.y - P.y);
-    if (dr.type === "gold" && dist < 26 && dr.t > 0.3) { dr.x += (P.x - dr.x) * 8 * dt; dr.y += (P.y - dr.y) * 8 * dt; }
-    if (dist < 9 && dr.t > 0.3) {
-      if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; }
-      else if (dr.type === "potion") { addToInventory(P, makePotion(dr.id, dr.qty)); flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); dr.done = true; }
+    if (dr.type === "gold" && dist < 36 && dr.t > 0.3) { dr.x += (P.x - dr.x) * 8 * dt; dr.y += (P.y - dr.y) * 8 * dt; }
+    if (dist < 19 && dr.t > 0.3) {
+      if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; emit(G, "gold"); }
+      else if (dr.type === "potion") { addToInventory(P, makePotion(dr.id, dr.qty)); flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); dr.done = true; emit(G, "pickup"); }
       else if (dr.type === "item") {
-        if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; }
+        if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); }
         else if (!dr.warned) { flash(G, "Inventar voll", "#ff5f6d"); dr.warned = true; }
       }
       G.dirty = true;

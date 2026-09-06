@@ -1,8 +1,9 @@
 /* Speichern: mehrere Spielstände im localStorage, Versionierung, Export und Import als Datei */
 import { REGIONS, VILLAGES, DUNGEONS, regionAt, WORLD_W, WORLD_H, START_VILLAGE, TS } from "./constants.js";
+import { LEGACY_POTIONS, POTIONS } from "../data/items.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const ACCOUNT_COUNT = 5;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -34,6 +35,19 @@ export function migrate(data) {
     out.saveVersion = 3;
     const [sx, sy] = START_VILLAGE.split(",").map(Number);
     out.P = { ...out.P, area: "over", sx, sy, x: 7 * TS + 8, y: 8 * TS + 8, lastVillage: START_VILLAGE, visits: {}, quests: out.P.quests || {} };
+  }
+  if (v < 4) {
+    // Version 4: ein Heiltrank statt drei Größen
+    out.saveVersion = 4;
+    const inv = [], stacks = {};
+    for (const it of out.P.inventory || []) {
+      if (it.kind !== "trank") { inv.push(it); continue; }
+      const id = POTIONS[it.potId] ? it.potId : LEGACY_POTIONS[it.potId];
+      if (!id) continue;
+      if (!stacks[id]) { stacks[id] = { uid: "p_" + id, kind: "trank", potId: id, name: POTIONS[id].name, qty: 0, value: Math.round(POTIONS[id].price * 0.45) }; inv.push(stacks[id]); }
+      stacks[id].qty += it.qty || 1;
+    }
+    out.P = { ...out.P, inventory: inv };
   }
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";

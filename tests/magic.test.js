@@ -8,7 +8,7 @@ import { BASES, generateItem, BASE_BY_ID } from "../src/game/items.js";
 import { rngFor } from "../src/game/rng.js";
 import { SKILLS, learn, canLearn, whyNot, freePoints, respec, spellRankMult } from "../src/game/skills.js";
 import { SPELLS, spellCost, spellDamage, canCast, selectSpell, cycleSpell } from "../src/game/magic.js";
-import { migrate } from "../src/game/save.js";
+import { migrate, SAVE_VERSION } from "../src/game/save.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 function arena(seed) {
@@ -186,7 +186,7 @@ describe("Magie", () => {
   });
   it("Speicherstand Version 1 bekommt Mana und Fertigkeiten", () => {
     const mig = migrate({ saveVersion: 1, seed: "x", P: { level: 5, xp: 0, gold: 0, hp: 10, inventory: [], equip: {}, area: "over", sx: 2, sy: 3, x: 0, y: 0, dir: "up" } });
-    assert.equal(mig.saveVersion, 3);
+    assert.equal(mig.saveVersion, SAVE_VERSION);
     assert.equal(mig.P.mana, 30);
     assert.deepEqual(mig.P.skills, {});
     assert.equal(freePoints(mig.P), 5);

@@ -1,7 +1,7 @@
 /* Items: Generierung, Stats, Aufwertung, Tränke. Tabellen liegen in data/items.js. */
 import { pick } from "./rng.js";
-import { RARITIES, SLOTS, SLOT_ORDER, STAT_NAMES, STAT_KEYS, FLAT_STATS, WEAPON_TYPES, BASES, PREFIXES, SUFFIXES, POTIONS } from "../data/items.js";
-export { RARITIES, SLOTS, SLOT_ORDER, STAT_NAMES, STAT_KEYS, WEAPON_TYPES, BASES, PREFIXES, SUFFIXES, POTIONS };
+import { RARITIES, SLOTS, SLOT_ORDER, STAT_NAMES, STAT_KEYS, FLAT_STATS, WEAPON_TYPES, BASES, PREFIXES, SUFFIXES, POTIONS, LEGACY_POTIONS } from "../data/items.js";
+export { RARITIES, SLOTS, SLOT_ORDER, STAT_NAMES, STAT_KEYS, WEAPON_TYPES, BASES, PREFIXES, SUFFIXES, POTIONS, LEGACY_POTIONS };
 
 export const RARITY_BY_ID = Object.fromEntries(RARITIES.map(r => [r.id, r]));
 export const BASE_BY_ID = Object.fromEntries(BASES.map(b => [b.id, b]));
@@ -75,8 +75,8 @@ export function makePotion(id, qty = 1) { return { uid: "p_" + id, kind: "trank"
 export function sumStats(s) { return Object.values(s).reduce((a, b) => a + b, 0); }
 export function potionDesc(id) {
   const p = POTIONS[id];
-  if (p.heal >= 9999) return "Heilt vollständig, füllt Mana";
-  if (p.heal) return `Heilt ${p.heal} Leben`;
-  if (p.mana) return `Füllt ${p.mana} Mana`;
+  if (!p) return "";
+  if (p.healPct) return `Heilt ${Math.round(p.healPct * 100)} % des Lebens`;
+  if (p.manaPct) return `Füllt ${Math.round(p.manaPct * 100)} % Mana`;
   return "";
 }

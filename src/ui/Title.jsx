@@ -57,6 +57,9 @@ export default function Title({ accounts, onContinue, onNew, onRename, onReset, 
         <div className="title-kicker">Ein Loot-Abenteuer</div>
         <h1 className="title-name">Eldenfeld</h1>
         <div className="title-sub">Sieben Regionen, drei Dungeons, unendlich Beute.</div>
+        <div className="notice">
+          <b>Speicher liegt im Browser dieses Geräts.</b> Wer Websitedaten oder den Verlauf löscht, im privaten Modus spielt oder den Browser wechselt, verliert die Konten. Sicherung: hinter „…“ bei jedem Konto „Als Datei sichern“, die Datei auf dem Gerät behalten und bei Bedarf über „Datei“ in ein freies Konto laden.
+        </div>
         <div className="section" style={{ textAlign: "left" }}>Wer spielt?</div>
 
         <div className="col">

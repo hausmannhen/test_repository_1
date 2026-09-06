@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 const mem = new Map();
 globalThis.localStorage = { getItem: k => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, String(v)), removeItem: k => mem.delete(k) };
 
-const { listSaves, listAccounts, makeSlot, writeSlot, deleteSlot, renameSlot, saveGame, loadSlot, exportSlot, importSave, migrate, describeSave, deleteAllSaves, ACCOUNT_IDS, ACCOUNT_COUNT, fileNameFor } = await import("../src/game/save.js");
+const { listSaves, listAccounts, makeSlot, writeSlot, deleteSlot, renameSlot, saveGame, loadSlot, exportSlot, importSave, migrate, describeSave, deleteAllSaves, ACCOUNT_IDS, ACCOUNT_COUNT, fileNameFor, SAVE_VERSION } = await import("../src/game/save.js");
 const { createGame, startGame } = await import("../src/game/engine.js");
 const { newPlayer } = await import("../src/game/player.js");
 
@@ -69,14 +69,14 @@ describe("Spielstände", () => {
     assert.equal(saves.length, 1);
     assert.equal(saves[0].name, "Spieler 1");
     assert.equal(saves[0].id, ACCOUNT_IDS[0]);
-    assert.equal(saves[0].saveVersion, 3);
+    assert.equal(saves[0].saveVersion, SAVE_VERSION);
     assert.equal(mem.has("eldenfeld_save_v1"), false);
   });
 
   it("Migration und Beschreibung", () => {
     const old = { seed: "alt", P: { level: 3, xp: 1, gold: 5, hp: 10, inventory: [], equip: {}, area: "over", sx: 2, sy: 3, x: 0, y: 0, dir: "up" } };
     const mig = migrate(old);
-    assert.equal(mig.saveVersion, 3);
+    assert.equal(mig.saveVersion, SAVE_VERSION);
     assert.equal(mig.P.sx, 4); assert.equal(mig.P.sy, 5);
     assert.deepEqual(mig.P.visits, {});
     assert.equal(migrate(null), null);
@@ -92,5 +92,17 @@ describe("Spielstände", () => {
     assert.ok(listAccounts().every(a => a.slot));
     deleteAllSaves();
     assert.equal(listSaves().length, 0);
+  });
+});
+
+describe("Tränke-Migration", () => {
+  it("alte Trankgrößen werden zu einem Heiltrank zusammengefasst", () => {
+    const P = newPlayer("x");
+    P.inventory = [{ uid: "p_heiltrank_k", kind: "trank", potId: "heiltrank_k", qty: 2 }, { uid: "p_heiltrank_g", kind: "trank", potId: "heiltrank_g", qty: 1 }, { uid: "p_elixier", kind: "trank", potId: "elixier", qty: 1 }, { uid: "p_manatrank", kind: "trank", potId: "manatrank", qty: 2 }];
+    const mig = migrate({ saveVersion: 3, seed: "s", P });
+    const pots = mig.P.inventory.filter(i => i.kind === "trank");
+    assert.equal(pots.length, 2);
+    assert.equal(pots.find(p => p.potId === "heiltrank").qty, 4);
+    assert.equal(pots.find(p => p.potId === "manatrank").qty, 2);
   });
 });

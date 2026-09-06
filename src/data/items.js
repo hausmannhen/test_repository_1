@@ -80,9 +80,8 @@ export const SUFFIXES = [
   { name: "des Magiers", stat: "mag", v: 0.7 }, { name: "der Quelle", stat: "mana", v: 1.0 }, { name: "der Gezeiten", stat: "mag", v: 0.5 },
 ];
 export const POTIONS = {
-  heiltrank_k: { name: "Kleiner Heiltrank", heal: 30, price: 12, color: "#ff5f6d" },
-  heiltrank_m: { name: "Heiltrank",         heal: 80, price: 34, color: "#ff2f4f" },
-  heiltrank_g: { name: "Großer Heiltrank",  heal: 200, price: 90, color: "#c8102e" },
-  manatrank:   { name: "Manatrank",         mana: 60, price: 28, color: "#5aa7ff" },
-  elixier:     { name: "Elixier",           heal: 9999, mana: 9999, price: 260, color: "#ffd23f" },
+  heiltrank: { name: "Heiltrank", healPct: 0.3, price: 25, color: "#ff2f4f" },
+  manatrank: { name: "Manatrank", manaPct: 0.5, price: 22, color: "#5aa7ff" },
 };
+/* Alte Trank-IDs aus früheren Spielständen */
+export const LEGACY_POTIONS = { heiltrank_k: "heiltrank", heiltrank_m: "heiltrank", heiltrank_g: "heiltrank", elixier: "heiltrank" };

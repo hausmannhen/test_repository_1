@@ -21,6 +21,7 @@ import Sage from "./ui/Sage.jsx";
 import Death from "./ui/Death.jsx";
 import Npc from "./ui/Npc.jsx";
 import { trackerText } from "./game/quests.js";
+import { GameAudio } from "./game/audio.js";
 
 export default function App() {
   const [phase, setPhase] = useState("title");
@@ -34,6 +35,8 @@ export default function App() {
   const inputRef = useRef(createInput());
   const panelRef = useRef(null);
   panelRef.current = panel;
+  const audioRef = useRef(null);
+  if (!audioRef.current) audioRef.current = new GameAudio();
 
   const closePanel = useCallback(() => {
     const G = gRef.current;
@@ -94,6 +97,14 @@ export default function App() {
       if (!panelRef.current) update(G, dt, input);
       const r = rendererRef.current;
       if (r) r.render(G, dt);
+      // Ton: Ereignisse abspielen, Stimmung nach Region
+      const au = audioRef.current;
+      if (au) {
+        for (const ev of G.events) au.sfx(ev.type, ev);
+        au.setMood(G.screen.dungeonRoom ? "dungeon" : G.screen.region);
+        au.update(G.time);
+      }
+      G.events.length = 0;
       const P = G.P, d = derive(P);
       const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].heal).reduce((a, b) => a + b.qty, 0);
       const manaPots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].mana).reduce((a, b) => a + b.qty, 0);
@@ -101,7 +112,8 @@ export default function App() {
       const sp = P.activeSpell && SPELLS[P.activeSpell] ? SPELLS[P.activeSpell] : null;
       const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),
         spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null,
-        loc: locationName(G), quest: trackerText(P), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0 };
+        loc: locationName(G), quest: trackerText(P), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0,
+        area: P.area, pos: [P.sx, P.sy], visited: Object.keys(P.visits).filter(k => /^\d+,\d+$/.test(k)), cleared: P.cleared };
       const s = JSON.stringify(next);
       if (s !== lastUi) { lastUi = s; setUi(next); }
       if (G.dead && !panelRef.current) setPanel("tot");
@@ -109,6 +121,13 @@ export default function App() {
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [phase]);
+
+  // Ton beim ersten Tipp freischalten (Browser verlangen eine Nutzeraktion)
+  useEffect(() => {
+    const unlock = () => { audioRef.current.unlock(); };
+    window.addEventListener("pointerdown", unlock); window.addEventListener("keydown", unlock);
+    return () => { window.removeEventListener("pointerdown", unlock); window.removeEventListener("keydown", unlock); };
+  }, []);
 
   // Speichern beim Verlassen
   useEffect(() => {
@@ -125,7 +144,7 @@ export default function App() {
   const G = gRef.current;
   const renderPanel = () => {
     if (!panel) return null;
-    const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle };
+    const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle, audio: audioRef.current };
     if (panel === "inventar") return <Inventory {...props} />;
     if (panel === "shop") return <Shop {...props} />;
     if (panel === "smith") return <Smith {...props} />;

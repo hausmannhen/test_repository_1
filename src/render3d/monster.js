@@ -137,11 +137,13 @@ export function buildMobModel(m) {
   // Lebensbalken (wird vom Renderer zur Kamera gedreht)
   const barW = m.boss ? 2.2 : m.mini ? 1.6 : s + 0.3;
   const bar = new THREE.Group();
-  const barBg = new THREE.Mesh(G.plane(barW, 0.12), basic("#1a1a24", { depthTest: false, transparent: true, opacity: 0.85 }));
-  const barFg = new THREE.Mesh(G.plane(barW, 0.12), basic(m.boss ? "#ff3b3b" : m.mini ? "#ffb347" : "#6fe28a", { depthTest: false }));
-  barBg.renderOrder = 20; barFg.renderOrder = 21;
-  barFg.position.z = 0.001;
-  bar.add(barBg, barFg);
+  const barH = m.boss ? 0.2 : 0.16;
+  const barEdge = new THREE.Mesh(G.plane(barW + 0.06, barH + 0.06), basic("#000000", { depthTest: false, transparent: true, opacity: 0.9 }));
+  const barBg = new THREE.Mesh(G.plane(barW, barH), basic("#3a1010", { depthTest: false }));
+  const barFg = new THREE.Mesh(G.plane(barW, barH), basic(m.boss ? "#ff1e1e" : m.mini ? "#ff4a2a" : "#e8302c", { depthTest: false }));
+  barEdge.renderOrder = 19; barBg.renderOrder = 20; barFg.renderOrder = 21;
+  barEdge.position.z = -0.001; barFg.position.z = 0.001;
+  bar.add(barEdge, barBg, barFg);
   bar.visible = false;
   const height = m.shape === "bat" ? 1.3 : m.shape === "golem" ? 1.5 * s : m.shape === "ghost" ? 1.5 * s : 1.2 * s;
 

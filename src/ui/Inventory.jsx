@@ -1,37 +1,39 @@
 /* Ausrüstung, Beutel und Weltkarte */
 import React, { useState } from "react";
 import { WORLD_W, WORLD_H, VILLAGES, DUNGEON_BY_SCREEN, DUNGEONS, REGIONS, REGION_MAP_COLORS, regionAt } from "../game/constants.js";
-import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
+import { MINIBOSS_BY_SCREEN, MINIBOSSES } from "../data/minibosses.js";
 import { SLOTS, SLOT_ORDER, effectiveStats, sumStats } from "../game/items.js";
 import { derive, xpNeed, usePotion, useManaPotion, INVENTORY_MAX } from "../game/player.js";
 import { POTIONS } from "../game/items.js";
 import { freePoints } from "../game/skills.js";
 import Skills from "./Skills.jsx";
+import Settings from "./Settings.jsx";
 import Quests from "./Quests.jsx";
 import { activeQuests, isComplete } from "../game/quests.js";
 import { equipItem, unequipItem, dropItem } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemName, ItemRow, StatLine } from "./bits.jsx";
 
+/* Detail unter der Zeile: Werte, Vergleich mit dem angelegten Stück, Knöpfe */
 export function ItemDetail({ P, item, actions }) {
   const other = P.equip[item.slot];
+  const compare = item.kind === "gear" && other && other !== item;
   return (
-    <div className="detail">
-      <ItemName item={item} className="detail-name" />
-      {item.kind === "gear" && <div style={{ margin: "6px 0 10px" }}><StatLine stats={effectiveStats(item)} compare={other && other !== item ? effectiveStats(other) : null} /></div>}
-      {item.kind === "gear" && other && other !== item && <div className="detail-sub">Vergleich mit angelegtem {SLOTS[item.slot]}: <ItemName item={other} /></div>}
-      <div className="detail-sub" style={{ marginBottom: 10 }}>Wert: {item.value} Gold</div>
+    <div>
+      {item.kind === "gear" && <StatLine stats={effectiveStats(item)} compare={compare ? effectiveStats(other) : null} />}
+      {compare && <div className="detail-sub" style={{ marginTop: 6 }}>Vergleich mit angelegtem {SLOTS[item.slot]}: <ItemName item={other} />. Grün ist besser, Rot schlechter.</div>}
+      {item.kind === "gear" && item.type === "fern" && <div className="detail-sub">Reichweite {item.range}, alle {item.rate} s ein Schuss</div>}
+      <div className="detail-sub" style={{ margin: "6px 0 8px" }}>Wert: {item.value} Gold</div>
       <div className="row">{actions}</div>
     </div>
   );
 }
 
-export default function Inventory({ G, onClose, rerender, onQuit }) {
+export default function Inventory({ G, onClose, rerender, onQuit, audio }) {
   const P = G.P, d = derive(P);
   const [tab, setTab] = useState("ausruestung");
   const [selected, setSelected] = useState(null);
   const sel = selected && (P.inventory.includes(selected) || Object.values(P.equip).includes(selected)) ? selected : null;
-  const isEquipped = sel && P.equip[sel.slot] === sel;
   const visited = Object.keys(P.visits).filter(k => /^\d+,\d+$/.test(k));
 
   const doEquip = (it) => { equipItem(P, it); setSelected(it); rerender(); };
@@ -41,7 +43,13 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
 
   const points = freePoints(P);
   const questBadge = activeQuests(P).filter(id => isComplete(P, id)).length;
-  const body = tab === "aufgaben" ? <Quests G={G} /> : tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
+  const actionsFor = (it) => it.kind === "trank"
+    ? [<Btn key="u" small tone="gold" onClick={() => doUse(it)}>Trinken</Btn>, <Btn key="d" small onClick={() => doDrop(it)}>Wegwerfen</Btn>]
+    : P.equip[it.slot] === it
+      ? [<Btn key="a" small onClick={() => doUnequip(it)}>Ablegen</Btn>]
+      : [<Btn key="e" small tone="gold" onClick={() => doEquip(it)}>Anlegen</Btn>, <Btn key="d" small onClick={() => doDrop(it)}>Wegwerfen</Btn>];
+  const minisDone = MINIBOSSES.filter(m => P.cleared["mb:" + m.id]).length;
+  const body = tab === "einstellungen" ? <Settings audio={audio} /> : tab === "aufgaben" ? <Quests G={G} /> : tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
     <div>
       <div className="dim" style={{ fontSize: 13, marginBottom: 8 }}>Erkundete Gebiete. Dörfer in Gold, Dungeons als Dreieck, Reviere der Zwischenbosse als Schädel, du in Grün.</div>
       <div className="map" style={{ gridTemplateColumns: `repeat(${WORLD_W}, 1fr)` }}>
@@ -57,7 +65,7 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
       </div>
       <div className="dim" style={{ fontSize: 12, marginTop: 10, lineHeight: 1.6 }}>
         {Object.entries(REGIONS).map(([k, r]) => <div key={k}><span className="swatch" style={{ background: REGION_MAP_COLORS[k] }} />{r.name}, Stufe {r.level}+</div>)}
-        <div style={{ marginTop: 6 }}>Besiegte Bosse: {Object.keys(P.cleared).length} von {DUNGEONS.length}. Getötete Monster: {P.kills}.</div>
+        <div style={{ marginTop: 6 }}>Zwischenbosse: {minisDone} von {MINIBOSSES.length}. Endbosse: {DUNGEONS.filter(d => P.cleared[d.id]).length} von {DUNGEONS.length}. Getötete Monster: {P.kills}.</div>
       </div>
     </div>
   ) : (
@@ -66,35 +74,32 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
         <div className="dim" style={{ fontSize: 13, marginBottom: 6 }}>Stufe {P.level}, {P.xp} / {xpNeed(P.level)} Erfahrung</div>
         <StatLine stats={{ atk: d.atk, def: d.def, hp: d.maxHp, crit: d.crit, spd: d.spd, luck: d.luck, mag: d.mag, mana: d.maxMana }} />
       </div>
-      {sel && <ItemDetail P={P} item={sel} actions={sel.kind === "trank"
-        ? [<Btn key="u" small tone="gold" onClick={() => doUse(sel)}>Trinken</Btn>, <Btn key="d" small onClick={() => doDrop(sel)}>Wegwerfen</Btn>]
-        : isEquipped
-          ? [<Btn key="a" small onClick={() => doUnequip(sel)}>Ablegen</Btn>]
-          : [<Btn key="e" small tone="gold" onClick={() => doEquip(sel)}>Anlegen</Btn>, <Btn key="d" small onClick={() => doDrop(sel)}>Wegwerfen</Btn>]} />}
       <div className="section">Angelegt</div>
       {SLOT_ORDER.map(slot => {
         const it = P.equip[slot];
-        return <div key={slot} onClick={() => it && setSelected(it)} className={`equip-row${sel && sel === it ? " selected" : ""}${it ? " clickable" : ""}`}>
-          <span className="dim" style={{ fontSize: 13 }}>{SLOTS[slot]}</span>
-          {it ? <ItemName item={it} className="small" /> : <span className="empty">leer</span>}
-        </div>;
+        if (!it) return <div key={slot} className="equip-row"><span className="dim" style={{ fontSize: 13 }}>{SLOTS[slot]}</span><span className="empty">leer</span></div>;
+        return <ItemRow key={slot} item={it} tag={SLOTS[slot]} selected={sel === it} onClick={() => setSelected(sel === it ? null : it)}>
+          <ItemDetail P={P} item={it} actions={actionsFor(it)} />
+        </ItemRow>;
       })}
       <div className="section" style={{ marginTop: 12 }}>Beutel ({P.inventory.length} / {INVENTORY_MAX})</div>
       {P.inventory.length === 0 && <div className="empty">Noch leer. Monster lassen Beute fallen.</div>}
       {[...P.inventory].sort((a, b) => (a.kind === "trank" ? -1 : 1) - (b.kind === "trank" ? -1 : 1)).map(it => (
-        <ItemRow key={it.uid} item={it} selected={sel === it} onClick={() => setSelected(it)}
-          right={it.kind === "gear" && P.equip[it.slot] && sumStats(effectiveStats(it)) > sumStats(effectiveStats(P.equip[it.slot])) ? <span className="green" style={{ fontSize: 12 }}>besser</span> : null} />
+        <ItemRow key={it.uid} item={it} selected={sel === it} onClick={() => setSelected(sel === it ? null : it)}
+          right={it.kind === "gear" && P.equip[it.slot] && sumStats(effectiveStats(it)) > sumStats(effectiveStats(P.equip[it.slot])) ? <span className="green" style={{ fontSize: 12 }}>besser</span> : it.kind === "gear" && !P.equip[it.slot] ? <span className="dim" style={{ fontSize: 12 }}>frei</span> : null}>
+          <ItemDetail P={P} item={it} actions={actionsFor(it)} />
+        </ItemRow>
       ))}
     </div>
   );
 
   return (
-    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : tab === "aufgaben" ? "Aufgaben" : "Ausrüstung"} gold={P.gold} footer={<>
+    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : tab === "aufgaben" ? "Aufgaben" : tab === "einstellungen" ? "Ton" : "Ausrüstung"} gold={P.gold} footer={<>
       <Btn onClick={onQuit}>Speichern und zum Titel</Btn>
       <Btn tone="gold" onClick={onClose}>Schließen</Btn>
     </>}>
       <div className="row" style={{ marginBottom: 12 }}>
-        {["ausruestung", "fertigkeiten", "aufgaben", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : t === "aufgaben" ? `Aufgaben${questBadge > 0 ? ` (${questBadge})` : ""}` : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
+        {["ausruestung", "fertigkeiten", "aufgaben", "karte", "einstellungen"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : t === "aufgaben" ? `Aufgaben${questBadge > 0 ? ` (${questBadge})` : ""}` : t === "einstellungen" ? "Ton" : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
       </div>
       {body}
     </Panel>
