@@ -11,8 +11,8 @@ function mesh(geometry, material, x = 0, y = 0, z = 0) {
 
 export function buildMobModel(m) {
   const s = m.size / 16;
-  const c1 = new THREE.MeshLambertMaterial({ color: new THREE.Color(m.color) });
-  const c2 = new THREE.MeshLambertMaterial({ color: new THREE.Color(m.color2) });
+  const c1 = new THREE.MeshStandardMaterial({ color: new THREE.Color(m.color), roughness: 0.85 });
+  const c2 = new THREE.MeshStandardMaterial({ color: new THREE.Color(m.color2), roughness: 0.85 });
   const mats = [c1, c2];
   const group = new THREE.Group();
   const parts = {};
@@ -20,7 +20,7 @@ export function buildMobModel(m) {
 
   switch (m.shape) {
     case "blob": {
-      parts.body = mesh(G.ico(0.5, 1), c1, 0, s * 0.35, 0);
+      parts.body = mesh(G.ico(0.5, 2), c1, 0, s * 0.35, 0);
       parts.body.scale.set(s, s * 0.7, s);
       group.add(parts.body);
       group.add(mesh(G.box(0.1 * s, 0.1 * s, 0.04), c2, -0.15 * s, s * 0.42, -0.45 * s));
@@ -28,8 +28,10 @@ export function buildMobModel(m) {
       break;
     }
     case "quad": {
-      group.add(mesh(G.box(0.9 * s, 0.45 * s, 0.55 * s), c1, 0, 0.3 * s, 0));
-      group.add(mesh(G.box(0.42 * s, 0.36 * s, 0.4 * s), c1, 0, 0.5 * s, -0.5 * s));
+      const body = mesh(G.capsule(0.22, 0.5), c1, 0, 0.52 * s, 0); body.rotation.x = Math.PI / 2; body.scale.setScalar(s);
+      group.add(body);
+      const headM = mesh(G.sphere(0.2, 10), c1, 0, 0.66 * s, -0.5 * s); headM.scale.set(s, s * 0.9, s * 1.1);
+      group.add(headM);
       group.add(mesh(G.box(0.1 * s, 0.14 * s, 0.06 * s), c1, -0.14 * s, 0.86 * s, -0.5 * s));
       group.add(mesh(G.box(0.1 * s, 0.14 * s, 0.06 * s), c1, 0.14 * s, 0.86 * s, -0.5 * s));
       group.add(mesh(G.box(0.06 * s, 0.06 * s, 0.03), red, -0.1 * s, 0.7 * s, -0.7 * s));

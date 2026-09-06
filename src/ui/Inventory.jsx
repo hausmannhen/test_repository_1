@@ -2,7 +2,10 @@
 import React, { useState } from "react";
 import { WORLD_W, WORLD_H, VILLAGES, DUNGEON_BY_SCREEN, DUNGEONS, REGIONS, REGION_MAP_COLORS, regionAt } from "../game/constants.js";
 import { SLOTS, SLOT_ORDER, effectiveStats, sumStats } from "../game/items.js";
-import { derive, xpNeed, usePotion, INVENTORY_MAX } from "../game/player.js";
+import { derive, xpNeed, usePotion, useManaPotion, INVENTORY_MAX } from "../game/player.js";
+import { POTIONS } from "../game/items.js";
+import { freePoints } from "../game/skills.js";
+import Skills from "./Skills.jsx";
 import { equipItem, unequipItem, dropItem } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemName, ItemRow, StatLine } from "./bits.jsx";
@@ -31,9 +34,10 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
   const doEquip = (it) => { equipItem(P, it); setSelected(it); rerender(); };
   const doUnequip = (it) => { if (unequipItem(P, it)) { setSelected(it); rerender(); } };
   const doDrop = (it) => { dropItem(P, it); setSelected(null); rerender(); };
-  const doUse = () => { usePotion(G); rerender(); };
+  const doUse = (it) => { const p = POTIONS[it.potId]; if (p.mana && !p.heal) useManaPotion(G); else usePotion(G); rerender(); };
 
-  const body = tab === "karte" ? (
+  const points = freePoints(P);
+  const body = tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
     <div>
       <div className="dim" style={{ fontSize: 13, marginBottom: 8 }}>Erkundete Gebiete. Dörfer in Gold, Dungeons in Rot, du in Grün.</div>
       <div className="map" style={{ gridTemplateColumns: `repeat(${WORLD_W}, 1fr)` }}>
@@ -55,10 +59,10 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
     <div>
       <div className="box">
         <div className="dim" style={{ fontSize: 13, marginBottom: 6 }}>Stufe {P.level}, {P.xp} / {xpNeed(P.level)} Erfahrung</div>
-        <StatLine stats={{ atk: d.atk, def: d.def, hp: d.maxHp, crit: d.crit, spd: d.spd, luck: d.luck }} />
+        <StatLine stats={{ atk: d.atk, def: d.def, hp: d.maxHp, crit: d.crit, spd: d.spd, luck: d.luck, mag: d.mag, mana: d.maxMana }} />
       </div>
       {sel && <ItemDetail P={P} item={sel} actions={sel.kind === "trank"
-        ? [<Btn key="u" small tone="gold" onClick={doUse}>Trinken</Btn>, <Btn key="d" small onClick={() => doDrop(sel)}>Wegwerfen</Btn>]
+        ? [<Btn key="u" small tone="gold" onClick={() => doUse(sel)}>Trinken</Btn>, <Btn key="d" small onClick={() => doDrop(sel)}>Wegwerfen</Btn>]
         : isEquipped
           ? [<Btn key="a" small onClick={() => doUnequip(sel)}>Ablegen</Btn>]
           : [<Btn key="e" small tone="gold" onClick={() => doEquip(sel)}>Anlegen</Btn>, <Btn key="d" small onClick={() => doDrop(sel)}>Wegwerfen</Btn>]} />}
@@ -80,12 +84,12 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
   );
 
   return (
-    <Panel title="Ausrüstung" gold={P.gold} footer={<>
+    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : "Ausrüstung"} gold={P.gold} footer={<>
       <Btn onClick={onQuit}>Speichern und zum Titel</Btn>
       <Btn tone="gold" onClick={onClose}>Schließen</Btn>
     </>}>
       <div className="row" style={{ marginBottom: 12 }}>
-        {["ausruestung", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : "Karte"}</Btn>)}
+        {["ausruestung", "fertigkeiten", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
       </div>
       {body}
     </Panel>

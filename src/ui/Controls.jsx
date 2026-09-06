@@ -1,8 +1,10 @@
 /* Touch-Steuerung: Steuerkreuz links, Trank und Schwert rechts, Menüknopf */
 import React, { useRef } from "react";
 import { Btn } from "./bits.jsx";
+import { SPELLS, ELEMENTS } from "../data/spells.js";
 
-export default function Controls({ input, onPotion, onMenu, pots, menuOpen }) {
+export default function Controls({ input, onPotion, onManaPotion, onMenu, pots, manaPots, menuOpen, spells, activeSpell, onSelectSpell }) {
+  const el = activeSpell && SPELLS[activeSpell] ? ELEMENTS[SPELLS[activeSpell].element] : null;
   const padRef = useRef(null);
   const pad = (e, end) => {
     if (end) { input.x = 0; input.y = 0; return; }
@@ -15,6 +17,15 @@ export default function Controls({ input, onPotion, onMenu, pots, menuOpen }) {
     input.x = dx; input.y = dy;
   };
   return (
+    <div className="controls-wrap">
+      {spells && spells.length > 0 && (
+        <div className="spellbar">
+          {spells.map(id => {
+            const e = ELEMENTS[SPELLS[id].element], active = id === activeSpell;
+            return <button key={id} type="button" className={`chip chip-small${active ? " active" : ""}`} onPointerDown={() => onSelectSpell(id)} style={{ borderColor: e.color, color: active ? "#1b1712" : e.color, background: active ? e.color : "transparent" }}>{SPELLS[id].name}</button>;
+          })}
+        </div>
+      )}
     <div className="controls">
       <div ref={padRef} className="pad"
         onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); pad(e, false); }}
@@ -27,13 +38,20 @@ export default function Controls({ input, onPotion, onMenu, pots, menuOpen }) {
       </div>
       <div className="controls-right">
         <div className="row" style={{ alignItems: "flex-end" }}>
-          <button type="button" className="btn-potion" onPointerDown={onPotion}>Trank<br /><span className="dim">{pots}</span></button>
+          <div className="col" style={{ gap: 6 }}>
+            <button type="button" className="btn-potion" onPointerDown={onPotion}>Trank<br /><span className="dim">{pots}</span></button>
+            <button type="button" className="btn-potion btn-mana" onPointerDown={onManaPotion}>Mana<br /><span className="dim">{manaPots}</span></button>
+          </div>
+          <button type="button" className="btn-cast" disabled={!activeSpell} style={el ? { borderColor: el.color, color: el.color } : undefined}
+            onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); input.cast = true; }}
+            onPointerUp={() => { input.cast = false; }} onPointerCancel={() => { input.cast = false; }}>{activeSpell ? "Zauber" : "–"}</button>
           <button type="button" className="btn-sword"
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); input.attack = true; }}
             onPointerUp={() => { input.attack = false; }} onPointerCancel={() => { input.attack = false; }}>Schwert</button>
         </div>
-        <Btn small onClick={onMenu}>{menuOpen ? "Schließen" : "Ausrüstung & Karte"}</Btn>
+        <Btn small onClick={onMenu}>{menuOpen ? "Schließen" : "Menü"}</Btn>
       </div>
+    </div>
     </div>
   );
 }

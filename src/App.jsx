@@ -1,7 +1,11 @@
 /* Titel, Spiel, Panels. Spielschleife: Engine-Update, 3D-Render, HUD-Sync. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createGame, startGame, update, respawn, locationName } from "./game/engine.js";
-import { derive, xpNeed, usePotion } from "./game/player.js";
+import { derive, xpNeed, usePotion, useManaPotion } from "./game/player.js";
+import { knownSpells, freePoints } from "./game/skills.js";
+import { selectSpell, cycleSpell } from "./game/magic.js";
+import { SPELLS, ELEMENTS } from "./data/spells.js";
+import { POTIONS } from "./game/items.js";
 import { saveGame, listAccounts, makeSlot, writeSlot, deleteSlot, renameSlot } from "./game/save.js";
 import { newPlayer } from "./game/player.js";
 import { createInput, readInput, bindKeyboard } from "./game/input.js";
@@ -40,6 +44,14 @@ export default function App() {
     else if (!panelRef.current) setPanel("inventar");
   }, [closePanel]);
   const drinkPotion = useCallback(() => { const G = gRef.current; if (G && !panelRef.current && !G.dead) usePotion(G); }, []);
+  const drinkMana = useCallback(() => { const G = gRef.current; if (G && !panelRef.current && !G.dead) useManaPotion(G); }, []);
+  const pickSpell = useCallback((idOrIndex) => {
+    const G = gRef.current; if (!G) return;
+    const list = knownSpells(G.P);
+    const id = typeof idOrIndex === "number" ? list[idOrIndex] : idOrIndex;
+    if (id) { selectSpell(G.P, id); G.dirty = true; }
+  }, []);
+  const nextSpell = useCallback(() => { const G = gRef.current; if (G) { cycleSpell(G.P); G.dirty = true; } }, []);
 
   const start = useCallback((slot) => {
     const G = createGame(slot.seed, slot.P, { id: slot.id, name: slot.name });
@@ -66,7 +78,7 @@ export default function App() {
   }, []);
 
   // Tastatur
-  useEffect(() => bindKeyboard(inputRef.current, { potion: drinkPotion, inventory: toggleInventory, escape: () => { if (panelRef.current && panelRef.current !== "tot") closePanel(); } }), [drinkPotion, toggleInventory, closePanel]);
+  useEffect(() => bindKeyboard(inputRef.current, { potion: drinkPotion, manaPotion: drinkMana, inventory: toggleInventory, selectSpell: pickSpell, cycleSpell: nextSpell, escape: () => { if (panelRef.current && panelRef.current !== "tot") closePanel(); } }), [drinkPotion, drinkMana, toggleInventory, pickSpell, nextSpell, closePanel]);
 
   // Spielschleife
   useEffect(() => {
@@ -81,8 +93,13 @@ export default function App() {
       const r = rendererRef.current;
       if (r) r.render(G, dt);
       const P = G.P, d = derive(P);
-      const pots = P.inventory.filter(i => i.kind === "trank").reduce((a, b) => a + b.qty, 0);
-      const next = { hp: P.hp, maxHp: d.maxHp, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, loc: locationName(G), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0 };
+      const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].heal).reduce((a, b) => a + b.qty, 0);
+      const manaPots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].mana).reduce((a, b) => a + b.qty, 0);
+      const spells = knownSpells(P);
+      const sp = P.activeSpell && SPELLS[P.activeSpell] ? SPELLS[P.activeSpell] : null;
+      const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),
+        spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null,
+        loc: locationName(G), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0 };
       const s = JSON.stringify(next);
       if (s !== lastUi) { lastUi = s; setUi(next); }
       if (G.dead && !panelRef.current) setPanel("tot");
@@ -131,7 +148,8 @@ export default function App() {
           )}
           {ui && ui.msg && <div className="msg-wrap"><span className="msg" style={{ color: ui.msg.color }}>{ui.msg.text}</span></div>}
         </div>
-        <Controls input={inputRef.current} onPotion={drinkPotion} onMenu={toggleInventory} pots={ui ? ui.pots : 0} menuOpen={panel === "inventar"} />
+        <Controls input={inputRef.current} onPotion={drinkPotion} onManaPotion={drinkMana} onMenu={toggleInventory} pots={ui ? ui.pots : 0} manaPots={ui ? ui.manaPots : 0}
+          menuOpen={panel === "inventar"} spells={ui ? ui.spells : []} activeSpell={ui ? ui.activeSpell : null} onSelectSpell={pickSpell} />
         {renderPanel()}
       </div>
     </div>

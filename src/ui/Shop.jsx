@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { POTIONS } from "../game/items.js";
+import { POTIONS, potionDesc } from "../game/items.js";
 import { buyPotion, sellItem } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemRow } from "./bits.jsx";
@@ -14,7 +14,7 @@ export default function Shop({ G, onClose, rerender }) {
       </div>
       {tab === "kaufen" ? Object.entries(POTIONS).map(([id, p]) => (
         <div key={id} className="item-row">
-          <div><span style={{ color: p.color, fontSize: 14 }}>{p.name}</span><div className="item-row-sub">Heilt {p.heal >= 9999 ? "vollständig" : p.heal + " Leben"}</div></div>
+          <div><span style={{ color: p.color, fontSize: 14 }}>{p.name}</span><div className="item-row-sub">{potionDesc(id)}</div></div>
           <Btn small tone={P.gold >= p.price ? "gold" : "default"} disabled={P.gold < p.price} onClick={() => { buyPotion(P, id); rerender(); }}>{p.price} G</Btn>
         </div>
       )) : (

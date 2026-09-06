@@ -1,7 +1,7 @@
 /* Kleine UI-Bausteine: Knopf, Herzen, Itemname, Statzeile */
 import React from "react";
 import { clamp } from "../game/rng.js";
-import { RARITY_BY_ID, POTIONS, STAT_NAMES } from "../game/items.js";
+import { RARITY_BY_ID, POTIONS, STAT_NAMES, WEAPON_TYPES, potionDesc } from "../game/items.js";
 
 export function Btn({ children, onClick, tone = "default", small, disabled, className = "", style }) {
   return (
@@ -40,7 +40,7 @@ export function ItemRow({ item, selected, onClick, right }) {
     <div onClick={onClick} className={`item-row${selected ? " selected" : ""}`}>
       <div>
         <ItemName item={item} className="item-row-name" />
-        <div className="item-row-sub">{item.kind === "gear" ? `${SLOT_LABEL[item.slot]}, Stufe ${item.ilvl}, ${RARITY_BY_ID[item.rarity].name}` : `Heilt ${POTIONS[item.potId].heal >= 9999 ? "vollständig" : POTIONS[item.potId].heal + " Leben"}`}</div>
+        <div className="item-row-sub">{item.kind === "gear" ? `${item.slot === "waffe" ? WEAPON_TYPES[item.type || "nah"] : SLOT_LABEL[item.slot]}, Stufe ${item.ilvl}, ${RARITY_BY_ID[item.rarity].name}` : potionDesc(item.potId)}</div>
       </div>
       {right}
     </div>

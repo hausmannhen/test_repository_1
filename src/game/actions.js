@@ -53,3 +53,5 @@ export function buyBuff(P) {
   P.gold -= BUFF_COST; P.buffT = BUFF_DURATION;
   return true;
 }
+
+export function respecCost(P) { return 20 + P.level * 10; }

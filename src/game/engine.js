@@ -5,6 +5,8 @@ import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash } from "./player.js";
+import { castSpell, aimAt, ELEMENTS } from "./magic.js";
+export { castSpell };
 
 export const TRANSITION_DUR = 0.4;   // Sekunden Kamera-Slide beim Bildschirmwechsel
 
@@ -13,7 +15,8 @@ export function createGame(seed, P = null, slot = null) {
   return {
     seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
-    attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2 },
+    attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
+    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -49,7 +52,7 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   P.visits[vkey] = (P.visits[vkey] || 0) + 1;
   G.mobs = spawnMobsFor(screen, G.seed, P.visits[vkey]);
   if (screen.dungeonRoom && screen.dungeonRoom.type === "boss" && P.cleared[screen.dungeonRoom.d.id]) G.mobs = G.mobs.filter(m => !m.boss);
-  G.projs = []; G.drops = []; G.fx = [];
+  G.projs = []; G.pprojs = []; G.pending = []; G.drops = []; G.fx = [];
   unstick(P, screen.tiles);
   G.transition = slide && prev ? { t: 0, dur: TRANSITION_DUR, dx: slide.dx, dy: slide.dy, prevScreen: prev, fromX, fromY } : null;
   if (screen.village) { P.lastVillage = `${sx},${sy}`; if (banner) G.banner = { text: screen.village.name, sub: "Dorf", t: 2.6 }; }
@@ -125,12 +128,29 @@ export function moveWithCollision(tiles, e, dx, dy, hw, hh) {
 }
 
 /* ---------- Kampf ---------- */
-export function damageMob(G, m, dmg, crit, kx, ky) {
+export function damageMob(G, m, dmg, crit, kx, ky, color = null) {
+  if (m.dead) return;
   m.hp -= dmg; m.hitT = 0.18;
   m.vx += kx * 160; m.vy += ky * 160;
-  G.fx.push({ kind: "num", x: m.x, y: m.y - m.size, rise: 0, text: String(dmg), color: crit ? "#ffd23f" : "#fff", t: 0.8, big: crit });
+  G.fx.push({ kind: "num", x: m.x, y: m.y - m.size, rise: 0, text: String(dmg), color: crit ? "#ffd23f" : (color || "#fff"), t: 0.8, big: crit });
   if (m.hp <= 0) killMob(G, m);
 }
+/* Treffer aus Geschoss oder Zauber anwenden: Schaden, Brand, Verlangsamung, Rückstoß, Lebensraub */
+export function applyHit(G, m, hit, dx, dy) {
+  if (m.dead) return 0;
+  const P = G.P;
+  const crit = hit.crit === true || (typeof hit.critChance === "number" && Math.random() * 100 < hit.critChance);
+  const dmg = Math.max(1, Math.round(hit.dmg * (0.85 + Math.random() * 0.3) * (crit ? 2 : 1) * (P.buffT > 0 ? 1.5 : 1)));
+  const el = hit.element ? ELEMENTS[hit.element] : null;
+  const k = hit.knock || 0.5;
+  damageMob(G, m, dmg, crit, dx * k, dy * k, el ? el.color : null);
+  if (hit.burn) { m.burnT = Math.max(m.burnT || 0, hit.burn); m.burnDps = Math.max(m.burnDps || 0, dmg * 0.2); }
+  if (hit.slow) m.slowT = Math.max(m.slowT || 0, hit.slow);
+  const heal = Math.round(dmg * ((hit.leech || 0) + (hit.heal || 0)));
+  if (heal > 0) { const d = derive(P); P.hp = Math.min(d.maxHp, P.hp + heal); G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "+" + heal, color: "#6fe28a", t: 0.8, small: true }); }
+  return dmg;
+}
+const DIRV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 export function killMob(G, m) {
   const P = G.P;
   m.dead = true;
@@ -156,8 +176,9 @@ export function gainXp(G, amount) {
   G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "+" + amount + " XP", color: "#8fd3ff", t: 1, small: true });
   while (P.xp >= xpNeed(P.level)) {
     P.xp -= xpNeed(P.level); P.level++;
-    P.hp = derive(P).maxHp;
-    G.banner = { text: "Stufe " + P.level, sub: "Angriff und Leben gestiegen", t: 3 };
+    const d = derive(P);
+    P.hp = d.maxHp; P.mana = d.maxMana;
+    G.banner = { text: "Stufe " + P.level, sub: "Neuer Fertigkeitspunkt", t: 3 };
   }
   G.dirty = true;
 }
@@ -175,7 +196,8 @@ export function hurtPlayer(G, amount) {
 export function respawn(G) {
   const P = G.P;
   const [sx, sy] = P.lastVillage.split(",").map(Number);
-  P.gold = Math.floor(P.gold * 0.9); P.hp = Math.ceil(derive(P).maxHp / 2);
+  const d = derive(P);
+  P.gold = Math.floor(P.gold * 0.9); P.hp = Math.ceil(d.maxHp / 2); P.mana = d.maxMana;
   G.dead = false; G.invT = 1.5;
   enterScreen(G, "over", sx, sy, 7 * TS + 8, 8 * TS + 8, true);
 }
@@ -195,7 +217,12 @@ export function update(G, dt, input) {
   if (G.msg && (G.msg.t -= dt) <= 0) G.msg = null;
   if (G.banner && (G.banner.t -= dt) <= 0) G.banner = null;
   if (G.trigCd > 0) G.trigCd -= dt;
+  if (G.castT > 0) G.castT -= dt;
+  if (G.shootCd > 0) G.shootCd -= dt;
+  for (const k in G.spellCd) if (G.spellCd[k] > 0) G.spellCd[k] -= dt;
   if (G.dead) return;
+  // Mana regeneriert
+  P.mana = Math.min(d.maxMana, (P.mana || 0) + d.manaRegen * dt);
 
   // --- Spielerbewegung ---
   let ix = input.x, iy = input.y;
@@ -209,26 +236,101 @@ export function update(G, dt, input) {
   moveWithCollision(tiles, P, ix * speed * dt, iy * speed * dt, 5, 5);
   G.walkT = len > 0.2 ? G.walkT + dt : 0;
 
-  // --- Angriff ---
+  // --- Zauber ---
+  if (input.cast) castSpell(G);
+
+  // --- Angriff: Nahkampf oder Fernkampf ---
   G.attack.t = Math.max(-1, G.attack.t - dt);
   const atkSpeed = 1 + d.spd / 150;
-  if (input.attack && G.attack.t <= -0.08 / atkSpeed) {
-    G.attack = { t: 0.2 / atkSpeed, dir: P.dir, hit: new Set(), maxT: 0.2 / atkSpeed };
+  if (d.weaponType === "fern") {
+    if (input.attack && G.shootCd <= 0) {
+      G.shootCd = d.rate;
+      G.attack = { t: 0.15, dir: P.dir, hit: new Set(), maxT: 0.15, ranged: true };
+      let [dx, dy] = DIRV[P.dir];
+      const aim = aimAt(G, dx, dy, d.range);
+      if (aim) { dx = aim.x; dy = aim.y; }
+      const angles = d.doubleShot ? [-0.12, 0.12] : [0];
+      for (const a of angles) {
+        const ca = Math.cos(a), sa = Math.sin(a);
+        const vx = dx * ca - dy * sa, vy = dx * sa + dy * ca;
+        G.pprojs.push({ x: P.x + vx * 6, y: P.y + vy * 6, vx: vx * d.projSpeed, vy: vy * d.projSpeed, t: d.range / d.projSpeed, kind: d.proj, color: "#e8e2d0", color2: "#8a6a3a",
+          dmg: d.atk * d.rangedMult, critChance: d.crit + d.critRanged, pierce: d.pierce, hit: new Set(), knock: 0.6 });
+      }
+    }
+  } else if (input.attack && G.attack.t <= -0.08 / atkSpeed) {
+    G.attack = { t: 0.2 / atkSpeed, dir: P.dir, hit: new Set(), maxT: 0.2 / atkSpeed, ranged: false };
   }
-  if (G.attack.t > 0) {
+  if (G.attack.t > 0 && !G.attack.ranged) {
     const reach = d.reach;
     const box = attackBox(P, G.attack.dir, reach);
     for (const m of G.mobs) {
       if (m.dead || G.attack.hit.has(m.id)) continue;
-      if (rectHit(box, { x: m.x - m.size / 2, y: m.y - m.size / 2, w: m.size, h: m.size })) {
+      const inBox = rectHit(box, { x: m.x - m.size / 2, y: m.y - m.size / 2, w: m.size, h: m.size });
+      const inSweep = d.sweep && Math.hypot(m.x - P.x, m.y - P.y) < reach + m.size / 2 + 4;
+      if (inBox || inSweep) {
         G.attack.hit.add(m.id);
-        const crit = Math.random() * 100 < d.crit;
-        const dmg = Math.max(1, Math.round(d.atk * (0.85 + Math.random() * 0.3) * (crit ? 2 : 1) * (P.buffT > 0 ? 1.5 : 1)));
+        const crit = Math.random() * 100 < d.crit + d.critMelee;
+        const dmg = Math.max(1, Math.round(d.atk * d.meleeMult * (0.85 + Math.random() * 0.3) * (crit ? 2 : 1) * (P.buffT > 0 ? 1.5 : 1)));
         const kx = Math.sign(m.x - P.x) || 0, ky = Math.sign(m.y - P.y) || 0;
         damageMob(G, m, dmg, crit, kx * 0.7, ky * 0.7);
       }
     }
   }
+
+  // --- Spielergeschosse: Pfeile, Messer, Zauber ---
+  for (const pr of G.pprojs) {
+    pr.x += pr.vx * dt; pr.y += pr.vy * dt; pr.t -= dt;
+    if (solidAt(tiles, pr.x, pr.y) || pr.x < 0 || pr.y < 0 || pr.x > W || pr.y > H) { pr.t = 0; continue; }
+    for (const m of G.mobs) {
+      if (m.dead || pr.hit.has(m.id)) continue;
+      if (Math.hypot(m.x - pr.x, m.y - pr.y) < m.size / 2 + 5) {
+        pr.hit.add(m.id);
+        const len = Math.hypot(pr.vx, pr.vy) || 1;
+        applyHit(G, m, pr, pr.vx / len, pr.vy / len);
+        if (!pr.pierce) { pr.t = 0; break; }
+      }
+    }
+  }
+  G.pprojs = G.pprojs.filter(pr => pr.t > 0);
+
+  // --- Sofortwirkungen: Nova, Strahl, Kette ---
+  for (const ef of G.pending) {
+    if (ef.type === "nova") {
+      for (const m of G.mobs) {
+        if (m.dead) continue;
+        const mx = m.x - ef.x, my = m.y - ef.y, dist = Math.hypot(mx, my) || 1;
+        if (dist <= ef.radius + m.size / 2) applyHit(G, m, ef, mx / dist, my / dist);
+      }
+    } else if (ef.type === "beam") {
+      for (const m of G.mobs) {
+        if (m.dead) continue;
+        const mx = m.x - ef.x, my = m.y - ef.y;
+        const along = mx * ef.dx + my * ef.dy;
+        if (along < 0 || along > ef.len) continue;
+        const across = Math.abs(mx * ef.dy - my * ef.dx);
+        if (across <= ef.width + m.size / 2) applyHit(G, m, ef, ef.dx, ef.dy);
+      }
+    } else if (ef.type === "chain") {
+      let fx = ef.x, fy = ef.y;
+      const done = new Set();
+      for (let j = 0; j < ef.jumps; j++) {
+        let best = null, bestD = ef.range;
+        for (const m of G.mobs) {
+          if (m.dead || done.has(m.id)) continue;
+          const dd = Math.hypot(m.x - fx, m.y - fy);
+          if (dd < bestD) { best = m; bestD = dd; }
+        }
+        if (!best) break;
+        done.add(best.id);
+        G.fx.push({ kind: "beam", x: fx, y: fy, x2: best.x, y2: best.y, color: ef.color, t: 0.25, maxT: 0.25, thin: true });
+        const dx = best.x - fx, dy = best.y - fy, len = Math.hypot(dx, dy) || 1;
+        applyHit(G, best, { ...ef, dmg: ef.dmg * Math.pow(0.8, j) }, dx / len, dy / len);
+        fx = best.x; fy = best.y;
+      }
+    }
+  }
+  G.pending = [];
+
   if (P.buffT > 0) P.buffT -= dt;
 
   // --- Monster ---
@@ -238,6 +340,11 @@ export function update(G, dt, input) {
     if (m.hitT > 0) m.hitT -= dt;
     if (m.cd > 0) m.cd -= dt;
     if (m.sideT > 0) m.sideT -= dt;
+    if (m.burnT > 0) {
+      m.burnT -= dt; m.burnTick = (m.burnTick || 0) + dt;
+      if (m.burnTick >= 0.5) { m.burnTick -= 0.5; damageMob(G, m, Math.max(1, Math.round(m.burnDps * 0.5)), false, 0, 0, ELEMENTS.feuer.color); if (m.dead) continue; }
+    }
+    if (m.slowT > 0) m.slowT -= dt;
     const dx = P.x - m.x, dy = P.y - m.y, dist = Math.hypot(dx, dy) || 1;
     const nx = dx / dist, ny = dy / dist;
     let mx = 0, my = 0;
@@ -260,7 +367,7 @@ export function update(G, dt, input) {
     }
     // Blockiert: kurz 90° ausweichen
     if (m.sideT > 0) { const tx = -my * m.side, ty = mx * m.side; mx = tx; my = ty; }
-    const sp = m.spd;
+    const sp = m.spd * (m.slowT > 0 ? 0.5 : 1);
     const kb = Math.hypot(m.vx, m.vy);
     m.vx *= Math.pow(0.02, dt); m.vy *= Math.pow(0.02, dt);
     const half = m.size / 2 - 1;

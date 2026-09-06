@@ -1,7 +1,9 @@
-/* Low-Poly-Held: sechs Boxen, Schwert am Handgelenk, Schild, Helm in Seltenheitsfarbe */
+/* Held: Kapseln und Kugeln statt Klötze. Waffe je Typ: Schwert, Bogen, Armbrust, Wurfmesser, Stab. */
 import * as THREE from "three";
 import { lambert, G } from "./materials.js";
 import { RARITY_BY_ID } from "../game/items.js";
+import { derive } from "../game/player.js";
+import { SPELLS, ELEMENTS } from "../data/spells.js";
 
 const DIR_ROT = { up: 0, down: Math.PI, left: Math.PI / 2, right: -Math.PI / 2 };
 
@@ -14,49 +16,74 @@ function mesh(geometry, material, x = 0, y = 0, z = 0) {
 
 export function buildPlayerModel() {
   const group = new THREE.Group();
-  const tunic = lambert("#2e7d3a"), skin = lambert("#f1c9a0"), hair = lambert("#3b2a1a"), boots = lambert("#5a3a1e");
-  const blade = lambert("#d8d8e0"), hilt = lambert("#8a5a3a"), shieldMat = lambert("#8a6a3a");
-  const helmMat = new THREE.MeshLambertMaterial({ color: new THREE.Color("#ffffff") });
+  const tunic = lambert("#2f6f3a", { roughness: 0.9 }), skin = lambert("#e8bf98", { roughness: 0.7 }), hair = lambert("#3b2a1a"), boots = lambert("#4a3018", { roughness: 0.95 });
+  const leather = lambert("#6a4a2a"), steel = lambert("#c8c8d0", { roughness: 0.35, metalness: 0.7 }), wood = lambert("#7a5a36");
+  const helmMat = new THREE.MeshStandardMaterial({ color: new THREE.Color("#ffffff"), roughness: 0.4, metalness: 0.6 });
+  const orbMat = new THREE.MeshStandardMaterial({ color: new THREE.Color("#8ad0ff"), emissive: new THREE.Color("#4a90ff"), emissiveIntensity: 0.6, roughness: 0.3 });
 
-  // Beine (Gelenk an der Hüfte, y = 0.4)
+  // Beine (Gelenk an der Hüfte)
   const hipL = new THREE.Group(), hipR = new THREE.Group();
-  hipL.position.set(-0.11, 0.4, 0); hipR.position.set(0.11, 0.4, 0);
-  hipL.add(mesh(G.hang(0.16, 0.4, 0.16), boots)); hipR.add(mesh(G.hang(0.16, 0.4, 0.16), boots));
-  // Rumpf
-  const torso = mesh(G.box(0.42, 0.42, 0.26), tunic, 0, 0.38, 0);
-  const belt = mesh(G.box(0.44, 0.06, 0.28), boots, 0, 0.42, 0);
+  hipL.position.set(-0.1, 0.42, 0); hipR.position.set(0.1, 0.42, 0);
+  hipL.add(mesh(G.hangCapsule(0.075, 0.24), boots)); hipR.add(mesh(G.hangCapsule(0.075, 0.24), boots));
+  // Rumpf und Gürtel
+  const torso = mesh(G.capsule(0.19, 0.22), tunic, 0, 0.62, 0);
+  torso.scale.set(1, 1, 0.75);
+  const belt = mesh(G.cyl(0.2, 0.2, 0.06, 12), leather, 0, 0.44, 0);
+  belt.scale.set(1, 1, 0.78);
   // Kopf
-  const head = mesh(G.box(0.36, 0.32, 0.34), skin, 0, 0.8, 0);
-  const hairTop = mesh(G.box(0.38, 0.1, 0.36), hair, 0, 1.1, 0);
-  const hairBack = mesh(G.box(0.38, 0.2, 0.08), hair, 0, 0.92, 0.15);
-  const eyeL = mesh(G.box(0.05, 0.05, 0.02), lambert("#1a1a24"), -0.08, 0.96, -0.17);
-  const eyeR = mesh(G.box(0.05, 0.05, 0.02), lambert("#1a1a24"), 0.08, 0.96, -0.17);
-  const helm = mesh(G.box(0.42, 0.14, 0.4), helmMat, 0, 1.1, 0); helm.visible = false;
-  // Arme (Schulter y = 0.78); rechts: Schwungachse (y) um den Arm (x)
+  const head = mesh(G.sphere(0.17, 12), skin, 0, 0.98, 0);
+  const hairTop = mesh(G.sphere(0.175, 12), hair, 0, 1.02, 0.01);
+  hairTop.scale.set(1, 0.75, 1);
+  const eyeL = mesh(G.sphere(0.02, 6), lambert("#1a1a24"), -0.06, 0.99, -0.155);
+  const eyeR = mesh(G.sphere(0.02, 6), lambert("#1a1a24"), 0.06, 0.99, -0.155);
+  const helm = mesh(G.sphere(0.19, 12), helmMat, 0, 1.03, 0); helm.scale.set(1, 0.8, 1); helm.visible = false;
+  // Arme (Schulter); rechts: Schwungachse (y) um den Arm (x)
   const shoulderL = new THREE.Group(), shoulderR = new THREE.Group();
-  shoulderL.position.set(-0.28, 0.78, 0); shoulderR.position.set(0.28, 0.78, 0);
+  shoulderL.position.set(-0.24, 0.8, 0); shoulderR.position.set(0.24, 0.8, 0);
   const armL = new THREE.Group(), armR = new THREE.Group();
-  armL.add(mesh(G.hang(0.12, 0.38, 0.12), tunic)); armR.add(mesh(G.hang(0.12, 0.38, 0.12), tunic));
-  const handL = mesh(G.box(0.12, 0.1, 0.12), skin, 0, -0.44, 0);
-  const handR = mesh(G.box(0.12, 0.1, 0.12), skin, 0, -0.44, 0);
+  armL.add(mesh(G.hangCapsule(0.06, 0.22, 0.06), tunic)); armR.add(mesh(G.hangCapsule(0.06, 0.22), tunic));
+  const handL = mesh(G.sphere(0.06, 8), skin, 0, -0.38, 0);
+  const handR = mesh(G.sphere(0.06, 8), skin, 0, -0.38, 0);
   armL.add(handL); armR.add(handR);
   shoulderL.add(armL); shoulderR.add(armR);
-  // Schwert verlängert den rechten Arm
+
+  // Waffen an der rechten Hand
+  const weapons = {};
   const sword = new THREE.Group();
-  sword.position.set(0, -0.4, 0);
-  const bladeMesh = mesh(G.hang(0.06, 0.62, 0.05), blade, 0, -0.04, 0);
-  const guard = mesh(G.box(0.2, 0.05, 0.06), hilt, 0, -0.06, 0);
-  sword.add(bladeMesh, guard);
-  armR.add(sword);
+  sword.add(mesh(G.hang(0.05, 0.62, 0.02), steel, 0, -0.04, 0), mesh(G.box(0.18, 0.04, 0.05), leather, 0, -0.07, 0), mesh(G.cyl(0.02, 0.025, 0.1, 6), leather, 0, -0.02, 0));
+  weapons.nah = sword;
+  const staff = new THREE.Group();
+  const shaft = mesh(G.cyl(0.02, 0.025, 1.2, 8), wood, 0, -0.5, 0);
+  const orb = mesh(G.ico(0.07, 1), orbMat, 0, 0.75, 0);
+  staff.add(shaft, orb);
+  weapons.fokus = staff;
+  const bow = new THREE.Group();
+  const bowArc = mesh(G.torus(0.34, 0.018, Math.PI), wood, 0, 0, 0);
+  bowArc.rotation.z = Math.PI / 2; bowArc.rotation.y = Math.PI / 2;
+  const string = mesh(G.box(0.006, 0.68, 0.006), lambert("#e8e2d0"), 0, 0, 0.0);
+  bow.add(bowArc, string);
+  weapons.pfeil = bow;
+  const crossbow = new THREE.Group();
+  crossbow.add(mesh(G.box(0.05, 0.05, 0.45), wood, 0, 0, -0.1), mesh(G.box(0.5, 0.03, 0.03), steel, 0, 0.02, -0.28));
+  weapons.bolzen = crossbow;
+  const knife = new THREE.Group();
+  knife.add(mesh(G.hang(0.03, 0.22, 0.015), steel, 0, 0, 0), mesh(G.box(0.03, 0.06, 0.02), leather, 0, 0, 0));
+  weapons.messer = knife;
+  const axe = new THREE.Group();
+  axe.add(mesh(G.hang(0.025, 0.4, 0.025), wood, 0, 0, 0), mesh(G.box(0.16, 0.14, 0.02), steel, 0.06, -0.28, 0));
+  weapons.axt = axe;
+  for (const k in weapons) { weapons[k].position.set(0, -0.4, 0); weapons[k].visible = false; armR.add(weapons[k]); }
   // Schild am linken Arm
-  const shield = mesh(G.box(0.06, 0.34, 0.3), shieldMat, -0.09, -0.34, 0); shield.visible = false;
+  const shield = mesh(G.cyl(0.19, 0.19, 0.04, 12), leather, -0.09, -0.34, 0);
+  shield.rotation.z = Math.PI / 2; shield.visible = false;
   armL.add(shield);
 
-  group.add(hipL, hipR, torso, belt, head, hairTop, hairBack, eyeL, eyeR, helm, shoulderL, shoulderR);
+  group.add(hipL, hipR, torso, belt, head, hairTop, eyeL, eyeR, helm, shoulderL, shoulderR);
   const state = { rot: 0 };
 
   function update(G, time, pos) {
     const P = G.P;
+    const d = derive(P);
     group.position.copy(pos);
     // Blinken bei Unverwundbarkeit
     group.visible = !(G.invT > 0 && Math.floor(time * 20) % 2 === 0);
@@ -68,28 +95,38 @@ export function buildPlayerModel() {
     while (diff < -Math.PI) diff += Math.PI * 2;
     state.rot += diff * 0.35;
     group.rotation.y = state.rot;
+    // Waffe
+    const wkey = d.weaponType === "fern" ? d.proj : d.weaponType;
+    for (const k in weapons) weapons[k].visible = k === wkey;
     // Gehen
     const walking = G.walkT > 0;
     const sw = walking ? Math.sin(G.walkT * 14) * 0.55 : 0;
     hipL.rotation.x = sw; hipR.rotation.x = -sw;
     armL.rotation.x = -sw * 0.8;
     group.position.y += walking ? Math.abs(Math.sin(G.walkT * 14)) * 0.04 : 0;
-    // Schwerthieb: Arm nach vorn heben, seitlich durchziehen
-    if (a.t > 0) {
+    // Angriff und Zauber
+    if (G.castT > 0) {
+      armR.rotation.x = 1.4; armL.rotation.x = 1.2; shoulderR.rotation.y = 0; torso.rotation.y = 0;
+      orbMat.emissiveIntensity = 2.5;
+    } else if (a.t > 0 && a.ranged) {
+      armR.rotation.x = 1.5; armL.rotation.x = 1.3; shoulderR.rotation.y = 0; torso.rotation.y = 0;
+    } else if (a.t > 0) {
       const prog = 1 - a.t / a.maxT;
       const lift = Math.sin(Math.min(1, prog * 1.6) * Math.PI / 2);
       armR.rotation.x = 1.3 * lift + 0.2;
       shoulderR.rotation.y = 1.1 - prog * 2.2;
       torso.rotation.y = 0.25 - prog * 0.5;
     } else {
-      armR.rotation.x = sw * 0.8;
+      armR.rotation.x = d.weaponType === "fern" ? 0.5 + sw * 0.3 : sw * 0.8;
       shoulderR.rotation.y = 0;
       torso.rotation.y = 0;
+      orbMat.emissiveIntensity += (0.6 - orbMat.emissiveIntensity) * 0.1;
     }
+    if (P.activeSpell && SPELLS[P.activeSpell]) { const el = ELEMENTS[SPELLS[P.activeSpell].element]; orbMat.emissive.set(el.color); orbMat.color.set(el.color2); }
     // Ausrüstung
-    shield.visible = !!P.equip.schild;
-    if (P.equip.kopf) { helm.visible = true; helmMat.color.set(RARITY_BY_ID[P.equip.kopf.rarity].color); }
-    else helm.visible = false;
+    shield.visible = !!P.equip.schild && d.weaponType !== "fern";
+    if (P.equip.kopf) { helm.visible = true; hairTop.visible = false; helmMat.color.set(RARITY_BY_ID[P.equip.kopf.rarity].color); }
+    else { helm.visible = false; hairTop.visible = true; }
   }
   return { group, update };
 }

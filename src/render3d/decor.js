@@ -67,19 +67,32 @@ export function buildDecor(screen, heights) {
     const ox = (rnd(x, y, "ox") - 0.5) * 0.3, oz = (rnd(x, y, "oz") - 0.5) * 0.3;
     switch (t) {
       case T.TREE: {
-        const sc = 0.85 + r * 0.35;
-        batch.add(G.cyl(0.09, 0.13, 0.55), lambert("#6b4a2e"), compose(cx + ox, h - 0.05, cz + oz, ry, sc));
-        batch.add(G.cone(0.46, 1.0, 7), lambert("#ffffff"), compose(cx + ox, h + 0.4 * sc, cz + oz, ry, sc, sc * (0.9 + r * 0.4), sc), vary(r > 0.5 ? tint.canopy : tint.canopy2, x * 31 + y * 17));
+        const sc = 0.85 + r * 0.35, v = (x + y * 3) % 3;
+        const conifer = screen.region === "eis" || screen.region === "berg" || (screen.region === "wald" && r > 0.55);
+        batch.add(G.cyl(0.07, 0.14, 0.7, 8), lambert("#5a4030", { roughness: 1 }), compose(cx + ox, h - 0.05, cz + oz, ry, sc));
+        const col = vary(r > 0.5 ? tint.canopy : tint.canopy2, x * 31 + y * 17, 0.08);
+        if (conifer) {
+          batch.add(G.cone(0.5, 0.9, 9), lambert("#ffffff"), compose(cx + ox, h + 0.3 * sc, cz + oz, ry, sc, sc, sc), col);
+          batch.add(G.cone(0.38, 0.8, 9), lambert("#ffffff"), compose(cx + ox, h + 0.75 * sc, cz + oz, ry + 0.4, sc, sc, sc), col);
+          batch.add(G.cone(0.24, 0.6, 9), lambert("#ffffff"), compose(cx + ox, h + 1.2 * sc, cz + oz, ry + 0.8, sc, sc, sc), col);
+        } else {
+          // Laubkrone aus drei Ballen
+          batch.add(G.foliage(0.42, v), lambert("#ffffff"), compose(cx + ox, h + 0.85 * sc, cz + oz, ry, sc, sc * 0.9, sc), col);
+          batch.add(G.foliage(0.32, (v + 1) % 3), lambert("#ffffff"), compose(cx + ox + 0.22 * sc, h + 1.05 * sc, cz + oz - 0.1 * sc, ry + 1, sc, sc, sc), vary(tint.canopy2, x * 13 + y * 7, 0.08));
+          batch.add(G.foliage(0.3, (v + 2) % 3), lambert("#ffffff"), compose(cx + ox - 0.2 * sc, h + 1.1 * sc, cz + oz + 0.15 * sc, ry + 2, sc, sc, sc), col);
+        }
         break;
       }
       case T.BUSH: {
-        const sc = 0.7 + r * 0.4;
-        batch.add(G.ico(0.32, 0), lambert("#ffffff"), compose(cx + ox, h + 0.2 * sc, cz + oz, ry, sc, sc * 0.75, sc), vary(tint.bush, x * 7 + y * 3));
+        const sc = 0.7 + r * 0.4, v = (x * 5 + y) % 3;
+        batch.add(G.foliage(0.34, v), lambert("#ffffff"), compose(cx + ox, h + 0.22 * sc, cz + oz, ry, sc, sc * 0.75, sc), vary(tint.bush, x * 7 + y * 3, 0.08));
+        batch.add(G.foliage(0.22, (v + 1) % 3), lambert("#ffffff"), compose(cx + ox + 0.2, h + 0.18 * sc, cz + oz + 0.12, ry, sc, sc * 0.8, sc), vary(tint.bush, x * 3 + y * 11, 0.1));
         break;
       }
       case T.ROCK: {
-        const sc = 0.8 + r * 0.5;
-        batch.add(G.dodeca(0.36), lambert("#ffffff"), compose(cx + ox * 0.5, h + 0.16 * sc, cz + oz * 0.5, ry, sc, sc * 0.8, sc, r * 0.4), vary(tint.rock, x * 5 + y * 11, 0.08));
+        const sc = 0.8 + r * 0.5, v = (x * 3 + y * 5) % 3;
+        batch.add(G.rock(0.36, v), lambert("#ffffff", { roughness: 0.95 }), compose(cx + ox * 0.5, h + 0.14 * sc, cz + oz * 0.5, ry, sc, sc * 0.8, sc, r * 0.4), vary(tint.rock, x * 5 + y * 11, 0.1));
+        if (r > 0.6) batch.add(G.rock(0.18, (v + 1) % 3), lambert("#ffffff", { roughness: 0.95 }), compose(cx + ox * 0.5 + 0.3, h + 0.05, cz + oz * 0.5 + 0.2, ry * 2, sc * 0.8), vary(tint.rock, x * 9 + y * 2, 0.1));
         break;
       }
       case T.DEADTREE: {
@@ -106,10 +119,10 @@ export function buildDecor(screen, heights) {
         break;
       }
       case T.GRASS: {
-        if ((x * 7 + y * 13) % 3 === 1) {
-          for (let i = 0; i < 2; i++) {
+        if ((x * 7 + y * 13) % 3 !== 0) {
+          for (let i = 0; i < 3; i++) {
             const gx = cx + (rnd(x, y, "gx" + i) - 0.5) * 0.7, gz = cz + (rnd(x, y, "gz" + i) - 0.5) * 0.7;
-            batch.add(G.cone(0.05, 0.22, 4), lambert("#3f8a3a"), compose(gx, terrainHeight(heights, gx, gz) - 0.02, gz, ry));
+            batch.add(G.cone(0.05, 0.22, 4), lambert("#ffffff"), compose(gx, terrainHeight(heights, gx, gz) - 0.02, gz, ry + i, 1, 0.8 + rnd(x, y, "gh" + i) * 0.6, 1), vary(tint.bush, x * 17 + y * 5 + i, 0.15));
           }
         }
         break;

@@ -2,7 +2,7 @@
 import { REGIONS, VILLAGES, DUNGEONS, regionAt } from "./constants.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const ACCOUNT_COUNT = 5;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -23,6 +23,11 @@ export function migrate(data) {
     // Version 0: Artefakt-Prototyp, gleiches Spielerformat, nur ohne Versionsfeld
     out.saveVersion = 1;
     out.P = { buffT: 0, visits: {}, chests: {}, cleared: {}, hearts: 0, kills: 0, ...out.P };
+  }
+  if (v < 2) {
+    // Version 2: Mana, Fertigkeiten, Zauber
+    out.saveVersion = 2;
+    out.P = { mana: 30, skills: {}, spells: [], activeSpell: null, ...out.P };
   }
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";

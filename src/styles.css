@@ -39,6 +39,21 @@ body { -webkit-text-size-adjust: 100%; }
 .xpbar { width: 90px; height: 4px; background: #3a3025; border-radius: 2px; margin-top: 3px; margin-left: auto; }
 .xpbar-fill { height: 100%; background: #8fd3ff; border-radius: 2px; }
 
+.manabar { width: 120px; height: 4px; background: #24303a; border-radius: 2px; margin-top: 4px; }
+.manabar-fill { height: 100%; background: #5aa7ff; border-radius: 2px; }
+.controls-wrap { display: flex; flex-direction: column; }
+.spellbar { display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 12px 0; justify-content: center; }
+.chip { font-family: var(--font); font-size: 13px; padding: 5px 10px; border-radius: 14px; border: 1px solid; cursor: pointer; touch-action: manipulation; }
+.chip-small { font-size: 12px; padding: 4px 9px; }
+.btn-cast { width: 62px; height: 62px; border-radius: 50%; background: #241a30; border: 2px solid #6a3a9a; color: #c8a0ff; font-family: var(--font); font-size: 13px; touch-action: none; user-select: none; }
+.btn-cast:disabled { opacity: 0.4; }
+.btn-mana { width: 48px; height: 48px; border-color: #5aa7ff; background: #1e2a3a; font-size: 11px; }
+.skill-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; background: var(--panel); border-radius: 6px; margin-bottom: 5px; border: 1px solid transparent; }
+.skill-row.learned { border-color: var(--line); }
+.skill-main { flex: 1; }
+.skill-name { font-size: 14px; }
+.skill-desc { font-size: 11px; color: var(--dim); }
+.skill-lock { font-size: 11px; color: var(--red); }
 .view { position: relative; flex: 1; min-height: 240px; background: #000; overflow: hidden; }
 .scene { position: absolute; inset: 0; }
 .scene-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
@@ -51,7 +66,7 @@ body { -webkit-text-size-adjust: 100%; }
 .msg { background: rgba(10, 8, 6, 0.8); padding: 4px 10px; border-radius: 4px; font-size: 13px; }
 
 /* Steuerung */
-.controls { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; padding-bottom: max(18px, env(safe-area-inset-bottom)); touch-action: none; user-select: none; -webkit-user-select: none; }
+.controls { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; padding-bottom: max(18px, env(safe-area-inset-bottom)); touch-action: none; user-select: none; -webkit-user-select: none; }
 .pad { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(circle, #3a3025 0%, #2a231b 70%, #1f1912 100%); border: 2px solid var(--line); position: relative; touch-action: none; }
 .pad-arrow { position: absolute; transform: translate(-50%, -50%); color: var(--dim); font-size: 14px; line-height: 1; pointer-events: none; }
 .controls-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }

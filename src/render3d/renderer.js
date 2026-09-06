@@ -31,6 +31,8 @@ export class Renderer3D {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.05;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(35, 1, 0.5, 80);
     this.width = 1; this.height = 1;
@@ -39,7 +41,7 @@ export class Renderer3D {
     this.sun.position.set(VW / 2 + 5, 14, VH / 2 + 6);
     this.sun.target.position.set(VW / 2, 0, VH / 2);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(1024, 1024);
+    this.sun.shadow.mapSize.set(1536, 1536);
     const sc = this.sun.shadow.camera;
     sc.left = -10; sc.right = 10; sc.top = 8; sc.bottom = -8; sc.near = 1; sc.far = 40;
     sc.updateProjectionMatrix();
@@ -48,11 +50,15 @@ export class Renderer3D {
     this.scene.add(this.sun, this.sun.target);
     this.hemi = new THREE.HemisphereLight(0x9fd3ff, 0x4f7a3a, 1.1);
     this.scene.add(this.hemi);
+    // Aufhelllicht von der Gegenseite, ohne Schatten, nimmt den Schatten die Härte
+    this.fill = new THREE.DirectionalLight(0xcfe0ff, 0.5);
+    this.fill.position.set(VW / 2 - 8, 6, VH / 2 - 4);
+    this.scene.add(this.fill);
     this.playerLight = new THREE.PointLight(0xffb070, 0, 9, 1.6);
     this.scene.add(this.playerLight);
 
     // weite Bodenfläche unter dem Bildschirm, damit hinter den Rändern kein Leerraum sichtbar wird
-    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshLambertMaterial({ color: new THREE.Color("#4f7a3a") }));
+    this.floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: new THREE.Color("#4f7a3a"), roughness: 1 }));
     this.floor.rotation.x = -Math.PI / 2;
     this.floor.position.set(VW / 2, -0.5, VH / 2);
     this.floor.receiveShadow = true;
@@ -111,12 +117,12 @@ export class Renderer3D {
     const d = this.camDist;
     if (screen.dungeonRoom) {
       this.scene.fog = new THREE.Fog(sky, d + 2, d + 8);
-      this.sun.intensity = 0; this.sun.castShadow = false;
+      this.sun.intensity = 0; this.sun.castShadow = false; this.fill.intensity = 0;
       this.playerLight.intensity = 45;
       this.playerLight.color.set(screen.dungeonRoom.d.id === 2 ? "#ff8a50" : "#ffb070");
     } else {
       this.scene.fog = new THREE.Fog(sky, d + 2, d + 13);
-      this.sun.intensity = env.sunI; this.sun.castShadow = true;
+      this.sun.intensity = env.sunI; this.sun.castShadow = true; this.fill.intensity = env.sunI * 0.2;
       this.sun.color.set(env.sun);
       this.playerLight.intensity = 0;
     }
