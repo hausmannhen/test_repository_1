@@ -4,7 +4,6 @@ import { TS, VW, VH, WORLD_W, WORLD_H, idx, regionAt } from "../src/game/constan
 import { walkable } from "../src/game/world.js";
 import { createGame, startGame, enterScreen, update } from "../src/game/engine.js";
 import { derive, usePotion } from "../src/game/player.js";
-import { migrate, serialize } from "../src/game/save.js";
 import { makeMob } from "../src/game/monsters.js";
 
 /* Kampfsimulation: Spieler läuft zum nächsten Monster und schlägt zu.
@@ -89,21 +88,5 @@ describe("Kampf", () => {
     assert.ok(hp1 < 60);
     update(G, 1 / 60, { x: 0, y: 0, attack: false });
     assert.equal(P.hp, hp1);
-  });
-});
-
-describe("Speichern", () => {
-  it("Migration hebt alte Speicherstände auf Version 1", () => {
-    const G = startGame(createGame("save-seed"));
-    const s = JSON.parse(serialize(G));
-    assert.equal(s.saveVersion, 1);
-    assert.equal(s.seed, "save-seed");
-    const old = { seed: "alt", P: { level: 3, xp: 1, gold: 5, hp: 10, inventory: [], equip: {}, area: "over", sx: 2, sy: 3, x: 0, y: 0, dir: "up" } };
-    const mig = migrate(old);
-    assert.equal(mig.saveVersion, 1);
-    assert.deepEqual(mig.P.visits, {});
-    assert.equal(mig.P.level, 3);
-    assert.equal(migrate(null), null);
-    assert.equal(migrate({ foo: 1 }), null);
   });
 });

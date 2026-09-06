@@ -2,7 +2,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createGame, startGame, update, respawn, locationName } from "./game/engine.js";
 import { derive, xpNeed, usePotion } from "./game/player.js";
-import { saveGame, loadGame } from "./game/save.js";
+import { saveGame, listSaves, makeSlot, writeSlot, deleteSlot } from "./game/save.js";
+import { newPlayer } from "./game/player.js";
 import { createInput, readInput, bindKeyboard } from "./game/input.js";
 import Scene from "./render3d/Scene.jsx";
 import Hud from "./ui/Hud.jsx";
@@ -17,7 +18,7 @@ import Death from "./ui/Death.jsx";
 
 export default function App() {
   const [phase, setPhase] = useState("title");
-  const [save, setSave] = useState(() => loadGame());
+  const [saves, setSaves] = useState(() => listSaves());
   const [panel, setPanel] = useState(null);
   const [ui, setUi] = useState(null);
   const [, force] = useState(0);
@@ -40,14 +41,27 @@ export default function App() {
   }, [closePanel]);
   const drinkPotion = useCallback(() => { const G = gRef.current; if (G && !panelRef.current && !G.dead) usePotion(G); }, []);
 
-  const start = useCallback((existing) => {
-    const seed = existing ? existing.seed : "eldenfeld-" + Math.random().toString(36).slice(2, 8);
-    const G = createGame(seed, existing ? existing.P : null);
+  const start = useCallback((slot) => {
+    const G = createGame(slot.seed, slot.P, { id: slot.id, name: slot.name });
     G.openPanel = (type) => setPanel(type);
     G.save = () => saveGame(G);
     gRef.current = G;
     startGame(G);
     setPanel(null); setPhase("game");
+  }, []);
+  const newSave = useCallback((name) => {
+    const seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
+    const slot = makeSlot(name, seed, newPlayer(seed));
+    writeSlot(slot);
+    start(slot);
+  }, [start]);
+  const importSlot = useCallback((slot) => { writeSlot(slot); setSaves(listSaves()); }, []);
+  const removeSlot = useCallback((slot) => { deleteSlot(slot.id); setSaves(listSaves()); }, []);
+  const quitToTitle = useCallback(() => {
+    const G = gRef.current;
+    if (G && !G.dead) saveGame(G);
+    gRef.current = null; rendererRef.current = null;
+    setPanel(null); setUi(null); setSaves(listSaves()); setPhase("title");
   }, []);
 
   // Tastatur
@@ -85,13 +99,13 @@ export default function App() {
   }, []);
 
   if (phase === "title") {
-    return <Title save={save} onContinue={() => start(save)} onNew={() => { setSave(null); start(null); }} />;
+    return <Title saves={saves} onContinue={start} onNew={newSave} onDelete={removeSlot} onImport={importSlot} />;
   }
 
   const G = gRef.current;
   const renderPanel = () => {
     if (!panel) return null;
-    const props = { G, onClose: closePanel, rerender };
+    const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle };
     if (panel === "inventar") return <Inventory {...props} />;
     if (panel === "shop") return <Shop {...props} />;
     if (panel === "smith") return <Smith {...props} />;

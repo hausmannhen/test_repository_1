@@ -89,3 +89,14 @@ body { -webkit-text-size-adjust: 100%; }
 @media (min-width: 900px) and (min-aspect-ratio: 1/1) {
   .game-inner { max-width: 900px; }
 }
+
+/* Spielstände */
+.save-row { background: var(--panel); border-radius: 8px; padding: 10px 12px; text-align: left; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.save-main { flex: 1; min-width: 140px; cursor: pointer; }
+.save-name { font-size: 16px; color: var(--text); }
+.save-sub { font-size: 12px; color: var(--dim); margin-top: 2px; }
+.save-actions { display: flex; gap: 6px; }
+.save-menu { width: 100%; display: flex; gap: 6px; flex-wrap: wrap; padding-top: 8px; border-top: 1px solid var(--line); }
+.save-new { background: var(--panel); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.input { font-family: var(--font); font-size: 16px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); width: 100%; }
+.input:focus { outline: none; border-color: var(--gold); }

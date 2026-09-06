@@ -26,6 +26,12 @@ Voraussetzung: Node 20 oder neuer.
 - Tastatur: WASD oder Pfeile, Leertaste Angriff, E Trank, I Inventar, Escape schließt Panels.
 - Häuser in Dörfern über die Tür betreten: Händler, Heilerin, Schmied, Weise.
 
+## Spielstände
+
+Beim Start wählst du einen Spielstand oder legst einen neuen mit Namen an, jeder hat seine eigene Welt. Bis zu 12 Spielstände pro Gerät, gespeichert im Browser (localStorage). Gespeichert wird automatisch bei jedem Bildschirmwechsel, beim Schließen eines Panels und über „Speichern und zum Titel“ im Ausrüstungsmenü.
+
+„Als Datei sichern“ legt einen Spielstand als JSON-Datei ab. „Spielstand aus Datei laden“ liest sie auf einem anderen Gerät wieder ein, als neuer Eintrag, nichts wird überschrieben.
+
 ## Struktur
 
 ```
@@ -39,7 +45,7 @@ src/
     player.js     Spieler, abgeleitete Werte, Inventar, Tränke
     engine.js     update(G, dt, input), enterScreen, Kollision, Kampf
     actions.js    Panel-Aktionen: Anlegen, Handel, Schmied, Heilerin
-    save.js       localStorage mit Versionsnummer und Migration
+    save.js       Spielstände im localStorage, Versionierung, Export und Import
     input.js      Tastatur und Touch in ein Eingabeobjekt
   render3d/     Three.js
     renderer.js   Szene, Kamera, Licht, Bildschirmwechsel mit Kamera-Slide

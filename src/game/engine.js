@@ -9,9 +9,9 @@ import { newPlayer, derive, xpNeed, addToInventory, flash } from "./player.js";
 export const TRANSITION_DUR = 0.4;   // Sekunden Kamera-Slide beim Bildschirmwechsel
 
 /* ---------- Spielzustand ---------- */
-export function createGame(seed, P = null) {
+export function createGame(seed, P = null, slot = null) {
   return {
-    seed, P: P || newPlayer(seed),
+    seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2 },
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,

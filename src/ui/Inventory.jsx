@@ -20,7 +20,7 @@ export function ItemDetail({ P, item, actions }) {
   );
 }
 
-export default function Inventory({ G, onClose, rerender }) {
+export default function Inventory({ G, onClose, rerender, onQuit }) {
   const P = G.P, d = derive(P);
   const [tab, setTab] = useState("ausruestung");
   const [selected, setSelected] = useState(null);
@@ -80,7 +80,10 @@ export default function Inventory({ G, onClose, rerender }) {
   );
 
   return (
-    <Panel title="Ausrüstung" gold={P.gold} footer={<Btn tone="gold" onClick={onClose}>Schließen</Btn>}>
+    <Panel title="Ausrüstung" gold={P.gold} footer={<>
+      <Btn onClick={onQuit}>Speichern und zum Titel</Btn>
+      <Btn tone="gold" onClick={onClose}>Schließen</Btn>
+    </>}>
       <div className="row" style={{ marginBottom: 12 }}>
         {["ausruestung", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : "Karte"}</Btn>)}
       </div>
