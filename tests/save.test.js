@@ -69,14 +69,15 @@ describe("Spielstände", () => {
     assert.equal(saves.length, 1);
     assert.equal(saves[0].name, "Spieler 1");
     assert.equal(saves[0].id, ACCOUNT_IDS[0]);
-    assert.equal(saves[0].saveVersion, 2);
+    assert.equal(saves[0].saveVersion, 3);
     assert.equal(mem.has("eldenfeld_save_v1"), false);
   });
 
   it("Migration und Beschreibung", () => {
     const old = { seed: "alt", P: { level: 3, xp: 1, gold: 5, hp: 10, inventory: [], equip: {}, area: "over", sx: 2, sy: 3, x: 0, y: 0, dir: "up" } };
     const mig = migrate(old);
-    assert.equal(mig.saveVersion, 2);
+    assert.equal(mig.saveVersion, 3);
+    assert.equal(mig.P.sx, 4); assert.equal(mig.P.sy, 5);
     assert.deepEqual(mig.P.visits, {});
     assert.equal(migrate(null), null);
     assert.equal(migrate({ foo: 1 }), null);

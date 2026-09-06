@@ -5,9 +5,10 @@ import { respec, spentPoints } from "../game/skills.js";
 import { respecCost } from "../game/actions.js";
 
 const HINTS = [
-  "Im Westen liegt der Dunkelforst. Dort steht der Waldschrein, ganz am Rand der Welt. Sein Herr ist der Eichenkönig.",
-  "Östlich von Kargstein, tief in den Höhen, ruht die Steinhalle. Ihr Wächter besteht aus Fels.",
-  "Ganz im Norden brennt der Aschekessel. Der Ascheturm dort ist nur für Helden ab Stufe 25.",
+  "Im Westen liegt der Dunkelforst mit Nebelfurt. Ganz im Südwesten steht der Waldschrein, sein Herr ist der Eichenkönig.",
+  "Nördlich, in den Höhen, liegt Kargstein. Östlich davon ruht die Steinhalle. Ihr Wächter besteht aus Fels.",
+  "Ganz im Nordosten brennt der Aschekessel. Der Ascheturm dort ist nur für Helden ab Stufe 25.",
+  "Sechs Dörfer, sieben Reviere, drei Dungeons. Die Bewohner der Dörfer wissen, wo die Reviere liegen. Lauf auf sie zu.",
   "Legendäre Beute fällt fast nie von Bettlern. Bosse lassen sie immer fallen.",
   "Glück auf deiner Rüstung erhöht die Chance auf seltene Funde. Der Schmied macht alles stärker, aber nicht seltener.",
   "Jeder besiegte Boss schenkt dir einen Herzcontainer. Drei Herzen warten in der Welt.",

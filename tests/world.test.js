@@ -25,11 +25,18 @@ describe("Oberwelt", () => {
       const [x, y] = key.split(",").map(Number);
       const s = genOverworldScreen("seed", x, y);
       assert.equal(s.village.name, VILLAGES[key].name);
-      const types = Object.values(s.doors).sort();
+      const types = Object.values(s.doors).filter(t => !t.startsWith("npc:")).sort();
       assert.deepEqual(types, ["heal", "sage", "shop", "sign", "smith"]);
+      assert.ok(s.npcs.length >= 1, key + " ohne Bewohner");
       for (const dk in s.doors) {
         const [dx, dy] = dk.split(",").map(Number);
-        assert.ok(s.tiles[idx(dx, dy)] === T.DOOR || s.tiles[idx(dx, dy)] === T.SIGN);
+        const t = s.tiles[idx(dx, dy)];
+        assert.ok(t === T.DOOR || t === T.SIGN || t === T.NPC);
+        if (t === T.NPC) {
+          // Bewohner stehen frei erreichbar: mindestens ein begehbares Nachbartile
+          const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([ox, oy]) => passable(s.tiles[idx(dx + ox, dy + oy)]));
+          assert.ok(nb, key + " Bewohner eingemauert");
+        }
       }
     }
   });
@@ -117,11 +124,11 @@ describe("Bildschirmwechsel", () => {
   });
   it("Wechsel nach Osten startet einen Kamera-Slide und pausiert die Engine", () => {
     const G = startGame(createGame("slide"));
-    // Elmshain (2,3): Mitte rechts hinauslaufen
+    // Elmshain (4,5): Mitte rechts hinauslaufen
     G.P.x = 14 * 16 + 8; G.P.y = 5 * 16 + 8;
     let steps = 0;
-    while (G.P.sx === 2 && steps++ < 300) update(G, 1 / 60, { x: 1, y: 0, attack: false });
-    assert.equal(G.P.sx, 3);
+    while (G.P.sx === 4 && steps++ < 300) update(G, 1 / 60, { x: 1, y: 0, attack: false });
+    assert.equal(G.P.sx, 5);
     assert.ok(G.transition && G.transition.dx === 1);
     const px = G.P.x;
     for (let i = 0; i < 10; i++) update(G, 1 / 60, { x: 1, y: 0, attack: false });

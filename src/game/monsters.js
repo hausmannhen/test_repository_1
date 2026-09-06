@@ -36,8 +36,8 @@ export function makeMob(typeId, level, x, y, bossDef = null) {
     atk: Math.round(base.atk * (1 + (level - 1) * 0.16) * (bossDef ? bossDef.atkMult : 1)),
     spd: base.spd * (bossDef ? 1.1 : 1), size: bossDef ? bossDef.size : base.size,
     shape: base.shape, color: bossDef ? bossDef.color : base.color, color2: bossDef ? bossDef.color2 : base.color2,
-    ai: base.ai, xp: Math.round(base.xp * (1 + (level - 1) * 0.2) * (bossDef ? 12 : 1)), gold: base.gold,
-    t: Math.random() * 10, cd: 0, hitT: 0, wx: 0, wy: 0, boss: !!bossDef, dead: false,
+    ai: base.ai, xp: Math.round(base.xp * (1 + (level - 1) * 0.2) * (bossDef ? (bossDef.mini ? 5 : 12) : 1)), gold: base.gold,
+    t: Math.random() * 10, cd: 0, hitT: 0, wx: 0, wy: 0, boss: !!bossDef && !bossDef.mini, mini: (bossDef && bossDef.mini) || null, dead: false,
     side: 1, sideT: 0,   // Ausweichen bei Blockade (90° drehen)
   };
   m.hp = m.maxHp;

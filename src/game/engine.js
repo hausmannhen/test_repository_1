@@ -1,11 +1,13 @@
 /* Engine: Bildschirmwechsel, Kollision, Kampf, Update. Keine Canvas- oder DOM-Referenz. */
-import { TS, VW, VH, W, H, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, DUNGEONS, VILLAGES } from "./constants.js";
+import { TS, VW, VH, W, H, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, DUNGEONS, VILLAGES, START_VILLAGE } from "./constants.js";
 import { mulberry32, rint, clamp } from "./rng.js";
 import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash } from "./player.js";
 import { castSpell, aimAt, ELEMENTS } from "./magic.js";
+import { onKill as questKill } from "./quests.js";
+import { MINIBOSS_BY_ID } from "../data/minibosses.js";
 export { castSpell };
 
 export const TRANSITION_DUR = 0.4;   // Sekunden Kamera-Slide beim Bildschirmwechsel
@@ -50,7 +52,7 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   G.screen = screen;
   const vkey = screen.key;
   P.visits[vkey] = (P.visits[vkey] || 0) + 1;
-  G.mobs = spawnMobsFor(screen, G.seed, P.visits[vkey]);
+  G.mobs = spawnMobsFor(screen, G.seed, P.visits[vkey], P.cleared);
   if (screen.dungeonRoom && screen.dungeonRoom.type === "boss" && P.cleared[screen.dungeonRoom.d.id]) G.mobs = G.mobs.filter(m => !m.boss);
   G.projs = []; G.pprojs = []; G.pending = []; G.drops = []; G.fx = [];
   unstick(P, screen.tiles);
@@ -163,12 +165,22 @@ export function killMob(G, m) {
     const ang = Math.random() * Math.PI * 2;
     G.drops.push({ ...dr, x: m.x + Math.cos(ang) * 6, y: m.y + Math.sin(ang) * 6, vx: Math.cos(ang) * 40, vy: Math.sin(ang) * 40, t: 0 });
   }
+  if (m.mini) {
+    // Zwischenboss: sichere Beute, kehrt nicht zurück
+    P.cleared["mb:" + m.mini] = true;
+    const mb = MINIBOSS_BY_ID[m.mini];
+    const extra = generateItem(r, (mb ? mb.level : m.level) + 2, d.luck, 2);
+    G.drops.push({ type: "item", item: extra, x: m.x + 8, y: m.y, vx: 30, vy: 0, t: 0 });
+    G.drops.push({ type: "gold", amount: rint(r, m.level * 6, m.level * 12), x: m.x - 8, y: m.y, vx: -30, vy: 0, t: 0 });
+    G.banner = { text: m.name + " besiegt", sub: "Das Revier ist frei", t: 3.5 };
+  }
   gainXp(G, m.xp);
   if (m.boss) {
     const dId = G.screen.dungeonRoom.d.id;
     P.cleared[dId] = true; P.hearts += 1; P.hp = derive(P).maxHp;
     G.banner = { text: m.name + " besiegt", sub: "Herzcontainer erhalten", t: 4 };
   }
+  questKill(G, m);
 }
 export function gainXp(G, amount) {
   const P = G.P;
@@ -195,7 +207,7 @@ export function hurtPlayer(G, amount) {
 }
 export function respawn(G) {
   const P = G.P;
-  const [sx, sy] = P.lastVillage.split(",").map(Number);
+  const [sx, sy] = (VILLAGES[P.lastVillage] ? P.lastVillage : START_VILLAGE).split(",").map(Number);
   const d = derive(P);
   P.gold = Math.floor(P.gold * 0.9); P.hp = Math.ceil(d.maxHp / 2); P.mana = d.maxMana;
   G.dead = false; G.invT = 1.5;
@@ -223,6 +235,7 @@ export function update(G, dt, input) {
   if (G.dead) return;
   // Mana regeneriert
   P.mana = Math.min(d.maxMana, (P.mana || 0) + d.manaRegen * dt);
+  if (G.pendingXp) { const xp = G.pendingXp; G.pendingXp = 0; gainXp(G, xp); }
 
   // --- Spielerbewegung ---
   let ix = input.x, iy = input.y;
@@ -235,6 +248,19 @@ export function update(G, dt, input) {
   let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1);
   moveWithCollision(tiles, P, ix * speed * dt, iy * speed * dt, 5, 5);
   G.walkT = len > 0.2 ? G.walkT + dt : 0;
+  // Anrempeln: Wegweiser lesen, mit Bewohnern sprechen
+  if (len > 0.2 && G.trigCd <= 0) {
+    const [fx, fy] = DIRV[P.dir];
+    const ftx = Math.floor((P.x + fx * 9) / TS), fty = Math.floor((P.y + fy * 9) / TS);
+    if (ftx >= 0 && fty >= 0 && ftx < VW && fty < VH) {
+      const ft = tiles[idx(ftx, fty)];
+      if (ft === T.SIGN) { G.trigCd = 3; flash(G, G.screen.village ? G.screen.village.greeting : "Ein Wegweiser", "#e9dcb8"); }
+      else if (ft === T.NPC) {
+        const who = G.screen.doors[`${ftx},${fty}`];
+        if (who) { G.trigCd = 0.8; G.panelReturn = null; G.openPanel && G.openPanel(who); }
+      }
+    }
+  }
 
   // --- Zauber ---
   if (input.cast) castSpell(G);
@@ -428,8 +454,6 @@ export function update(G, dt, input) {
         const back = ty <= 3 ? ty + 1 : ty - 1;
         G.panelReturn = { x: tx * TS + 8, y: back * TS + 8 };
         G.openPanel && G.openPanel(type);
-      } else if (t === T.SIGN) {
-        G.trigCd = 3; flash(G, G.screen.village ? G.screen.village.greeting : "Ein Wegweiser", "#e9dcb8");
       } else if (t === T.ENTRANCE) {
         const dg = G.screen.dungeon;
         G.trigCd = 1;

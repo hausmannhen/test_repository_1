@@ -19,6 +19,8 @@ import Smith from "./ui/Smith.jsx";
 import Healer from "./ui/Healer.jsx";
 import Sage from "./ui/Sage.jsx";
 import Death from "./ui/Death.jsx";
+import Npc from "./ui/Npc.jsx";
+import { trackerText } from "./game/quests.js";
 
 export default function App() {
   const [phase, setPhase] = useState("title");
@@ -99,7 +101,7 @@ export default function App() {
       const sp = P.activeSpell && SPELLS[P.activeSpell] ? SPELLS[P.activeSpell] : null;
       const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),
         spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null,
-        loc: locationName(G), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0 };
+        loc: locationName(G), quest: trackerText(P), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0 };
       const s = JSON.stringify(next);
       if (s !== lastUi) { lastUi = s; setUi(next); }
       if (G.dead && !panelRef.current) setPanel("tot");
@@ -130,6 +132,7 @@ export default function App() {
     if (panel === "heal") return <Healer {...props} />;
     if (panel === "sage") return <Sage {...props} />;
     if (panel === "tot") return <Death G={G} onRespawn={() => { respawn(G); setPanel(null); }} />;
+    if (panel.startsWith("npc:")) return <Npc {...props} npcId={panel.slice(4)} />;
     return null;
   };
 
@@ -139,7 +142,7 @@ export default function App() {
         <Hud ui={ui} />
         <div className="view">
           <Scene onReady={(r) => { rendererRef.current = r; }} />
-          <div className="loc">{ui ? ui.loc : ""}</div>
+          <div className="loc">{ui ? ui.loc : ""}{ui && ui.quest ? <div className="tracker">{ui.quest}</div> : null}</div>
           {ui && ui.banner && (
             <div className="banner-wrap"><div className="banner">
               <div className="banner-text">{ui.banner.text}</div>

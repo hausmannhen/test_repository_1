@@ -1,5 +1,5 @@
 /* Spieler: Erstellung, abgeleitete Werte, Inventar, Tränke, Mana */
-import { TS } from "./constants.js";
+import { TS, START_VILLAGE } from "./constants.js";
 import { rngFor } from "./rng.js";
 import { generateItem, makePotion, effectiveStats, POTIONS, BASE_BY_ID } from "./items.js";
 import { skillBonuses } from "./skills.js";
@@ -15,9 +15,9 @@ export function newPlayer(seed) {
     level: 1, xp: 0, gold: 30, hp: 60, mana: 30, hearts: 0, kills: 0,
     inventory: [makePotion("heiltrank_k", 3)],
     equip: { waffe: sword, kopf: null, rumpf: null, schild: null, amulett: null, ring: null },
-    area: "over", sx: 2, sy: 3, x: 7 * TS + 8, y: 8 * TS + 8, dir: "up",
-    cleared: {}, chests: {}, lastVillage: "2,3", visits: {}, buffT: 0,
-    skills: {}, spells: [], activeSpell: null,
+    area: "over", sx: +START_VILLAGE.split(",")[0], sy: +START_VILLAGE.split(",")[1], x: 7 * TS + 8, y: 8 * TS + 8, dir: "up",
+    cleared: {}, chests: {}, lastVillage: START_VILLAGE, visits: {}, buffT: 0,
+    skills: {}, spells: [], activeSpell: null, quests: {},
   };
 }
 export function xpNeed(level) { return Math.floor(30 * Math.pow(level, 1.45)); }

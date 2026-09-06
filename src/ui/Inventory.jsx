@@ -1,11 +1,14 @@
 /* Ausrüstung, Beutel und Weltkarte */
 import React, { useState } from "react";
 import { WORLD_W, WORLD_H, VILLAGES, DUNGEON_BY_SCREEN, DUNGEONS, REGIONS, REGION_MAP_COLORS, regionAt } from "../game/constants.js";
+import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
 import { SLOTS, SLOT_ORDER, effectiveStats, sumStats } from "../game/items.js";
 import { derive, xpNeed, usePotion, useManaPotion, INVENTORY_MAX } from "../game/player.js";
 import { POTIONS } from "../game/items.js";
 import { freePoints } from "../game/skills.js";
 import Skills from "./Skills.jsx";
+import Quests from "./Quests.jsx";
+import { activeQuests, isComplete } from "../game/quests.js";
 import { equipItem, unequipItem, dropItem } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemName, ItemRow, StatLine } from "./bits.jsx";
@@ -37,16 +40,18 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
   const doUse = (it) => { const p = POTIONS[it.potId]; if (p.mana && !p.heal) useManaPotion(G); else usePotion(G); rerender(); };
 
   const points = freePoints(P);
-  const body = tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
+  const questBadge = activeQuests(P).filter(id => isComplete(P, id)).length;
+  const body = tab === "aufgaben" ? <Quests G={G} /> : tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
     <div>
-      <div className="dim" style={{ fontSize: 13, marginBottom: 8 }}>Erkundete Gebiete. Dörfer in Gold, Dungeons in Rot, du in Grün.</div>
+      <div className="dim" style={{ fontSize: 13, marginBottom: 8 }}>Erkundete Gebiete. Dörfer in Gold, Dungeons als Dreieck, Reviere der Zwischenbosse als Schädel, du in Grün.</div>
       <div className="map" style={{ gridTemplateColumns: `repeat(${WORLD_W}, 1fr)` }}>
         {Array.from({ length: WORLD_W * WORLD_H }).map((_, i) => {
           const x = i % WORLD_W, y = Math.floor(i / WORLD_W), k = `${x},${y}`;
           const seen = visited.includes(k), here = P.area === "over" && P.sx === x && P.sy === y;
-          const v = VILLAGES[k], dg = DUNGEON_BY_SCREEN[k];
+          const v = VILLAGES[k], dg = DUNGEON_BY_SCREEN[k], mb = MINIBOSS_BY_SCREEN[k];
+          const mbDone = mb && P.cleared["mb:" + mb.id];
           return <div key={k} className={`map-cell${here ? " here" : ""}`} style={{ background: seen ? REGION_MAP_COLORS[regionAt(x, y)] : "#221c15" }}>
-            {seen && v ? <span className="gold bold">■</span> : seen && dg ? <span className="red bold">▲</span> : ""}
+            {seen && v ? <span className="gold bold">■</span> : seen && dg ? <span className="red bold">▲</span> : seen && mb ? <span className={mbDone ? "dim" : "red"}>{mbDone ? "×" : "☠"}</span> : ""}
           </div>;
         })}
       </div>
@@ -84,12 +89,12 @@ export default function Inventory({ G, onClose, rerender, onQuit }) {
   );
 
   return (
-    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : "Ausrüstung"} gold={P.gold} footer={<>
+    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : tab === "aufgaben" ? "Aufgaben" : "Ausrüstung"} gold={P.gold} footer={<>
       <Btn onClick={onQuit}>Speichern und zum Titel</Btn>
       <Btn tone="gold" onClick={onClose}>Schließen</Btn>
     </>}>
       <div className="row" style={{ marginBottom: 12 }}>
-        {["ausruestung", "fertigkeiten", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
+        {["ausruestung", "fertigkeiten", "aufgaben", "karte"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : t === "aufgaben" ? `Aufgaben${questBadge > 0 ? ` (${questBadge})` : ""}` : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
       </div>
       {body}
     </Panel>

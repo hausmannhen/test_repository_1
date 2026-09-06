@@ -1,8 +1,8 @@
 /* Speichern: mehrere Spielstände im localStorage, Versionierung, Export und Import als Datei */
-import { REGIONS, VILLAGES, DUNGEONS, regionAt } from "./constants.js";
+import { REGIONS, VILLAGES, DUNGEONS, regionAt, WORLD_W, WORLD_H, START_VILLAGE, TS } from "./constants.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const ACCOUNT_COUNT = 5;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -29,6 +29,12 @@ export function migrate(data) {
     out.saveVersion = 2;
     out.P = { mana: 30, skills: {}, spells: [], activeSpell: null, ...out.P };
   }
+  if (v < 3) {
+    // Version 3: Welt 10×10, Aufgaben. Alte Positionen passen nicht mehr, Start in Elmshain.
+    out.saveVersion = 3;
+    const [sx, sy] = START_VILLAGE.split(",").map(Number);
+    out.P = { ...out.P, area: "over", sx, sy, x: 7 * TS + 8, y: 8 * TS + 8, lastVillage: START_VILLAGE, visits: {}, quests: out.P.quests || {} };
+  }
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";
   if (!out.id) out.id = newSlotId();
@@ -43,7 +49,7 @@ export function describeSave(slot) {
   if (P.area === "over") {
     const key = `${P.sx},${P.sy}`;
     if (VILLAGES[key]) loc = VILLAGES[key].name;
-    else if (P.sx >= 0 && P.sy >= 0 && P.sx < 6 && P.sy < 6) loc = REGIONS[regionAt(P.sx, P.sy)].name;
+    else if (P.sx >= 0 && P.sy >= 0 && P.sx < WORLD_W && P.sy < WORLD_H) loc = REGIONS[regionAt(P.sx, P.sy)].name;
   } else {
     const d = DUNGEONS[+String(P.area).slice(1)];
     loc = d ? d.name : "Dungeon";

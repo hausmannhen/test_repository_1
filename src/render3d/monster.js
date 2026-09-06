@@ -135,10 +135,10 @@ export function buildMobModel(m) {
   group.traverse(o => { if (o.isMesh) o.castShadow = true; });
 
   // Lebensbalken (wird vom Renderer zur Kamera gedreht)
-  const barW = m.boss ? 2.2 : s + 0.3;
+  const barW = m.boss ? 2.2 : m.mini ? 1.6 : s + 0.3;
   const bar = new THREE.Group();
   const barBg = new THREE.Mesh(G.plane(barW, 0.12), basic("#1a1a24", { depthTest: false, transparent: true, opacity: 0.85 }));
-  const barFg = new THREE.Mesh(G.plane(barW, 0.12), basic(m.boss ? "#ff3b3b" : "#6fe28a", { depthTest: false }));
+  const barFg = new THREE.Mesh(G.plane(barW, 0.12), basic(m.boss ? "#ff3b3b" : m.mini ? "#ffb347" : "#6fe28a", { depthTest: false }));
   barBg.renderOrder = 20; barFg.renderOrder = 21;
   barFg.position.z = 0.001;
   bar.add(barBg, barFg);
@@ -193,4 +193,23 @@ export function buildMobModel(m) {
   }
   function dispose() { for (const mat of mats) mat.dispose(); }
   return { group, bar, update, dispose };
+}
+
+/* Bewohner: menschliche Figur, dreht sich zum Spieler, Marker über dem Kopf */
+export function buildNpcModel(npc) {
+  const fake = { size: 12, shape: "human", color: npc.color, color2: npc.color2, boss: false, mini: null, hp: 1, maxHp: 1, x: npc.x * 16 + 8, y: npc.y * 16 + 8, t: 0, hitT: 0 };
+  const model = buildMobModel(fake);
+  const state = { rot: Math.PI };
+  function update(time, pos, playerPos) {
+    model.group.position.copy(pos);
+    model.group.position.y += Math.sin(time * 1.5 + npc.x) * 0.01;
+    const dx = playerPos.x - pos.x, dz = playerPos.z - pos.z;
+    const target = Math.hypot(dx, dz) < 3 ? Math.atan2(-dx, -dz) : Math.PI;
+    let diff = target - state.rot;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    state.rot += diff * 0.08;
+    model.group.rotation.y = state.rot;
+  }
+  return { group: model.group, update, dispose: model.dispose };
 }

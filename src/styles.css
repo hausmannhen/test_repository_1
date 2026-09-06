@@ -117,3 +117,9 @@ body { -webkit-text-size-adjust: 100%; }
 .save-new { background: var(--panel); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
 .input { font-family: var(--font); font-size: 16px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); width: 100%; }
 .input:focus { outline: none; border-color: var(--gold); }
+
+/* Aufgaben */
+.tracker { font-size: 11px; color: var(--gold); margin-top: 2px; max-width: 70vw; }
+.quest-row { background: var(--panel); border-radius: 6px; padding: 8px 10px; margin-bottom: 5px; }
+.quest-row.done { opacity: 0.7; }
+.quest-title { font-size: 14px; }

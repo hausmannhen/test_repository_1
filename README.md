@@ -1,6 +1,8 @@
 # Eldenfeld
 
-Zelda-artiges Fantasy-Action-RPG mit Loot. Welt, Monster, Items und Dropchancen entstehen prozedural aus einem Seed. Sieben Regionen, vier Dörfer, drei Dungeons mit Bossen, 40 Basisitems in fünf Seltenheiten mit deutsch deklinierten Affixen.
+Zelda-artiges Fantasy-Action-RPG mit Loot. Welt, Monster, Items und Dropchancen entstehen prozedural aus einem Seed. Sieben Regionen auf 10×10 Bildschirmen, sechs Dörfer mit Bewohnern, sieben Zwischenboss-Reviere, drei Dungeons mit Bossen, 40 Basisitems in fünf Seltenheiten mit deutsch deklinierten Affixen.
+
+Eine Hauptgeschichte in neun Kapiteln vom Wolfsalpha vor Elmshain bis zum Aschedrachen Vargor, dazu Nebenaufgaben. Aufgaben gibt es bei den Bewohnern der Dörfer: auf sie zulaufen, Gespräch öffnet sich.
 
 Drei Kampfarten: Nahkampf (Schwert, Axt, Speer), Fernkampf (Bogen, Armbrust, Wurfmesser, Wurfaxt) und Magie mit acht Elementen plus Blutmagie. Ein Skilltree mit drei Zweigen, ein Punkt pro Stufe.
 
@@ -29,6 +31,13 @@ Voraussetzung: Node 20 oder neuer.
 - Fernwaffen schießen in Blickrichtung mit sanfter Zielhilfe auf den nächsten Gegner im Kegel. Zauber ebenso.
 - Häuser in Dörfern über die Tür betreten: Händler, Heilerin, Schmied, Weise.
 
+## Welt und Geschichte
+
+- Karte 10×10 in `REGION_MAP` (`src/game/constants.js`). Start in Elmshain in der Mitte. Dörfer: Elmshain, Nebelfurt (Wald), Kargstein (Berge), Dünenruh (Wüste), Moorhall (Moor), Frosthain (Frost).
+- Zwischenbosse in `src/data/minibosses.js`, einer je Region auf einem festen Bildschirm. Einmal besiegt, kehren sie nicht zurück, hinterlassen ein Item ab Selten und extra Gold. Auf der Karte als Schädel.
+- Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
+- Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss. Bereits erledigte Ziele zählen rückwirkend.
+
 ## Kampf, Magie, Skilltree
 
 - Waffen haben einen Typ. Nahkampf trifft im Bogen vor dem Helden. Fernkampf feuert Geschosse mit Reichweite, Feuerrate und Geschossart. Fokuswaffen (Stäbe) sind schwach im Nahkampf, verstärken aber Magie.
@@ -53,13 +62,14 @@ src/
     magic.js      Zauber wirken, Kosten, Zielhilfe
     skills.js     Skilltree, Punkte, Boni
     monsters.js   Monstertypen, Bosse, Skalierung, Drop-Tabellen
-    world.js      Oberwelt, Dörfer, Dungeons, Spawns
+    world.js      Oberwelt, Dörfer mit Bewohnern, Dungeons, Spawns, Zwischenbosse
+    quests.js     Aufgaben annehmen, Fortschritt, Abschluss, Gespräche
     player.js     Spieler, abgeleitete Werte, Inventar, Tränke
     engine.js     update(G, dt, input), enterScreen, Kollision, Kampf
     actions.js    Panel-Aktionen: Anlegen, Handel, Schmied, Heilerin
     save.js       Spielstände im localStorage, Versionierung, Export und Import
     input.js      Tastatur und Touch in ein Eingabeobjekt
-  data/         Tabellen: items.js, spells.js, skills.js
+  data/         Tabellen: items.js, spells.js, skills.js, minibosses.js, npcs.js, quests.js
   render3d/     Three.js
     renderer.js   Szene, Kamera, Licht, Bildschirmwechsel mit Kamera-Slide
     terrain.js    Tiles → Mesh mit Vertex-Farben, Höhen-Noise, Wasser- und Lava-Shader

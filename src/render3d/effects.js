@@ -6,7 +6,7 @@ const MAX_PARTICLES = 512;
 const textureCache = new Map();
 const _v = new THREE.Vector3();
 
-function textTexture(text, color, size) {
+export function textTexture(text, color, size) {
   const key = text + "|" + color + "|" + size;
   if (textureCache.has(key)) return textureCache.get(key);
   const canvas = document.createElement("canvas");

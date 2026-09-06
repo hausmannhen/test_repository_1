@@ -1,10 +1,10 @@
 import React from "react";
-import { VILLAGES } from "../game/constants.js";
+import { VILLAGES, START_VILLAGE } from "../game/constants.js";
 import Panel from "./Panel.jsx";
 import { Btn } from "./bits.jsx";
 
 export default function Death({ G, onRespawn }) {
-  const village = VILLAGES[G.P.lastVillage] || VILLAGES["2,3"];
+  const village = VILLAGES[G.P.lastVillage] || VILLAGES[START_VILLAGE];
   return (
     <Panel title="Gefallen" footer={<Btn tone="gold" onClick={onRespawn}>Zurück nach {village.name}</Btn>}>
       <div className="prose">

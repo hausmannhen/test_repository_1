@@ -5,7 +5,10 @@ import { TS, VW, VH } from "../game/constants.js";
 import { buildTerrain, terrainHeight } from "./terrain.js";
 import { buildDecor } from "./decor.js";
 import { buildPlayerModel } from "./player.js";
-import { buildMobModel } from "./monster.js";
+import { buildMobModel, buildNpcModel } from "./monster.js";
+import { textTexture } from "./effects.js";
+import { NPCS } from "../data/npcs.js";
+import { talkTo } from "../game/quests.js";
 import { buildDropModel } from "./drops.js";
 import { Effects } from "./effects.js";
 import { disposeObject } from "./materials.js";
@@ -68,6 +71,8 @@ export class Renderer3D {
     this.scene.add(this.player.group);
     this.mobs = new Map();
     this.drops = new Map();
+    this.npcs = [];
+    this.markerMats = {};
     this.effects = new Effects(this.scene);
 
     this.screenKey = null;
@@ -110,6 +115,26 @@ export class Renderer3D {
     this.scene.remove(s.group);
     disposeObject(s.group);
   }
+  markerMaterial(kind) {
+    if (!this.markerMats[kind]) {
+      const spec = { offer: ["!", "#ffd23f"], complete: ["✓", "#6fe28a"], progress: ["…", "#a8977a"] }[kind];
+      this.markerMats[kind] = new THREE.SpriteMaterial({ map: textTexture(spec[0], spec[1], 64), transparent: true, depthTest: false });
+    }
+    return this.markerMats[kind];
+  }
+  buildNpcs(screen) {
+    for (const n of this.npcs) { this.scene.remove(n.model.group, n.marker); n.model.dispose(); }
+    this.npcs = [];
+    for (const ref of screen.npcs || []) {
+      const npc = NPCS[ref.id];
+      if (!npc) continue;
+      const model = buildNpcModel(npc);
+      const marker = new THREE.Sprite(this.markerMaterial("offer"));
+      marker.scale.set(0.5, 0.5, 1); marker.renderOrder = 25; marker.visible = false;
+      this.scene.add(model.group, marker);
+      this.npcs.push({ id: npc.id, x: ref.x + 0.5, z: ref.y + 0.5, model, marker });
+    }
+  }
   applyEnvironment(screen) {
     const env = screen.dungeonRoom ? SKY.dungeon : SKY[screen.region] || SKY.wiese;
     const sky = new THREE.Color(env.sky);
@@ -147,6 +172,7 @@ export class Renderer3D {
     this.scene.add(this.current.group);
     this.screenKey = screen.key;
     this.applyEnvironment(screen);
+    this.buildNpcs(screen);
     // Mobs und Drops des alten Bildschirms entfernen
     for (const [, mm] of this.mobs) { this.scene.remove(mm.group, mm.bar); mm.dispose(); }
     this.mobs.clear();
@@ -216,6 +242,14 @@ export class Renderer3D {
     for (const [id, mm] of this.mobs) {
       if (!seen.has(id)) { this.scene.remove(mm.group, mm.bar); mm.dispose(); this.mobs.delete(id); }
     }
+    // Bewohner
+    for (const n of this.npcs) {
+      const y = this.groundY(n.x, n.z);
+      n.model.update(time, this._v.set(n.x, y, n.z), this._pos.set(P.x / TS, 0, P.y / TS));
+      const mode = talkTo(G, n.id).mode;
+      n.marker.visible = mode !== "idle";
+      if (mode !== "idle") { n.marker.material = this.markerMaterial(mode); n.marker.position.set(n.x, y + 1.55 + Math.sin(time * 3) * 0.05, n.z); }
+    }
     // Drops
     const seenD = new Set();
     for (const dr of G.drops) {
@@ -239,6 +273,7 @@ export class Renderer3D {
   }
 
   dispose() {
+    for (const n of this.npcs) n.model.dispose();
     this.disposeScreen(this.current); this.disposeScreen(this.prev);
     for (const [, mm] of this.mobs) mm.dispose();
     this.renderer.dispose();

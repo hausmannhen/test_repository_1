@@ -2,6 +2,8 @@
 import { TS, VW, VH, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, regionAt, VILLAGES, DUNGEON_BY_SCREEN } from "./constants.js";
 import { hashStr, rngFor, rint, pick, chance } from "./rng.js";
 import { BOSSES, makeMob } from "./monsters.js";
+import { NPCS_BY_VILLAGE } from "../data/npcs.js";
+import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
 
 export function isProtected(x, y) {
   // Kreuz durch die Mitte + Öffnungen an den Rändern: garantiert Durchgang
@@ -48,7 +50,7 @@ export function genOverworldScreen(seed, sx, sy) {
   for (let x = 0; x < VW; x++) { if (sy === 0) tiles[idx(x, 0)] = border; if (sy === WORLD_H - 1) tiles[idx(x, VH - 1)] = border; }
   for (let y = 0; y < VH; y++) { if (sx === 0) tiles[idx(0, y)] = border; if (sx === WORLD_W - 1) tiles[idx(VW - 1, y)] = border; }
 
-  const screen = { key, tiles, region: regId, doors: {}, village: null, dungeon: null, chest: null };
+  const screen = { key, tiles, region: regId, doors: {}, village: null, dungeon: null, chest: null, npcs: [], miniboss: MINIBOSS_BY_SCREEN[key] || null };
 
   if (VILLAGES[key]) buildVillage(screen, r, VILLAGES[key], regId);
   else if (DUNGEON_BY_SCREEN[key]) buildDungeonEntrance(screen, DUNGEON_BY_SCREEN[key], regId);
@@ -82,6 +84,12 @@ export function buildVillage(screen, r, vill, regId) {
   }
   tiles[idx(6, 4)] = T.WATER; tiles[idx(8, 4)] = T.WATER;   // kleine Brunnen
   tiles[idx(8, 9)] = T.SIGN; screen.doors["8,9"] = "sign";
+  // Bewohner
+  for (const n of NPCS_BY_VILLAGE[screen.key] || []) {
+    tiles[idx(n.x, n.y)] = T.NPC;
+    screen.doors[`${n.x},${n.y}`] = "npc:" + n.id;
+    screen.npcs.push({ id: n.id, x: n.x, y: n.y });
+  }
   // Rand
   const border = regId === "wueste" ? T.ROCK : T.TREE;
   for (let x = 0; x < VW; x++) { if (!isProtected(x, 0)) tiles[idx(x, 0)] = border; if (!isProtected(x, VH - 1)) tiles[idx(x, VH - 1)] = border; }
@@ -164,7 +172,7 @@ export function genDungeonRoom(r, d, c, type, key) {
     const x = rint(r, 2, VW - 3), y = rint(r, 2, VH - 3);
     if (!isProtected(x, y)) tiles[idx(x, y)] = d.id === 2 && chance(r, 0.5) ? T.LAVA : T.PILLAR;
   }
-  const screen = { key: "d" + d.id + ":" + key, tiles, region: null, doors: {}, village: null, dungeon: null, chest: null, dungeonRoom: { type, d, conn: c } };
+  const screen = { key: "d" + d.id + ":" + key, tiles, region: null, doors: {}, village: null, dungeon: null, chest: null, npcs: [], miniboss: null, dungeonRoom: { type, d, conn: c } };
   if (type === "entry") { tiles[idx(7, VH - 2)] = T.EXIT; }
   if (type === "chest") { tiles[idx(7, 5)] = T.CHEST; screen.chest = { x: 7, y: 5, id: "d" + d.id + key }; }
   return screen;
@@ -176,10 +184,17 @@ export function walkable(tiles, tx, ty) {
   const t = tiles[idx(tx, ty)];
   return !SOLID.has(t) && t !== T.LAVA && t !== T.DOOR && t !== T.CHEST && t !== T.ENTRANCE && t !== T.EXIT;
 }
-export function spawnMobsFor(screen, seed, visitCount) {
+export function spawnMobsFor(screen, seed, visitCount, cleared = {}) {
   const mobs = [];
   const r = rngFor(seed, "mobs" + screen.key + ":" + visitCount);
   let pool, level, count;
+  // Zwischenboss in seinem Revier, solange er lebt
+  if (screen.miniboss && !cleared["mb:" + screen.miniboss.id]) {
+    const mb = screen.miniboss;
+    let tx = 7, ty = 3;
+    for (let tries = 0; tries < 50 && !walkable(screen.tiles, tx, ty); tries++) { tx = rint(r, 2, VW - 3); ty = rint(r, 1, 3); }
+    mobs.push(makeMob(mb.base, mb.level, tx * TS + 8, ty * TS + 8, { ...mb, mini: mb.id }));
+  }
   if (screen.dungeonRoom) {
     const d = screen.dungeonRoom.d;
     pool = d.mobs; level = d.level;
