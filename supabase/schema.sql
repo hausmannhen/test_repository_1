@@ -1,7 +1,7 @@
 -- Eldenfeld: Online-Konten. Einmal im Supabase SQL Editor ausführen.
 -- Zugriff nur über die Funktionen unten; die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt.
 
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.konten (
   name          text primary key,
@@ -26,7 +26,7 @@ language sql immutable as $$
 $$;
 
 create or replace function public._konto_pruefen(p_name text, p_token text) returns boolean
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare k record;
 begin
   select token, token_expires into k from konten where name = p_name;
@@ -39,7 +39,7 @@ end $$;
 -- Liste aller Konten für die Auswahl (ohne Spielstand)
 create or replace function public.konten_liste()
 returns table(name text, level int, updated_at timestamptz, gold int, loc jsonb)
-language sql security definer set search_path = public stable as $$
+language sql security definer set search_path = public, extensions stable as $$
   select name, level, updated_at,
          coalesce((save->'P'->>'gold')::int, 0) as gold,
          jsonb_build_object('area', save->'P'->>'area', 'sx', save->'P'->'sx', 'sy', save->'P'->'sy') as loc
@@ -49,7 +49,7 @@ $$;
 -- Konto anlegen: Name, vierstellige PIN, optional ein vorhandener Spielstand
 create or replace function public.konto_anlegen(p_name text, p_pin text, p_save jsonb default null)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare t text; n int;
 begin
   if not _konto_name_ok(p_name) then raise exception 'Name: 2 bis 20 Zeichen, Buchstaben, Ziffern, Leerzeichen'; end if;
@@ -67,7 +67,7 @@ end $$;
 -- Anmelden: nach fünf Fehlversuchen 15 Minuten Sperre
 create or replace function public.konto_login(p_name text, p_pin text)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare k record; t text;
 begin
   select * into k from konten where lower(name) = lower(p_name);
@@ -87,7 +87,7 @@ end $$;
 -- Spielstand laden
 create or replace function public.konto_laden(p_name text, p_token text)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare k record;
 begin
   if not _konto_pruefen(p_name, p_token) then raise exception 'Sitzung abgelaufen, bitte neu anmelden'; end if;
@@ -98,7 +98,7 @@ end $$;
 -- Spielstand speichern
 create or replace function public.konto_speichern(p_name text, p_token text, p_save jsonb)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 begin
   if not _konto_pruefen(p_name, p_token) then raise exception 'Sitzung abgelaufen, bitte neu anmelden'; end if;
   if length(p_save::text) > 200000 then raise exception 'Spielstand zu groß'; end if;
@@ -109,7 +109,7 @@ end $$;
 -- PIN ändern
 create or replace function public.konto_pin_aendern(p_name text, p_token text, p_alt text, p_neu text)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare k record;
 begin
   if not _konto_pruefen(p_name, p_token) then raise exception 'Sitzung abgelaufen, bitte neu anmelden'; end if;
@@ -123,7 +123,7 @@ end $$;
 -- Konto löschen
 create or replace function public.konto_loeschen(p_name text, p_token text, p_pin text)
 returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, extensions as $$
 declare k record;
 begin
   if not _konto_pruefen(p_name, p_token) then raise exception 'Sitzung abgelaufen, bitte neu anmelden'; end if;
