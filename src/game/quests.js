@@ -17,7 +17,14 @@ export function canOffer(P, id) {
   const q = QUESTS[id];
   if (!q || questState(P, id)) return false;
   if (q.requires && !isDone(P, q.requires)) return false;
+  if (q.raid && raidWait(P, id) > 0) return false;
   return true;
+}
+/* Überfälle: nach Sieg oder Niederlage müssen erst Feinde draußen fallen, bevor das Dorf wieder ruft */
+export const RAID_WAIT = { won: 30, lost: 15 };
+export function raidWait(P, id) {
+  const until = P.raidReady && P.raidReady[id];
+  return until ? Math.max(0, until - (P.kills || 0)) : 0;
 }
 export function acceptQuest(P, id) {
   if (!canOffer(P, id)) return false;
@@ -79,7 +86,9 @@ export function onRaidEnd(G, won) {
   const P = G.P, id = G.raid && G.raid.questId;
   if (!id || !isActive(P, id)) return;
   if (won) { P.quests[id].progress = 1; if (QUESTS[id].raid && QUESTS[id].raid.scale) { if (!P.raidWins) P.raidWins = {}; P.raidWins[id] = (P.raidWins[id] || 0) + 1; } G.banner = { text: "Aufgabe erfüllt", sub: `${QUESTS[id].title}, zurück zu ${NPCS[QUESTS[id].turnIn].name}`, t: 3.5 }; }
-  else { delete P.quests[id]; }   // verloren: Aufgabe wieder annehmbar
+  else { delete P.quests[id]; }   // verloren: Aufgabe später wieder annehmbar
+  if (!P.raidReady) P.raidReady = {};
+  P.raidReady[id] = (P.kills || 0) + (won ? RAID_WAIT.won : RAID_WAIT.lost);
   G.dirty = true;
 }
 export function onKill(G, m) {
@@ -125,6 +134,7 @@ export function talkTo(G, npcId) {
   // Erst abschließen, dann anbieten, dann Fortschritt zeigen, sonst Alltagsspruch
   for (const id of QUEST_ORDER) if (QUESTS[id].turnIn === npcId && isComplete(P, id)) return { npc, mode: "complete", quest: id };
   for (const id of QUEST_ORDER) if (QUESTS[id].giver === npcId && canOffer(P, id)) return { npc, mode: "offer", quest: id };
+  for (const id of QUEST_ORDER) { const q = QUESTS[id]; if (q.giver === npcId && q.raid && !questState(P, id) && (!q.requires || isDone(P, q.requires)) && raidWait(P, id) > 0) return { npc, mode: "wait", quest: id, left: raidWait(P, id) }; }
   for (const id of QUEST_ORDER) if (QUESTS[id].turnIn === npcId && isActive(P, id)) return { npc, mode: "progress", quest: id };
   return { npc, mode: "idle", quest: null };
 }

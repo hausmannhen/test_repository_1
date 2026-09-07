@@ -20,11 +20,11 @@ export function newPlayer(seed) {
     skills: {}, spells: [], activeSpell: null, quests: {}, hints: {}, slowT: 0,
   };
 }
-export function xpNeed(level) { return Math.floor(30 * Math.pow(level, 1.45)); }
+export function xpNeed(level) { return Math.floor(40 * Math.pow(level, 1.6)); }
 export function derive(P) {
   const b = skillBonuses(P);
   const s = {
-    atk: 4 + P.level * 2, def: Math.floor(P.level * 0.5) + b.def, maxHp: 60 + (P.level - 1) * 8 + P.hearts * 20 + b.hp,
+    atk: 4 + P.level * 2, def: Math.floor(P.level * 0.5) + b.def, maxHp: 60 + (P.level - 1) * 6 + P.hearts * 20 + b.hp,
     crit: 5, spd: 0, luck: 0, reach: 12, mag: 2 + P.level, maxMana: 30 + (P.level - 1) * 4 + b.mana, manaRegen: 2 + b.manaRegen,
     weaponType: "nah", range: 0, rate: 0.5, projSpeed: 200, proj: "pfeil", blood: 0,
   };

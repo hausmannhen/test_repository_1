@@ -34,7 +34,7 @@ export function makeMob(typeId, level, x, y, bossDef = null) {
   const m = {
     id: Math.random().toString(36).slice(2), type: typeId, name: bossDef ? bossDef.name : base.name,
     x, y, vx: 0, vy: 0, level,
-    maxHp: Math.round(base.hp * lvlMult * (bossDef ? bossDef.hpMult : 1)),
+    maxHp: Math.round(base.hp * 1.25 * lvlMult * (bossDef ? bossDef.hpMult : 1)),
     atk: Math.round(base.atk * (1 + (level - 1) * 0.16) * (bossDef ? bossDef.atkMult : 1)),
     spd: base.spd * (bossDef ? 1.1 : 1), size: bossDef ? bossDef.size : base.size,
     shape: base.shape, color: bossDef ? bossDef.color : base.color, color2: bossDef ? bossDef.color2 : base.color2,

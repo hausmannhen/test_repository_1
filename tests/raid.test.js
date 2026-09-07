@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { TS, VW, VH } from "../src/game/constants.js";
 import { createGame, startGame, enterScreen, update, startRaid, raidActive, killMob } from "../src/game/engine.js";
 import { WELL, PAUSE } from "../src/game/raid.js";
-import { acceptQuest, isComplete, completeQuest, talkTo, raidLevel, canOffer } from "../src/game/quests.js";
+import { acceptQuest, isComplete, completeQuest, talkTo, raidLevel, canOffer, RAID_WAIT, QUESTS } from "../src/game/quests.js";
+// Bram hat sonst nichts anzubieten: alle anderen Aufgaben von ihm gelten als erledigt
+const onlyRaid = (P, keep) => { for (const id of Object.keys(QUESTS)) if (QUESTS[id].giver === "bram" && id !== keep && !P.quests[id]) P.quests[id] = { state: "done", progress: 1 }; };
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 const step = (G, n, input = idle) => { for (let i = 0; i < n; i++) update(G, 1 / 60, input); };
@@ -43,7 +45,14 @@ describe("Überfall", () => {
     for (const mm of G.mobs) { mm.x = WELL.x; mm.y = WELL.y; mm.spawnDelay = 0; }
     step(G, 30);
     assert.equal(G.raid.state, "done"); assert.equal(G.raid.won, false);
-    assert.equal(G.P.quests.r1, undefined, "verlorene Aufgabe wieder annehmbar");
+    assert.equal(G.P.quests.r1, undefined, "verlorene Aufgabe bleibt nicht aktiv");
+    // Nach der Niederlage ruht das Dorf: erst 15 Feinde draußen, dann wieder annehmbar
+    assert.equal(canOffer(G.P, "r1"), false, "sofort wieder annehmbar");
+    onlyRaid(G.P, "r1");
+    const t = talkTo(G, "bram");
+    assert.equal(t.mode, "wait"); assert.equal(t.quest, "r1"); assert.equal(t.left, RAID_WAIT.lost);
+    G.P.kills += RAID_WAIT.lost;
+    assert.equal(canOffer(G.P, "r1"), true);
     assert.equal(talkTo(G, "bram").mode, "offer");
   });
 
@@ -67,7 +76,12 @@ describe("Überfall", () => {
     assert.ok(got.gold >= 100 && G.P.gold === gold + got.gold);
     assert.equal(G.P.quests.r2, undefined, "wiederholbare Aufgabe bleibt frei");
     assert.equal(raidLevel(G.P, "r2"), 2);
-    assert.ok(canOffer(G.P, "r2"), "Wachdienst nicht wieder annehmbar");
+    assert.equal(canOffer(G.P, "r2"), false, "Wachdienst sofort wieder annehmbar");
+    onlyRaid(G.P, "r2");
+    assert.equal(talkTo(G, "bram").mode, "wait");
+    G.P.kills += RAID_WAIT.won;
+    assert.ok(canOffer(G.P, "r2"), "Wachdienst nach 30 Kills nicht annehmbar");
+    assert.equal(talkTo(G, "bram").mode, "offer");
   });
 
   it("Bildschirmwechsel bricht den Überfall ab, Anführer hat eigene Beute", () => {
@@ -118,5 +132,16 @@ describe("Überfall, Randfälle aus der Code-Prüfung", () => {
     assert.equal(P.inventory.find(i => i.potId === "manatrank").qty, 1);
     assert.equal(P.inventory.find(i => i.potId === "heiltrank").qty, 2);
     assert.ok(P.mana > 0);
+  });
+});
+
+describe("Überfall: Stärke nach Spielerstufe", () => {
+  it("Angreifer sind mindestens auf Gebietsstufe, bei hoher Spielerstufe rund 80 % davon", () => {
+    const G = startGame(createGame("raid-lvl"));
+    enterScreen(G, "over", 4, 5, 7 * TS + 8, 8 * TS + 8, false);
+    G.P.level = 2; startRaid(G, { waves: 2, level: 1 });
+    assert.equal(G.raid.mobLevel, 2);
+    G.raid = null; G.P.level = 20; startRaid(G, { waves: 2, level: 2 });
+    assert.equal(G.raid.mobLevel, 18);
   });
 });

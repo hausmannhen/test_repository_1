@@ -122,14 +122,21 @@ describe("Fernkampf", () => {
     assert.ok(G.pprojs.every(p => p.pierce));
     assert.ok(derive(P).rate < 0.32);
   });
-  it("Geschosse zielen sanft auf Gegner im Kegel", () => {
+  it("Geschosse fliegen in Stockrichtung, ohne Zielhilfe, auch diagonal", () => {
     const G = arena("aim");
     const P = G.P;
     P.equip.waffe = weapon("armbrust");
     const m = makeMob("wolf", 1, P.x + 70, P.y + 25); m.spd = 0; G.mobs = [m];
-    P.dir = "right";
+    P.dir = "right"; G.aim = null;
     update(G, 1 / 60, { ...idle, attack: true });
-    assert.ok(G.pprojs[0].vy > 0, "keine Zielhilfe");
+    assert.equal(G.pprojs[0].vy, 0, "Zielhilfe greift");
+    assert.ok(G.pprojs[0].vx > 0);
+    // Stock nach unten rechts gedrückt: Schuss geht diagonal, egal wo der Gegner steht
+    G.pprojs = []; G.shootCd = 0;
+    update(G, 1 / 60, { ...idle, x: 0.7, y: 0.7 });
+    update(G, 1 / 60, { ...idle, attack: true });
+    const p = G.pprojs[0];
+    assert.ok(Math.abs(p.vx - p.vy) < 1e-6 && p.vx > 0, "nicht diagonal");
   });
 });
 

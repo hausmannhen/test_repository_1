@@ -28,7 +28,7 @@ Voraussetzung: Node 20 oder neuer.
 
 - Touch: Steuerkreuz links, Schwert und Trank rechts, Menüknopf für Ausrüstung und Karte.
 - Tastatur: WASD oder Pfeile, Leertaste Angriff, Q oder Shift Zauber, 1 bis 9 Zauber wählen, Tab nächster Zauber, E Heiltrank, R Manatrank, I Menü, Escape schließt Panels.
-- Fernwaffen schießen in Blickrichtung mit sanfter Zielhilfe auf den nächsten Gegner im Kegel. Zauber ebenso.
+- Fernwaffen und Zauber gehen genau in die zuletzt gedrückte Stockrichtung, auch diagonal. Keine Zielhilfe: wer trifft, hat gezielt.
 - Häuser in Dörfern über die Tür betreten: Händler, Heilerin, Schmied, Weise.
 
 ## Welt und Geschichte
@@ -44,7 +44,7 @@ Voraussetzung: Node 20 oder neuer.
 - Geschichte: beim ersten Start eines neuen Spielstands erklärt ein Fenster die Geschichte, bevor sich etwas bewegt („Aufbrechen“ schließt es). Danach steht derselbe Text im Menü unter „Geschichte“, mit dem Stand der Kapitel. Alte Spielstände sehen das Fenster nicht, nur den Reiter.
 - Einstieg: neue Spieler bekommen einmalige Hinweise, wenn nichts anderes angezeigt wird: Weg zu Bram, Steuerung, erster Fertigkeitspunkt, erste Beute, wenig Leben.
 - Kampftruhen: Keine Truhe öffnet sich, solange Gegner auf dem Bildschirm sind. Das Schloss pulsiert rot, bis der letzte fällt, dann wird es gold.
-- Überfall: Annehmen sperrt die vier Dorfausgänge mit Palisaden, Monster kommen in Wellen durch die Tore und laufen zum Brunnen. Fällt der Brunnen, ist der Überfall verloren und die Aufgabe wieder annehmbar. Die letzte Welle bringt einen Anführer. „Wachdienst“ in Elmshain ist endlos wiederholbar, jedes Mal eine Welle mehr und stärkere Gegner, Belohnung wächst mit. Logik in `src/game/raid.js`.
+- Überfall: Annehmen sperrt die vier Dorfausgänge mit Palisaden, Monster kommen in Wellen durch die Tore und laufen zum Brunnen. Fällt der Brunnen, ist der Überfall verloren. Nach jedem Überfall ruht das Dorf: nach einem Sieg müssen erst 30 Feinde draußen fallen, nach einer Niederlage 15, vorher bietet der Bewohner nichts an. Die Angreifer skalieren mit der Spielerstufe (rund 80 % davon plus Schwierigkeit, mindestens Gebietsstufe). Die letzte Welle bringt einen Anführer. „Wachdienst“ in Elmshain ist wiederholbar, jedes Mal eine Welle mehr und stärkere Gegner, Belohnung wächst mit. Logik in `src/game/raid.js`.
 
 ## Kampf, Magie, Skilltree
 
@@ -75,7 +75,7 @@ src/
     constants.js  Tiles, Bildschirmmaße, Regionen, Dörfer, Dungeons
     rng.js        Seed-Zufall
     items.js      generateItem, Stats, Aufwertung (Tabellen in data/)
-    magic.js      Zauber wirken, Kosten, Zielhilfe
+    magic.js      Zauber wirken, Kosten, Schussrichtung
     skills.js     Skilltree, Punkte, Boni
     monsters.js   Monstertypen, Bosse, Skalierung, Drop-Tabellen
     world.js      Oberwelt, Dörfer mit Bewohnern, Dungeons, Spawns, Zwischenbosse

@@ -5,7 +5,7 @@ import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
-import { castSpell, aimAt, ELEMENTS } from "./magic.js";
+import { castSpell, aimDir, ELEMENTS } from "./magic.js";
 import { onKill as questKill, gateOpen, gateFor, resetStaleRaids } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
@@ -24,7 +24,7 @@ export function createGame(seed, P = null, slot = null) {
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
     pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
-    hintQueue: [],
+    hintQueue: [], aim: null,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     intro: false,      // Geschichte-Fenster beim ersten Start noch offen
@@ -99,6 +99,22 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
 
 function blockedBox(tiles, x, y) {
   return solidAt(tiles, x - 5, y - 5) || solidAt(tiles, x + 4.9, y - 5) || solidAt(tiles, x - 5, y + 4.9) || solidAt(tiles, x + 4.9, y + 4.9);
+}
+/* Monster, das nicht weiterkommt: nächstes freies Feld, das dem Ziel näher liegt als der aktuelle Platz */
+export function hopToward(m, tiles, gx, gy, half = 5) {
+  const tx = clamp(Math.floor(m.x / TS), 0, VW - 1), ty = clamp(Math.floor(m.y / TS), 0, VH - 1);
+  const fits = (x, y) => { const cx = x * TS + 8, cy = y * TS + 8; return !solidAt(tiles, cx - half, cy - half) && !solidAt(tiles, cx + half, cy - half) && !solidAt(tiles, cx - half, cy + half) && !solidAt(tiles, cx + half, cy + half) && tiles[idx(x, y)] !== T.LAVA; };
+  const here = Math.hypot(gx - m.x, gy - m.y);
+  let best = null, bestD = here - 4;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const x = tx + dx, y = ty + dy;
+    if ((!dx && !dy) || x < 1 || y < 1 || x >= VW - 1 || y >= VH - 1 || !fits(x, y)) continue;
+    const dd = Math.hypot(gx - (x * TS + 8), gy - (y * TS + 8));
+    if (dd < bestD) { bestD = dd; best = [x, y]; }
+  }
+  if (!best) { unstick(m, tiles); return false; }
+  m.x = best[0] * TS + 8; m.y = best[1] * TS + 8; m.vx = 0; m.vy = 0;
+  return true;
 }
 export function unstick(P, tiles) {
   if (!blockedBox(tiles, P.x, P.y)) return;
@@ -237,7 +253,7 @@ export function gainXp(G, amount) {
   while (P.xp >= xpNeed(P.level)) {
     P.xp -= xpNeed(P.level); P.level++;
     const d = derive(P);
-    P.hp = d.maxHp; P.mana = d.maxMana;
+    P.hp = Math.min(d.maxHp, P.hp + Math.round(d.maxHp * 0.4)); P.mana = d.maxMana;   // Aufstieg heilt 40 %, nicht voll
     G.banner = { text: "Stufe " + P.level, sub: P.level % 3 === 0 ? "Neuer Fertigkeitspunkt" : "Angriff und Leben gestiegen", t: 3 };
     emit(G, "levelup");
   }
@@ -307,6 +323,7 @@ export function update(G, dt, input) {
   if (len > 1) { ix /= len; iy /= len; }
   if (len > 0.2) {
     if (Math.abs(ix) > Math.abs(iy)) P.dir = ix > 0 ? "right" : "left"; else P.dir = iy > 0 ? "down" : "up";
+    const al = Math.hypot(ix, iy); G.aim = { x: ix / al, y: iy / al };   // Schüsse und Zauber gehen genau dorthin, keine Zielhilfe
   }
   const onSwamp = tiles[idx(clamp(Math.floor(P.x / TS), 0, VW - 1), clamp(Math.floor(P.y / TS), 0, VH - 1))] === T.SWAMP;
   let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1) * (P.slowT > 0 ? 0.55 : 1);
@@ -344,9 +361,7 @@ export function update(G, dt, input) {
       G.shootCd = d.rate;
       G.attack = { t: 0.15, dir: P.dir, hit: new Set(), maxT: 0.15, ranged: true };
       emit(G, "shoot");
-      let [dx, dy] = DIRV[P.dir];
-      const aim = aimAt(G, dx, dy, d.range);
-      if (aim) { dx = aim.x; dy = aim.y; }
+      const [dx, dy] = aimDir(G);
       const angles = d.doubleShot ? [-0.12, 0.12] : [0];
       for (const a of angles) {
         const ca = Math.cos(a), sa = Math.sin(a);
@@ -454,7 +469,7 @@ export function update(G, dt, input) {
     if (m.boss && m.phases && m.phase < m.phases && m.hp <= m.maxHp * (1 - (m.phase + 1) / (m.phases + 1))) {
       m.phase++; m.atk = Math.round(m.atk * 1.15); m.spd *= 1.2; m.hitT = 0.3;
       const pool = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.mobs : ["golem"];
-      for (let i = 0; i < 2; i++) { const add = makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 40 : -40), m.y + 30); G.mobs.push(add); }
+      for (let i = 0; i < 2; i++) { const add = makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 40 : -40), m.y + 30); unstick(add, tiles); G.mobs.push(add); }
       G.banner = { text: m.name + " tobt", sub: `Phase ${m.phase + 1} von ${m.phases + 1}`, t: 2.5 };
       G.shake = 0.4; emit(G, "fanfare");
     }
@@ -495,6 +510,9 @@ export function update(G, dt, input) {
     if (aware && m.ai !== "erratic" && kb <= 5 && wanted > 0.01 && moved < wanted * 0.3 && m.sideT <= 0) {
       m.side = Math.random() < 0.5 ? 1 : -1; m.sideT = 0.5;
     }
+    // Festgefahren (Ecke, Rand, im Fels): nach 1,5 s ohne Fortschritt auf das nächste freie Feld Richtung Ziel springen
+    if (aware && wanted > 0.01 && moved < wanted * 0.3) m.stuckT = (m.stuckT || 0) + dt; else m.stuckT = 0;
+    if (m.stuckT > 1.5) { m.stuckT = 0; m.sideT = 0; hopToward(m, tiles, gx, gy, half); }
     // Kontaktschaden
     const pd = goal ? Math.hypot(P.x - m.x, P.y - m.y) : dist;
     if (pd < m.size / 2 + 5) { const hpBefore = P.hp; hurtPlayer(G, m.atk); if (m.elite === "eisig" && P.hp < hpBefore) { P.slowT = ELITES.eisig.slow; flash(G, "Eisig: du bist verlangsamt", "#9ad8ff"); } }
@@ -619,7 +637,7 @@ function updateAbilities(G, m, dt, d) {
       a.used = true;
       if (def.kind === "summon") {
         const pool = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.mobs : (G.screen.region ? REGIONS[G.screen.region].mobs : ["wolf"]);
-        for (let i = 0; i < def.count; i++) G.mobs.push(makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 36 : -36), m.y + 24));
+        for (let i = 0; i < def.count; i++) { const add = makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 36 : -36), m.y + 24); unstick(add, G.screen.tiles); G.mobs.push(add); }
         G.banner = { text: m.name + " ruft", sub: "Verstärkung kommt", t: 2.5 };
       } else if (def.kind === "enrage") {
         m.spd *= def.spdMult; m.atk = Math.round(m.atk * def.atkMult); m.hitT = 0.4;

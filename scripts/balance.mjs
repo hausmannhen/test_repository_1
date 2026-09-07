@@ -37,8 +37,10 @@ function fight(G, build, seconds) {
     if (best < 0.001) best = 0.001; // sonst 0/0 in der Richtung
     const dx = m.x - P.x, dy = m.y - P.y;
     let input;
-    if (build === "bogen") { const inRange = best < d.range - 10; input = { x: inRange ? 0 : dx / best, y: inRange ? 0 : dy / best, attack: inRange, cast: false }; if (best < 40) input = { x: -dx / best, y: -dy / best, attack: true, cast: false }; }
-    else if (build === "magie") { const sp = SPELLS[P.activeSpell]; const inRange = best < (sp.range || 120) - 10; const canMana = P.mana >= (sp.cost || 0); input = { x: inRange && canMana ? 0 : dx / best, y: inRange && canMana ? 0 : dy / best, attack: !canMana && best < d.reach + m.size / 2 + 2, cast: inRange && canMana }; if (P.mana < 12) useManaPotion(G); }
+    // Keine Zielhilfe: der Bot zielt wie ein Spieler, indem er den Stock leicht Richtung Gegner drückt, und schießt dann
+    const ax = dx / best * 0.25, ay = dy / best * 0.25;
+    if (build === "bogen") { const inRange = best < d.range - 10; input = inRange ? { x: ax, y: ay, attack: true, cast: false } : { x: dx / best, y: dy / best, attack: false, cast: false }; if (best < 40) input = { x: -dx / best, y: -dy / best, attack: false, cast: false }; }
+    else if (build === "magie") { const sp = SPELLS[P.activeSpell]; const inRange = best < (sp.range || 120) - 10; const canMana = P.mana >= (sp.cost || 0); input = inRange && canMana ? { x: ax, y: ay, attack: false, cast: true } : { x: dx / best, y: dy / best, attack: !canMana && best < d.reach + m.size / 2 + 2, cast: false }; if (P.mana < 12) useManaPotion(G); }
     else { const inReach = best < d.reach + m.size / 2 + 2; input = { x: inReach ? Math.sign(dx) * 0.3 : dx / best, y: inReach ? Math.sign(dy) * 0.3 : dy / best, attack: inReach, cast: false }; }
     if (P.hp < d.maxHp * 0.35) { if (usePotion(G)) pots++; }
     const hpBefore = P.hp;

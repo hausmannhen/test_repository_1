@@ -19,7 +19,8 @@ export function startRaid(G, { level = 1, waves = 3, questId = null } = {}) {
   const P = G.P, screen = G.screen;
   if (!screen || !screen.village) return false;
   const reg = REGIONS[screen.region] || REGIONS.wiese;
-  const mobLevel = Math.max(1, reg.level + level * 2 + Math.floor(P.level * 0.3));
+  // Stärke nach Spielerstufe: mindestens Gebietsstufe, sonst rund 80 % der Spielerstufe, plus Schwierigkeit
+  const mobLevel = Math.max(1, reg.level + level, Math.floor(P.level * 0.8) + level);
   G.raid = { state: "pause", wave: 0, waves, level, mobLevel, pool: reg.mobs, t: 2.5, wellHp: 100 + level * 25, wellMax: 100 + level * 25, questId, kills: 0, seed: G.seed + ":raid" + (P.raids || 0) };
   G.mobs = []; G.projs = []; G.pprojs = []; G.drops = [];
   G.banner = { text: "Überfall", sub: `${waves} Wellen. Halte den Brunnen.`, t: 3 };

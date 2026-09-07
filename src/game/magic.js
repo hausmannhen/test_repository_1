@@ -54,10 +54,7 @@ export function castSpell(G, spellId = G.P.activeSpell) {
   G.spellCd[spellId] = sp.cd;
   const dmg = spellDamage(P, spellId);
   const d = derive(P);
-  let [dx, dy] = DIRV[P.dir] || [0, -1];
-  // sanftes Zielen: nächster Gegner im Kegel vor dem Spieler
-  const aim = aimAt(G, dx, dy, sp.range || 120);
-  if (aim) { dx = aim.x; dy = aim.y; }
+  const [dx, dy] = aimDir(G);   // genau in Stockrichtung, keine Zielhilfe
   const hit = { spell: spellId, element: sp.element, dmg, crit: Math.random() * 100 < d.crit, burn: sp.burn || 0, slow: sp.slow || 0, knock: sp.knock || 0, leech: sp.leech || 0, heal: sp.heal || 0 };
   if (sp.kind === "bolt") {
     G.pprojs.push({ x: P.x + dx * 6, y: P.y + dy * 6, vx: dx * sp.speed, vy: dy * sp.speed, t: sp.range / sp.speed, kind: "spell", color: el.color, color2: el.color2, pierce: !!sp.pierce, hit: new Set(), ...hit });
@@ -77,18 +74,8 @@ export function castSpell(G, spellId = G.P.activeSpell) {
   return true;
 }
 
-/* Zielhilfe: nächster Gegner im Kegel vor dem Spieler (±50°); ist dort keiner, der nächste in Reichweite überhaupt.
-   So kann man rückwärts laufen und trotzdem schießen, was auf dem Handy die einzige Art zu kiten ist. */
-export function aimAt(G, dx, dy, range) {
-  const P = G.P;
-  let best = null, bestD = range, any = null, anyD = range;
-  for (const m of G.mobs) {
-    if (m.dead || m.spawnDelay > 0) continue;
-    const mx = m.x - P.x, my = m.y - P.y, dist = Math.hypot(mx, my) || 1;
-    if (dist > range) continue;
-    const cos = (mx * dx + my * dy) / dist;
-    if (cos >= 0.64 && dist < bestD) { best = { x: mx / dist, y: my / dist }; bestD = dist; }
-    if (dist < anyD) { any = { x: mx / dist, y: my / dist }; anyD = dist; }
-  }
-  return best || any;
+/* Richtung für Schüsse und Zauber: zuletzt gedrückte Stockrichtung (auch diagonal), sonst Blickrichtung */
+export function aimDir(G) {
+  if (G.aim) return [G.aim.x, G.aim.y];
+  return DIRV[G.P.dir] || [0, -1];
 }

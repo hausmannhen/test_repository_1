@@ -39,6 +39,8 @@ export default function Npc({ G, npcId, onClose, rerender }) {
         </div>
       </div>
     );
+  } else if (d.mode === "wait") {
+    body = <div className="prose"><p className="quote">„Die Palisaden werden noch geflickt, und die Leute brauchen Ruhe. Räum draußen auf, dann reden wir.“</p><div className="dim" style={{ fontSize: 12 }}>Noch {d.left} Feinde außerhalb des Dorfs besiegen, dann ist „{q.title}“ wieder annehmbar.</div></div>;
   } else if (d.mode === "raid") {
     body = <div className="prose"><p className="quote">„Nicht jetzt! Der Brunnen! Lauf!“</p></div>;
   } else if (d.mode === "complete") {
