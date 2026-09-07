@@ -2,13 +2,14 @@
 import React, { useRef, useState } from "react";
 import { Btn } from "./bits.jsx";
 import { describeSave, exportSlot, fileNameFor, importSave } from "../game/save.js";
+import CloudLogin from "./CloudLogin.jsx";
 
 function fmtDate(ts) {
   try { return new Date(ts).toLocaleString("de-CH", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }); }
   catch (e) { return ""; }
 }
 
-export default function Title({ accounts, onContinue, onNew, onRename, onReset, onImport }) {
+export default function Title({ accounts, onContinue, onNew, onRename, onReset, onImport, cloud, onCloudStart }) {
   const [editing, setEditing] = useState(null);      // { id, mode: "new" | "rename" }
   const [name, setName] = useState("");
   const [menuFor, setMenuFor] = useState(null);
@@ -57,10 +58,12 @@ export default function Title({ accounts, onContinue, onNew, onRename, onReset, 
         <div className="title-kicker">Ein Loot-Abenteuer</div>
         <h1 className="title-name">Eldenfeld</h1>
         <div className="title-sub">Sieben Regionen, drei Dungeons, unendlich Beute.</div>
+        {cloud && cloud.enabled && <CloudLogin cloud={cloud} localAccounts={accounts} onStart={onCloudStart} />}
+        {cloud && cloud.enabled && <div className="section" style={{ textAlign: "left", marginTop: 16 }}>Konten auf diesem Gerät</div>}
         <div className="notice">
-          <b>Speicher liegt im Browser dieses Geräts.</b> Wer Websitedaten oder den Verlauf löscht, im privaten Modus spielt oder den Browser wechselt, verliert die Konten. Sicherung: hinter „…“ bei jedem Konto „Als Datei sichern“, die Datei auf dem Gerät behalten und bei Bedarf über „Datei“ in ein freies Konto laden.
+          <b>Gerätekonten liegen im Browser dieses Geräts.</b> Wer Websitedaten oder den Verlauf löscht, im privaten Modus spielt oder den Browser wechselt, verliert die Konten. Sicherung: hinter „…“ bei jedem Konto „Als Datei sichern“, die Datei auf dem Gerät behalten und bei Bedarf über „Datei“ in ein freies Konto laden.
         </div>
-        <div className="section" style={{ textAlign: "left" }}>Wer spielt?</div>
+        {!(cloud && cloud.enabled) && <div className="section" style={{ textAlign: "left" }}>Wer spielt?</div>}
 
         <div className="col">
           {accounts.map(acc => {

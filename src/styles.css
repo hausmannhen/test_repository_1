@@ -132,3 +132,7 @@ body { -webkit-text-size-adjust: 100%; }
 .quest-row { background: var(--panel); border-radius: 6px; padding: 8px 10px; margin-bottom: 5px; }
 .quest-row.done { opacity: 0.7; }
 .quest-title { font-size: 14px; }
+
+/* Online-Konten */
+.cloud { text-align: left; margin-bottom: 6px; }
+.cloud .save-row { margin-bottom: 8px; }

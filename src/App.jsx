@@ -22,6 +22,7 @@ import Death from "./ui/Death.jsx";
 import Npc from "./ui/Npc.jsx";
 import { trackerText } from "./game/quests.js";
 import { GameAudio } from "./game/audio.js";
+import { CloudClient } from "./game/cloud.js";
 
 export default function App() {
   const [phase, setPhase] = useState("title");
@@ -37,13 +38,23 @@ export default function App() {
   panelRef.current = panel;
   const audioRef = useRef(null);
   if (!audioRef.current) audioRef.current = new GameAudio();
+  const cloudRef = useRef(null);
+  if (!cloudRef.current) cloudRef.current = new CloudClient();
+  const [, setOnline] = useState(true);
+  useEffect(() => { cloudRef.current.onStatus = (v) => setOnline(v); }, []);
 
+  /* Speichern: Gerätekonto in localStorage, Online-Konto in Cloud-Zwischenspeicher plus gebündeltem Upload */
+  const persist = useCallback((G) => {
+    if (!G || !G.slot) return;
+    if (G.slot.cloud) cloudRef.current.save({ name: G.slot.name, seed: G.seed, P: G.P });
+    else saveGame(G);
+  }, []);
   const closePanel = useCallback(() => {
     const G = gRef.current;
     if (G && G.panelReturn) { G.P.x = G.panelReturn.x; G.P.y = G.panelReturn.y; G.panelReturn = null; G.trigCd = 0.5; }
     setPanel(null);
-    if (G) saveGame(G);
-  }, []);
+    if (G) persist(G);
+  }, [persist]);
   const toggleInventory = useCallback(() => {
     if (panelRef.current === "inventar") closePanel();
     else if (!panelRef.current) setPanel("inventar");
@@ -59,13 +70,14 @@ export default function App() {
   const nextSpell = useCallback(() => { const G = gRef.current; if (G) { cycleSpell(G.P); G.dirty = true; } }, []);
 
   const start = useCallback((slot) => {
-    const G = createGame(slot.seed, slot.P, { id: slot.id, name: slot.name });
+    const seed = slot.seed || "eldenfeld-" + Math.random().toString(36).slice(2, 8);
+    const G = createGame(seed, slot.P || newPlayer(seed), { id: slot.id, name: slot.name, cloud: !!slot.cloud });
     G.openPanel = (type) => setPanel(type);
-    G.save = () => saveGame(G);
+    G.save = () => persist(G);
     gRef.current = G;
     startGame(G);
     setPanel(null); setPhase("game");
-  }, []);
+  }, [persist]);
   const newSave = useCallback((accountId, name) => {
     const seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
     const slot = makeSlot(name, seed, newPlayer(seed), accountId);
@@ -77,10 +89,10 @@ export default function App() {
   const renameAccount = useCallback((id, name) => { renameSlot(id, name); setAccounts(listAccounts()); }, []);
   const quitToTitle = useCallback(() => {
     const G = gRef.current;
-    if (G && !G.dead) saveGame(G);
+    if (G && !G.dead) { persist(G); if (G.slot.cloud) cloudRef.current.flush(); }
     gRef.current = null; rendererRef.current = null;
     setPanel(null); setUi(null); setAccounts(listAccounts()); setPhase("title");
-  }, []);
+  }, [persist]);
 
   // Tastatur
   useEffect(() => bindKeyboard(inputRef.current, { potion: drinkPotion, manaPotion: drinkMana, inventory: toggleInventory, selectSpell: pickSpell, cycleSpell: nextSpell, escape: () => { if (panelRef.current && panelRef.current !== "tot") closePanel(); } }), [drinkPotion, drinkMana, toggleInventory, pickSpell, nextSpell, closePanel]);
@@ -131,14 +143,14 @@ export default function App() {
 
   // Speichern beim Verlassen
   useEffect(() => {
-    const onHide = () => { if (gRef.current && !gRef.current.dead) saveGame(gRef.current); };
+    const onHide = () => { const G = gRef.current; if (G && !G.dead) { persist(G); if (G.slot.cloud) cloudRef.current.flush(); } };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("pagehide", onHide);
     return () => { document.removeEventListener("visibilitychange", onHide); window.removeEventListener("pagehide", onHide); };
-  }, []);
+  }, [persist]);
 
   if (phase === "title") {
-    return <Title accounts={accounts} onContinue={start} onNew={newSave} onRename={renameAccount} onReset={resetAccount} onImport={importSlot} />;
+    return <Title accounts={accounts} onContinue={start} onNew={newSave} onRename={renameAccount} onReset={resetAccount} onImport={importSlot} cloud={cloudRef.current} onCloudStart={start} />;
   }
 
   const G = gRef.current;

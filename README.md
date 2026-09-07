@@ -47,6 +47,12 @@ Voraussetzung: Node 20 oder neuer.
 - Ton: Musik und Geräusche werden per WebAudio erzeugt, keine Dateien. Musik wechselt mit der Region, Effekte für Hieb, Schuss, Treffer, Zauber, Beute, Aufstieg. Lautstärke und Stummschalten im Menü unter „Ton“, gespeichert im Browser.
 - HUD: Minikarte oben rechts mit erkundeten Bildschirmen, Dörfern (Gold), Dungeons (Rot), Revieren (Orange, grau nach Sieg) und eigener Position.
 
+## Online-Konten (optional)
+
+Mit einem Supabase-Projekt liegen bis zu zehn Konten in der Cloud, jedes mit Name und vierstelliger PIN, spielbar von jedem Gerät. Einrichtung: `supabase/schema.sql` im SQL Editor ausführen, Projekt-Adresse und öffentlichen Schlüssel in `src/cloud.config.js` eintragen. Bleibt die Adresse leer, zeigt das Spiel nur Gerätekonten.
+
+Schutz liegt in der Datenbank: PIN als bcrypt-Hash, fünf Fehlversuche sperren 15 Minuten, Sitzungs-Token 60 Tage, die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt. Gespeichert wird lokal sofort und online gebündelt (alle vier Sekunden höchstens einmal, beim Verlassen sofort). Offline geht es mit dem lokalen Stand weiter, der beim nächsten Kontakt hochgeladen wird. PIN zurücksetzen: Kommentar am Ende von `supabase/schema.sql`.
+
 ## Spielstände
 
 Beim Start stehen fünf Konten zur Auswahl. Ein freies Konto bekommt einen Namen und eine eigene Welt, ein belegtes wird mit „Spielen“ fortgesetzt. Gespeichert wird automatisch in das gewählte Konto: bei jedem Bildschirmwechsel, beim Schließen eines Panels und über „Speichern und zum Titel“ im Ausrüstungsmenü. Die Konten liegen im Browser des Geräts (localStorage).
