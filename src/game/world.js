@@ -184,7 +184,7 @@ export function walkable(tiles, tx, ty) {
   const t = tiles[idx(tx, ty)];
   return !SOLID.has(t) && t !== T.LAVA && t !== T.DOOR && t !== T.CHEST && t !== T.ENTRANCE && t !== T.EXIT;
 }
-export function spawnMobsFor(screen, seed, visitCount, cleared = {}) {
+export function spawnMobsFor(screen, seed, visitCount, cleared = {}, opts = {}) {
   const mobs = [];
   const r = rngFor(seed, "mobs" + screen.key + ":" + visitCount);
   let pool, level, count;
@@ -199,7 +199,11 @@ export function spawnMobsFor(screen, seed, visitCount, cleared = {}) {
     const d = screen.dungeonRoom.d;
     pool = d.mobs; level = d.level;
     if (screen.dungeonRoom.type === "boss") {
-      const bd = BOSSES[d.id];
+      let bd = BOSSES[d.id];
+      if (d.id === 2) {
+        // Vargor: ganz frei (drei Phasen) oder angekettet (schwächer, weniger Beute)
+        bd = opts.choice === "flicken" ? { ...bd, name: "Aschedrache Vargor, gefesselt", hpMult: 3.5, atkMult: 1.2, weak: true } : { ...bd, name: "Aschedrache Vargor, entfesselt", hpMult: 6.5, atkMult: 1.7, phases: 2 };
+      }
       mobs.push(makeMob(bd.base, level + 2, 7 * TS + 8, 3 * TS + 8, bd));
       count = 2;
     } else count = screen.dungeonRoom.type === "entry" ? 1 : rint(r, 3, 5);

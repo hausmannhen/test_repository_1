@@ -8,5 +8,7 @@ export const NPCS = {
   toll:  { id: "toll",  name: "Fischer Toll",       village: "6,8", x: 9, y: 4, color: "#4a6a5a", color2: "#1a2a22", idle: "„Der Nebel singt nachts. Das ist nicht der Nebel." },
   ylva:  { id: "ylva",  name: "Seherin Ylva",       village: "2,1", x: 5, y: 4, color: "#8ab0d0", color2: "#2a3a5a", idle: "„Ich habe den Drachen gesehen, bevor er erwachte. Ich sehe ihn noch." },
 };
+/* Die Weise wohnt im Haus (Tür „sage“), kein Tile, deshalb ohne Position und ohne Marker */
+NPCS.weise = { id: "weise", name: "Die Weise", village: "4,5", house: true, color: "#8a7a9a", color2: "#3a2a4a", idle: "" };
 export const NPCS_BY_VILLAGE = {};
-for (const n of Object.values(NPCS)) (NPCS_BY_VILLAGE[n.village] ||= []).push(n);
+for (const n of Object.values(NPCS)) if (!n.house) (NPCS_BY_VILLAGE[n.village] ||= []).push(n);

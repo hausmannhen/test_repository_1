@@ -23,6 +23,7 @@ describe("Welt 10×10", () => {
   });
   it("jeder NPC steht in seinem Dorf auf einem NPC-Tile", () => {
     for (const n of Object.values(NPCS)) {
+      if (n.house) continue;
       const [x, y] = n.village.split(",").map(Number);
       const s = genOverworldScreen("seed", x, y);
       assert.ok(s.village, n.id + " nicht im Dorf");
@@ -72,7 +73,7 @@ describe("Aufgaben", () => {
       if (q.next) { assert.ok(QUESTS[q.next], id); assert.equal(QUESTS[q.next].requires, id); }
       assert.ok(q.intro.length > 20 && q.done.length > 10, id);
     }
-    assert.equal(MAIN_QUESTS.length, 9);
+    assert.equal(MAIN_QUESTS.length, 10);
     for (let i = 1; i < MAIN_QUESTS.length; i++) assert.equal(QUESTS[MAIN_QUESTS[i]].requires, MAIN_QUESTS[i - 1]);
   });
   it("Annehmen, Fortschritt durch Kills, Abschluss mit Belohnung, Folgeaufgabe", () => {

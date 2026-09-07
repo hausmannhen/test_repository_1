@@ -1,5 +1,6 @@
 /* Aufgaben: annehmen, Fortschritt, abschließen, Belohnung. Zustand in P.quests[id] = { state, progress } */
-import { QUESTS, QUEST_ORDER, MAIN_QUESTS } from "../data/quests.js";
+import { QUESTS, QUEST_ORDER, MAIN_QUESTS, CHOICES } from "../data/quests.js";
+import { GATES } from "../data/gates.js";
 import { NPCS } from "../data/npcs.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
 import { BOSSES, MOBS } from "./monsters.js";
@@ -7,7 +8,7 @@ import { DUNGEONS } from "./constants.js";
 import { mulberry32 } from "./rng.js";
 import { generateItem } from "./items.js";
 import { derive, addToInventory, flash } from "./player.js";
-export { QUESTS, QUEST_ORDER, MAIN_QUESTS, NPCS };
+export { QUESTS, QUEST_ORDER, MAIN_QUESTS, NPCS, CHOICES, GATES };
 
 export function questState(P, id) { return (P.quests && P.quests[id]) || null; }
 export function isDone(P, id) { const q = questState(P, id); return !!q && q.state === "done"; }
@@ -40,6 +41,7 @@ export function objectiveText(P, id) {
   if (o.type === "boss") return `${BOSSES[o.id].name} in ${DUNGEONS[o.id].name} besiegen${prog ? " (erledigt)" : ""}`;
   if (o.type === "talk") return `Mit ${NPCS[o.npc].name} sprechen`;
   if (o.type === "raid") return prog ? "Dorf gehalten" : `Überfall abwehren${q.raid && q.raid.scale ? ` (Stufe ${raidLevel(P, id)})` : ""}`;
+  if (o.type === "choice") return prog ? "Entschieden" : "Die Weise in ihrem Haus in Elmshain aufsuchen und entscheiden";
   return "";
 }
 /* Hinweis, wo es weitergeht (für den Tracker im HUD) */
@@ -118,6 +120,31 @@ export function talkTo(G, npcId) {
   for (const id of QUEST_ORDER) if (QUESTS[id].giver === npcId && canOffer(P, id)) return { npc, mode: "offer", quest: id };
   for (const id of QUEST_ORDER) if (QUESTS[id].turnIn === npcId && isActive(P, id)) return { npc, mode: "progress", quest: id };
   return { npc, mode: "idle", quest: null };
+}
+/* Schlusstext je nach Wahl */
+export function doneText(P, id) {
+  const q = QUESTS[id];
+  if (q.doneAlt && P.choice === "flicken") return q.doneAlt;
+  return q.done;
+}
+/* Barrieren: offen, wenn das Kapitel erledigt ist */
+export function gateFor(region) { return GATES[region] || null; }
+export function gateOpen(P, region) {
+  const g = GATES[region];
+  if (!g) return true;
+  return isDone(P, g.opensAfter);
+}
+/* Die Wahl in Kapitel 7: nimmt die Aufgabe an, falls nötig, und erfüllt sie */
+export function makeChoice(G, choiceId) {
+  const P = G.P;
+  if (!CHOICES[choiceId] || P.choice) return false;
+  if (!questState(P, "h7")) { if (!acceptQuest(P, "h7")) return false; }
+  if (!isActive(P, "h7")) return false;
+  P.choice = choiceId;
+  P.quests.h7.progress = 1;
+  G.banner = { text: CHOICES[choiceId].title, sub: "Das dritte Siegel", t: 4 };
+  G.dirty = true;
+  return true;
 }
 export function storyProgress(P) {
   const done = MAIN_QUESTS.filter(id => isDone(P, id)).length;

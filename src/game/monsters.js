@@ -39,21 +39,22 @@ export function makeMob(typeId, level, x, y, bossDef = null) {
     ai: base.ai, xp: Math.round(base.xp * (1 + (level - 1) * 0.2) * (bossDef ? (bossDef.mini ? 5 : 12) : 1)), gold: base.gold,
     t: Math.random() * 10, cd: 0, hitT: 0, wx: 0, wy: 0, boss: !!bossDef && !bossDef.mini, mini: (bossDef && bossDef.mini) || null, dead: false,
     side: 1, sideT: 0,   // Ausweichen bei Blockade (90° drehen)
+    phases: (bossDef && bossDef.phases) || 0, phase: 0, weak: !!(bossDef && bossDef.weak),
   };
   m.hp = m.maxHp;
   return m;
 }
 
 /* ---------- Drop-Tabellen ---------- */
-export function rollDrops(r, mob, luck, isBoss) {
+export function rollDrops(r, mob, luck, isBoss, weak = false) {
   const drops = [];
   const [g0, g1] = mob.gold;
   const gold = Math.round(rint(r, g0, g1) * (1 + luck * 0.03) * (isBoss ? 6 : 1));
   drops.push({ type: "gold", amount: gold });
   const ilvl = mob.level;
   if (isBoss) {
-    drops.push({ type: "item", item: generateItem(r, ilvl + 3, luck, 3) });
-    drops.push({ type: "item", item: generateItem(r, ilvl + 1, luck, 2) });
+    drops.push({ type: "item", item: generateItem(r, ilvl + (weak ? 1 : 3), luck, weak ? 2 : 3) });
+    if (!weak) drops.push({ type: "item", item: generateItem(r, ilvl + 1, luck, 2) });
     drops.push({ type: "potion", id: "heiltrank", qty: 2 });
     return drops;
   }

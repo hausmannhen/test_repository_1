@@ -1,7 +1,8 @@
 /* Aufgabenliste: laufend, erledigt, Stand der Geschichte */
 import React from "react";
 import { QUESTS, QUEST_ORDER, NPCS, isActive, isDone, isComplete, objectiveText, storyProgress } from "../game/quests.js";
-import { VILLAGES } from "../game/constants.js";
+import { VILLAGES, REGIONS } from "../game/constants.js";
+import { GATES, gateOpen } from "../game/quests.js";
 
 export default function Quests({ G }) {
   const P = G.P;
@@ -15,7 +16,10 @@ export default function Quests({ G }) {
         <div style={{ fontSize: 15 }}>Geschichte: Kapitel {sp.done} von {sp.total}</div>
         <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Sprich mit den Bewohnern der Dörfer, indem du auf sie zuläufst. Ein Ausrufezeichen heißt: Aufgabe. Ein Häkchen: abholen.</div>
       </div>
-      <div className="section">Laufend</div>
+      <div className="section">Versperrte Gebiete</div>
+      {Object.values(GATES).filter(g => !gateOpen(P, g.id)).length === 0 && <div className="empty">Alle Wege sind offen.</div>}
+      {Object.values(GATES).filter(g => !gateOpen(P, g.id)).map(g => <div key={g.id} className="quest-row"><div className="quest-title">{REGIONS[g.id].name}: {g.name}</div><div className="dim" style={{ fontSize: 12 }}>Öffnet sich nach Kapitel {QUESTS[g.opensAfter].main}, „{QUESTS[g.opensAfter].title}“.</div></div>)}
+      <div className="section" style={{ marginTop: 12 }}>Laufend</div>
       {active.length === 0 && <div className="empty">Keine laufende Aufgabe. {sp.done === 0 ? "Ältester Bram in Elmshain wartet." : ""}</div>}
       {active.map(id => {
         const q = QUESTS[id], complete = isComplete(P, id);

@@ -1,45 +1,52 @@
-/* Aufgaben: eine Hauptgeschichte in Kapiteln, dazu Nebenaufgaben.
-   objective: { type: "kill", mob, count } | { type: "mini", id } | { type: "boss", id } | { type: "talk", npc }
-   reward: { gold, xp, item: { minRarity, slot? } } */
+/* Aufgaben: die Hauptgeschichte „Die drei Siegel“ in zehn Kapiteln, Überfälle, Nebenaufgaben.
+   objective: { type: "kill", mob, count } | { type: "mini", id } | { type: "boss", id } | { type: "raid" } | { type: "choice" }
+   reward: { gold, xp, item: { minRarity, slot? } }. Kapitel öffnen Barrieren (data/gates.js). */
 export const QUESTS = {
-  // Hauptgeschichte
+  // ---------- Akt 1: Rauch über Elmshain ----------
   h1: { id: "h1", main: 1, title: "Wölfe vor den Toren", giver: "bram", turnIn: "bram",
     intro: "„Die Grauwölfe reißen unsere Schafe, bald reißen sie Kinder. Sechs davon weniger, und Elmshain schläft wieder. Du siehst aus, als könntest du ein Schwert halten.“",
     objective: { type: "kill", mob: "wolf", count: 6 }, reward: { gold: 40, xp: 30 },
-    done: "„Sechs. Ich habe die Fährten gezählt. Das war nicht das Ende, das war ein Anfang: die Wölfe hatten einen Grund, so nah zu kommen.“", next: "h2" },
+    done: "„Sechs. Ich habe die Fährten gezählt. Das war kein Ende, das war ein Anfang: Die Wölfe hatten einen Grund, so nah zu kommen. Im Forst stimmt etwas nicht.“", next: "h2" },
   h2: { id: "h2", main: 2, title: "Das Alpha", giver: "bram", turnIn: "bram", requires: "h1",
-    intro: "„Ein Alpha treibt sie. Riesig, grau wie Asche, im Osten von Elmshain, wo die Hügel beginnen. Bring es zur Strecke, und die Wölfe werden wieder scheu.“",
+    intro: "„Ein Alpha treibt sie. Riesig, grau wie Asche, im Westen von Elmshain, wo das Gras ins Unterholz übergeht. Bring es zur Strecke, und die Wölfe werden wieder scheu.“",
     objective: { type: "mini", id: "alpha" }, reward: { gold: 90, xp: 80, item: { minRarity: 2 } },
-    done: "„Das Alpha ist tot, und trotzdem ist mir nicht wohl. Etwas hat die Tiere aus dem Forst getrieben. Sprich mit Ilva in Nebelfurt, im Westen. Sie kennt den Forst.“", next: "h3" },
+    done: "„Das Alpha ist tot, und mir ist trotzdem nicht wohl. Etwas hat die Tiere aus dem Forst getrieben. Sprich mit Ilva in Nebelfurt, im Westen. Sie kennt den Forst besser als der Forst sich selbst.“", next: "h3" },
   h3: { id: "h3", main: 3, title: "Der Schrein im Forst", giver: "ilva", turnIn: "ilva", requires: "h2",
-    intro: "„Bram schickt dich? Dann hör zu. Die Spinnen kommen aus dem alten Waldschrein, ganz im Südwesten. Ihre Mutter sitzt davor, im Süden von hier. Töte sie, dann steig hinab und bring den Eichenkönig zur Ruhe. Er war einmal unser Schutz.“",
+    intro: "„Bram schickt dich? Dann hör zu. Die Spinnen kommen aus dem alten Waldschrein, ganz im Südwesten. Ihre Mutter sitzt davor, im Süden von hier. Töte sie, dann steig hinab. Der Eichenkönig dort unten war einmal unser Schutz. Jetzt ist er nur noch Wahnsinn.“",
     objective: { type: "mini", id: "spinnenmutter" }, reward: { gold: 120, xp: 120 },
-    done: "„Die Mutter ist tot. Der Schrein liegt im Südwesten, am Rand der Welt. Der Eichenkönig wartet dort. Ich gehe nicht mit, ich habe ihn einmal gesehen.“", next: "h4" },
+    done: "„Die Mutter ist tot. Der Schrein liegt im Südwesten, am Rand der Welt. Ich gehe nicht mit, ich habe den König einmal gesehen. Das reicht für ein Leben.“", next: "h4" },
   h4: { id: "h4", main: 4, title: "Der Eichenkönig", giver: "ilva", turnIn: "ilva", requires: "h3",
     intro: "„Der Waldschrein. Südwesten, hinter den letzten Bäumen. Geh.“",
     objective: { type: "boss", id: 0 }, reward: { gold: 200, xp: 200, item: { minRarity: 3 } },
-    done: "„Der Forst atmet wieder. Aber der Eichenkönig war nicht der Ursprung. Die Ströme kommen aus dem Norden, aus dem Fels. Orun in Kargstein weiß mehr, wenn er nüchtern ist.“", next: "h5" },
+    done: "„Er hat gesprochen, bevor er starb? ‚Das erste Siegel bricht.‘ Ich verstehe es nicht. Aber ich habe gehört, dass der Steinschlag am Pass nach Norden aufgehört hat zu rumpeln, im selben Moment. Orun in Kargstein kennt die alten Geschichten. Geh nach Norden.“", next: "h5" },
+  // ---------- Akt 2: Der Riss ----------
   h5: { id: "h5", main: 5, title: "Steinerne Wächter", giver: "orun", turnIn: "orun", requires: "h4",
-    intro: "„Der Fels lebt, sage ich immer, und keiner hört zu. Westlich von hier hat sich ein Golem aus dem Berg gelöst, wir nennen ihn Felsbrecher. Danach die Steinhalle im Osten. Ihr Wächter hält etwas fest, das nicht mehr gehalten werden will.“",
+    intro: "„Der Fels lebt, sage ich immer, und keiner hört zu. Die alten Lieder nennen drei Wächter, die den Drachen unter dem Berg halten. Der Eichenkönig war einer. Westlich von hier hat sich ein Golem aus dem Berg gelöst, wir nennen ihn Felsbrecher. Fang mit ihm an.“",
     objective: { type: "mini", id: "felsbrecher" }, reward: { gold: 180, xp: 220 },
-    done: "„Felsbrecher liegt. Gut. Jetzt die Steinhalle, östlich von Kargstein. Dort unten wirst du verstehen, was ich meine.“", next: "h6" },
+    done: "„Felsbrecher liegt. Der zweite Wächter sitzt in der Steinhalle, östlich von Kargstein. Wenn die Lieder recht haben, hält er das Siegel. Wenn du ihn tötest, bricht es. Wenn du ihn lässt, bringt sein Wahnsinn den Berg zum Einsturz. Ich wüsste nicht, was besser ist.“", next: "h6" },
   h6: { id: "h6", main: 6, title: "Der Gebirgswächter", giver: "orun", turnIn: "orun", requires: "h5",
-    intro: "„Die Steinhalle. Osten. Nimm Fackeln, nimm Tränke, nimm dein Leben nicht zu ernst.“",
+    intro: "„Die Steinhalle. Osten. Nimm Tränke, nimm dein Leben nicht zu ernst.“",
     objective: { type: "boss", id: 1 }, reward: { gold: 320, xp: 400, item: { minRarity: 3 } },
-    done: "„Der Wächter hielt den Berg zu. Jetzt weißt du, was darunter glüht. Der Aschedrache Vargor ist wach. Zwei Fürsten dienen ihm, einer im Frost, einer in der Glut. Ylva in Frosthain hat ihn gesehen.“", next: "h7" },
-  h7: { id: "h7", main: 7, title: "Frost und Glut", giver: "ylva", turnIn: "ylva", requires: "h6",
+    done: "„Das zweite Siegel. Der Berg glüht. Der Sandsturm im Osten und der Nebel im Süden sind verschwunden, als hätte jemand die Hand weggenommen. Die Lieder sagen: Der dritte Wächter ist kein Ungeheuer. Er ist die Weise von Elmshain. Sie sitzt seit hundert Jahren in ihrem Haus. Sprich mit ihr.“", next: "h7" },
+  h7: { id: "h7", main: 7, title: "Das dritte Siegel", giver: "weise", turnIn: "weise", requires: "h6",
+    intro: "„Du weißt es also. Ja, ich habe ihn gebunden, vor hundert Jahren, mit dem Eichenkönig und dem Wächter aus Fels. Sie sind wahnsinnig geworden, ich bin nur müde. Ich habe dich losgeschickt, weil ich einen Schluss will. Jetzt entscheide du.“",
+    objective: { type: "choice" }, reward: { xp: 300 },
+    done: "„Es ist entschieden. Der Weg nach Norden ist frei. Frost und Glut halten die Pässe, Vargors Fürsten. Ylva in Frosthain hat ihn gesehen.“", next: "h8" },
+  // ---------- Akt 3: Asche ----------
+  h8: { id: "h8", main: 8, title: "Frost und Glut", giver: "ylva", turnIn: "ylva", requires: "h7",
     intro: "„Ich habe ihn gesehen, bevor er erwachte. Seine Fürsten halten die Pässe: der Frostfürst nördlich von hier, der Feuerteufel-Fürst am Rand des Kessels. Töte beide, sonst kommst du nie bis zum Turm.“",
     objective: { type: "mini", id: "frostfuerst" }, reward: { gold: 300, xp: 500 },
-    done: "„Der Frost schweigt. Jetzt die Glut. Der Fürst der Feuerteufel steht am Kesselrand, östlich der Berge.“", next: "h8" },
-  h8: { id: "h8", main: 8, title: "Der Fürst der Glut", giver: "ylva", turnIn: "ylva", requires: "h7",
+    done: "„Der Frost schweigt. Jetzt die Glut. Der Fürst der Feuerteufel steht am Kesselrand, östlich der Berge.“", next: "h9" },
+  h9: { id: "h9", main: 9, title: "Der Fürst der Glut", giver: "ylva", turnIn: "ylva", requires: "h8",
     intro: "„Der Feuerteufel-Fürst. Aschekessel, westlicher Rand. Ich sehe dich zurückkommen. Meistens.“",
     objective: { type: "mini", id: "glutfuerst" }, reward: { gold: 400, xp: 700, item: { minRarity: 3 } },
-    done: "„Beide Fürsten tot. Der Turm steht offen, ganz im Nordosten, wo die Asche am dichtesten fällt. Vargor wartet. Er hat immer gewartet.“", next: "h9" },
-  h9: { id: "h9", main: 9, title: "Aschedrache Vargor", giver: "ylva", turnIn: "ylva", requires: "h8",
+    done: "„Beide Fürsten tot. Der Turm steht offen, ganz im Nordosten, wo die Asche am dichtesten fällt. Vargor wartet. Er hat immer gewartet.“", next: "h10" },
+  h10: { id: "h10", main: 10, title: "Aschedrache Vargor", giver: "ylva", turnIn: "ylva", requires: "h9",
     intro: "„Der Ascheturm. Nordosten. Was auch geschieht: Sieh ihm in die Augen. Er hasst das.“",
     objective: { type: "boss", id: 2 }, reward: { gold: 1000, xp: 2000, item: { minRarity: 4 } },
-    done: "„Vargor ist gefallen. Die Asche legt sich, der Frost taut, der Forst schweigt. Eldenfeld gehört wieder denen, die darin leben. Und dir, wenn du willst. Die Monster werden trotzdem nicht müde.“", next: null },
-  // Überfälle: Dorfverteidigung, die zweite ist endlos wiederholbar
+    done: "„Vargor ist gefallen, ganz und für immer. Die Asche legt sich, der Frost taut, der Forst schweigt. Elmshain hat ein Grab gegraben für die Weise, ohne Namen, sie wollte keinen. Eldenfeld gehört wieder denen, die darin leben. Die Monster werden trotzdem nicht müde.“",
+    doneAlt: "„Vargor ist zurück unter dem Berg, halb, und das Siegel hält, so lange die Weise lebt. Sie sitzt wieder in ihrem Haus und sagt, sie sei jetzt weniger müde. Elmshain schläft. Die Monster werden trotzdem nicht müde.“", next: null },
+  // ---------- Überfälle ----------
   r1: { id: "r1", title: "Die Nacht der Wölfe", giver: "bram", turnIn: "bram", requires: "h1", raid: { waves: 3 },
     intro: "„Sie kommen heute Nacht, alle auf einmal. Ich habe die Palisaden schließen lassen, sobald du Ja sagst. Der Brunnen ist unser Leben, wenn er fällt, fällt Elmshain. Halte drei Wellen, dann sind wir quitt.“",
     objective: { type: "raid" }, reward: { gold: 80, xp: 90, item: { minRarity: 1 } },
@@ -52,7 +59,7 @@ export const QUESTS = {
     intro: "„Ohne ihre Mutter drehen die Spinnen durch. Sie kommen nach Nebelfurt, heute. Vier Wellen, schätze ich. Der Brunnen muss stehen bleiben.“",
     objective: { type: "raid" }, reward: { gold: 160, xp: 200, item: { minRarity: 2 } },
     done: "„Der Forst ist still. Du hast dir Nebelfurt verdient.“", next: null },
-  // Nebenaufgaben
+  // ---------- Nebenaufgaben ----------
   n1: { id: "n1", title: "Ratten im Speicher", giver: "lene", turnIn: "lene",
     intro: "„Riesenratten im Speicher. Fünf davon weniger, und ich schlafe wieder. Ich zahle in Gold, nicht in Käse.“",
     objective: { type: "kill", mob: "ratte", count: 5 }, reward: { gold: 30, xp: 20 },
@@ -73,10 +80,15 @@ export const QUESTS = {
     intro: "„Der Nebel singt. Das ist Grelda, die Moorhexe, östlich von hier. Sie holt sich jede Nacht einen von uns. Mach dem ein Ende.“",
     objective: { type: "mini", id: "grelda" }, reward: { gold: 280, xp: 350, item: { minRarity: 2 } },
     done: "„Es ist still. Zum ersten Mal seit Jahren. Ich weiß nicht, ob ich schlafen kann.“", next: null },
-  n6: { id: "n6", title: "Skelette im Schnee", giver: "ylva", turnIn: "ylva",
+  n6: { id: "n6", title: "Golems im Schnee", giver: "ylva", turnIn: "ylva",
     intro: "„Die Golems im Norden zerbrechen, seit der Drache wach ist. Sechs davon, und der Pass ist wieder sicher.“",
     objective: { type: "kill", mob: "golem", count: 6 }, reward: { gold: 200, xp: 300 },
     done: "„Der Pass ist frei. Danke, Wanderer.“", next: null },
 };
 export const QUEST_ORDER = Object.keys(QUESTS);
 export const MAIN_QUESTS = QUEST_ORDER.filter(id => QUESTS[id].main);
+/* Die Wahl in Kapitel 7 */
+export const CHOICES = {
+  brechen: { id: "brechen", title: "Das Siegel brechen", text: "Die Weise stirbt. Vargor wird ganz frei, und du stellst ihn mit aller Kraft: drei Phasen, die beste Beute.", result: "Sie schließt die Augen, und der Berg schreit. Der dritte Wächter ist gefallen. Die Frostwand zerbricht, der Aschesturm reißt auf. Vargor ist wach, ganz." },
+  flicken: { id: "flicken", title: "Das Siegel flicken", text: "Die Weise lebt. Mit den Zeichen der zwei toten Wächter hältst du das Siegel halb. Vargor bleibt gefesselt, der Kampf gegen ihn ist leichter, die Beute geringer.", result: "Sie legt die Hände auf die Zeichen, und der Berg wird still. Halb still. Die Frostwand und der Aschesturm weichen, weil sie es zulässt. Vargor ist wach, aber angekettet." },
+};

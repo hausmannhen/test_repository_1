@@ -2,11 +2,11 @@
 import { TS, VW, VH, W, H, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, DUNGEONS, VILLAGES, START_VILLAGE } from "./constants.js";
 import { mulberry32, rint, clamp } from "./rng.js";
 import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
-import { rollDrops } from "./monsters.js";
+import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
 import { castSpell, aimAt, ELEMENTS } from "./magic.js";
-import { onKill as questKill } from "./quests.js";
+import { onKill as questKill, gateOpen, gateFor } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
@@ -56,7 +56,7 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   G.screen = screen;
   const vkey = screen.key;
   P.visits[vkey] = (P.visits[vkey] || 0) + 1;
-  G.mobs = spawnMobsFor(screen, G.seed, P.visits[vkey], P.cleared);
+  G.mobs = spawnMobsFor(screen, G.seed, P.visits[vkey], P.cleared, { choice: P.choice || null });
   if (screen.dungeonRoom && screen.dungeonRoom.type === "boss" && P.cleared[screen.dungeonRoom.d.id]) G.mobs = G.mobs.filter(m => !m.boss);
   G.projs = []; G.pprojs = []; G.pending = []; G.drops = []; G.fx = [];
   unstick(P, screen.tiles);
@@ -108,6 +108,10 @@ function tryCross(G, dx, dy) {
   const nx = dx < 0 ? W - inset : dx > 0 ? inset : P.x;
   const ny = dy < 0 ? H - inset : dy > 0 ? inset : P.y;
   const target = getScreen(G, P.area, nsx, nsy);
+  if (isOver && target.region !== G.screen.region && !gateOpen(P, target.region)) {
+    if (G.trigCd <= 0) { flash(G, gateFor(target.region).blocked, "#e9dcb8"); G.trigCd = 2.5; }
+    return false;
+  }
   const spot = landingSpot(target.tiles, nx, ny, dx, dy);
   if (!spot) return false;
   enterScreen(G, P.area, nsx, nsy, spot.x, spot.y, true, { dx, dy });
@@ -167,7 +171,7 @@ export function killMob(G, m) {
   for (let i = 0; i < 8; i++) G.fx.push({ kind: "part", x: m.x, y: m.y, vx: (Math.random() - 0.5) * 90, vy: (Math.random() - 0.5) * 90, color: m.color, t: 0.5 });
   const d = derive(P);
   const r = mulberry32((Math.random() * 1e9) | 0);
-  const drops = rollDrops(r, m, d.luck, m.boss);
+  const drops = rollDrops(r, m, d.luck, m.boss, m.weak);
   for (const dr of drops) {
     const ang = Math.random() * Math.PI * 2;
     G.drops.push({ ...dr, x: m.x + Math.cos(ang) * 6, y: m.y + Math.sin(ang) * 6, vx: Math.cos(ang) * 40, vy: Math.sin(ang) * 40, t: 0 });
@@ -386,6 +390,14 @@ export function update(G, dt, input) {
     }
     if (m.slowT > 0) m.slowT -= dt;
     if (m.spawnDelay > 0) continue;
+    // Bossphasen: bei zwei Dritteln und einem Drittel wird er schneller und ruft Diener
+    if (m.boss && m.phases && m.phase < m.phases && m.hp <= m.maxHp * (1 - (m.phase + 1) / (m.phases + 1))) {
+      m.phase++; m.atk = Math.round(m.atk * 1.15); m.spd *= 1.2; m.hitT = 0.3;
+      const pool = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.mobs : ["golem"];
+      for (let i = 0; i < 2; i++) { const add = makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 40 : -40), m.y + 30); G.mobs.push(add); }
+      G.banner = { text: m.name + " tobt", sub: `Phase ${m.phase + 1} von ${m.phases + 1}`, t: 2.5 };
+      G.shake = 0.4; emit(G, "fanfare");
+    }
     const goal = m.raid && raidActive(G) ? raidTarget(G, m) : null;
     const gx = goal ? goal.x : P.x, gy = goal ? goal.y : P.y;
     const dx = gx - m.x, dy = gy - m.y, dist = Math.hypot(dx, dy) || 1;

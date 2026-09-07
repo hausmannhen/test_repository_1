@@ -3,7 +3,7 @@ import { REGIONS, VILLAGES, DUNGEONS, regionAt, WORLD_W, WORLD_H, START_VILLAGE,
 import { LEGACY_POTIONS, POTIONS } from "../data/items.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const ACCOUNT_COUNT = 2;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -48,6 +48,18 @@ export function migrate(data) {
       stacks[id].qty += it.qty || 1;
     }
     out.P = { ...out.P, inventory: inv };
+  }
+  if (v < 5) {
+    // Version 5: Geschichte in zehn Kapiteln, Kapitel 7 ist die Wahl. Alte 7 bis 9 rücken auf 8 bis 10.
+    out.saveVersion = 5;
+    const q = { ...(out.P.quests || {}) };
+    const old7 = q.h7, old8 = q.h8, old9 = q.h9;
+    delete q.h7; delete q.h8; delete q.h9;
+    if (old9) q.h10 = old9;
+    if (old8) q.h9 = old8;
+    if (old7) q.h8 = old7;
+    if (old7 || old8 || old9) { q.h7 = { state: "done", progress: 1 }; out.P.choice = out.P.choice || "brechen"; }
+    out.P = { ...out.P, quests: q, choice: out.P.choice || null };
   }
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";

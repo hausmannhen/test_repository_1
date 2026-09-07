@@ -1,6 +1,6 @@
 /* Gespräch mit einem Bewohner: Aufgabe anbieten, Fortschritt zeigen, abschließen */
 import React, { useState } from "react";
-import { QUESTS, talkTo, acceptWithHistory, completeQuest, objectiveText, raidLevel } from "../game/quests.js";
+import { QUESTS, talkTo, acceptWithHistory, completeQuest, objectiveText, raidLevel, doneText } from "../game/quests.js";
 import { startRaid } from "../game/engine.js";
 import { NPCS } from "../data/npcs.js";
 import Panel from "./Panel.jsx";
@@ -19,7 +19,7 @@ export default function Npc({ G, npcId, onClose, rerender }) {
   if (reward) {
     body = (
       <div className="prose">
-        <p className="quote">{QUESTS[reward.id].done}</p>
+        <p className="quote">{doneText(P, reward.id)}</p>
         <div className="box">
           <div className="section" style={{ marginTop: 0 }}>Belohnung</div>
           <div>{reward.gold > 0 && <span className="gold">{reward.gold} Gold</span>}{reward.gold > 0 && reward.xp > 0 ? " · " : ""}{reward.xp > 0 && <span style={{ color: "#8fd3ff" }}>{reward.xp} Erfahrung</span>}</div>

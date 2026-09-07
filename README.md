@@ -2,7 +2,7 @@
 
 Zelda-artiges Fantasy-Action-RPG mit Loot. Welt, Monster, Items und Dropchancen entstehen prozedural aus einem Seed. Sieben Regionen auf 10×10 Bildschirmen, sechs Dörfer mit Bewohnern, sieben Zwischenboss-Reviere, drei Dungeons mit Bossen, 40 Basisitems in fünf Seltenheiten mit deutsch deklinierten Affixen.
 
-Eine Hauptgeschichte in neun Kapiteln vom Wolfsalpha vor Elmshain bis zum Aschedrachen Vargor, dazu Nebenaufgaben. Aufgaben gibt es bei den Bewohnern der Dörfer: auf sie zulaufen, Gespräch öffnet sich.
+Eine Hauptgeschichte „Die drei Siegel“ in zehn Kapiteln und drei Akten: Grasland und Wald, dann Höhen, Wüste und Moor, dann Frost und Glut. Barrieren an den Regionsgrenzen öffnen sich mit den Kapiteln. In Kapitel 7 stellt die Weise von Elmshain den Spieler vor die Wahl: das dritte Siegel brechen (sie stirbt, Vargor entfesselt mit drei Phasen, beste Beute) oder flicken (sie lebt, Vargor gefesselt, leichter, weniger Beute). Zwei Enden. Dazu Überfälle und Nebenaufgaben.
 
 Drei Kampfarten: Nahkampf (Schwert, Axt, Speer), Fernkampf (Bogen, Armbrust, Wurfmesser, Wurfaxt) und Magie mit acht Elementen plus Blutmagie. Ein Skilltree mit drei Zweigen, ein Punkt alle drei Stufen.
 
@@ -36,7 +36,8 @@ Voraussetzung: Node 20 oder neuer.
 - Karte 10×10 in `REGION_MAP` (`src/game/constants.js`). Start in Elmshain in der Mitte. Dörfer: Elmshain, Nebelfurt (Wald), Kargstein (Berge), Dünenruh (Wüste), Moorhall (Moor), Frosthain (Frost).
 - Zwischenbosse in `src/data/minibosses.js`, einer je Region auf einem festen Bildschirm. Einmal besiegt, kehren sie nicht zurück, hinterlassen ein Item ab Selten und extra Gold. Auf der Karte als Schädel.
 - Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
-- Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss, Überfall. Bereits erledigte Ziele zählen rückwirkend.
+- Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss, Überfall, Entscheidung. Bereits erledigte Ziele zählen rückwirkend.
+- Barrieren in `src/data/gates.js`: Steinschlag (Höhen) fällt nach Kapitel 4, Sandsturm und Nebelwand nach Kapitel 6, Frostwand und Aschesturm nach der Wahl in Kapitel 7. Am Bildschirmrand als Wand sichtbar, im Aufgaben-Tab aufgelistet.
 - Überfall: Annehmen sperrt die vier Dorfausgänge mit Palisaden, Monster kommen in Wellen durch die Tore und laufen zum Brunnen. Fällt der Brunnen, ist der Überfall verloren und die Aufgabe wieder annehmbar. Die letzte Welle bringt einen Anführer. „Wachdienst“ in Elmshain ist endlos wiederholbar, jedes Mal eine Welle mehr und stärkere Gegner, Belohnung wächst mit. Logik in `src/game/raid.js`.
 
 ## Kampf, Magie, Skilltree

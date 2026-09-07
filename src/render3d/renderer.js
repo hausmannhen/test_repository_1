@@ -8,7 +8,8 @@ import { buildPlayerModel } from "./player.js";
 import { buildMobModel, buildNpcModel } from "./monster.js";
 import { textTexture } from "./effects.js";
 import { NPCS } from "../data/npcs.js";
-import { talkTo } from "../game/quests.js";
+import { talkTo, gateOpen, gateFor } from "../game/quests.js";
+import { regionAt, WORLD_W, WORLD_H } from "../game/constants.js";
 import { buildDropModel } from "./drops.js";
 import { Effects } from "./effects.js";
 import { disposeObject, lambert, G as GEO } from "./materials.js";
@@ -93,6 +94,14 @@ export class Renderer3D {
     }
     this.palisades.visible = false;
     this.scene.add(this.palisades);
+    // Barrieren an den Bildschirmrändern zu gesperrten Regionen
+    this.walls = [];
+    for (let i = 0; i < 4; i++) {
+      const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color("#888888"), transparent: true, opacity: 0.75, roughness: 0.9, emissive: new THREE.Color("#222222") });
+      const w = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
+      w.visible = false; w.userData.ownMaterial = true; w.userData.ownGeometry = true;
+      this.scene.add(w); this.walls.push(w);
+    }
     this.effects = new Effects(this.scene);
 
     this.screenKey = null;
@@ -193,6 +202,7 @@ export class Renderer3D {
     this.screenKey = screen.key;
     this.applyEnvironment(screen);
     this.buildNpcs(screen);
+    this.updateWalls(G);
     // Mobs und Drops des alten Bildschirms entfernen
     for (const [, mm] of this.mobs) { this.scene.remove(mm.group, mm.bar); mm.dispose(); }
     this.mobs.clear();
@@ -202,6 +212,29 @@ export class Renderer3D {
     if (!slide) {
       // harter Wechsel (Dungeon, Respawn): Kamera direkt setzen
       this.camTarget.copy(this.clampedTarget(G.P.x / TS, G.P.y / TS));
+    }
+  }
+
+  /* Wände zu gesperrten Nachbarregionen: links, rechts, oben, unten */
+  updateWalls(G) {
+    const P = G.P, s = G.screen;
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (let i = 0; i < 4; i++) {
+      const w = this.walls[i];
+      const nx = P.sx + dirs[i][0], ny = P.sy + dirs[i][1];
+      let show = false;
+      if (P.area === "over" && s.region && nx >= 0 && ny >= 0 && nx < WORLD_W && ny < WORLD_H) {
+        const reg = regionAt(nx, ny);
+        if (reg !== s.region && !gateOpen(P, reg)) {
+          const g = gateFor(reg);
+          w.material.color.set(g.color); w.material.emissive.set(g.color).multiplyScalar(0.25);
+          w.material.opacity = reg === "sumpf" || reg === "vulkan" ? 0.6 : 0.8;
+          if (dirs[i][0] !== 0) { w.scale.set(0.8, 2.2, VH + 1); w.position.set(dirs[i][0] < 0 ? -0.2 : VW + 0.2, 0.9, VH / 2); }
+          else { w.scale.set(VW + 1, 2.2, 0.8); w.position.set(VW / 2, 0.9, dirs[i][1] < 0 ? -0.2 : VH + 0.2); }
+          show = true;
+        }
+      }
+      w.visible = show;
     }
   }
 
@@ -262,8 +295,10 @@ export class Renderer3D {
     for (const [id, mm] of this.mobs) {
       if (!seen.has(id)) { this.scene.remove(mm.group, mm.bar); mm.dispose(); this.mobs.delete(id); }
     }
-    // Palisaden
+    // Palisaden und Barrieren
     this.palisades.visible = !!(G.raid && G.raid.state !== "done");
+    const gateKey = Object.keys(G.P.quests || {}).length + ":" + (G.P.choice || "");
+    if (gateKey !== this._gateKey) { this._gateKey = gateKey; this.updateWalls(G); }
     // Bewohner
     for (const n of this.npcs) {
       const y = this.groundY(n.x, n.z);
