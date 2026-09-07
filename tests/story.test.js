@@ -6,6 +6,7 @@ import { genDungeon } from "../src/game/world.js";
 import { gateOpen, makeChoice, isDone, isActive, doneText, canOffer, talkTo, CHOICES, GATES } from "../src/game/quests.js";
 import { migrate } from "../src/game/save.js";
 import { newPlayer } from "../src/game/player.js";
+import { STORY } from "../src/data/story.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 const doneUpTo = (n) => { const q = {}; for (let i = 1; i <= n; i++) q["h" + i] = { state: "done", progress: 1 }; return q; };
@@ -100,5 +101,28 @@ describe("Die Wahl", () => {
     const fresh = migrate({ saveVersion: 4, seed: "s", P: { ...newPlayer("n"), quests: doneUpTo(3) } });
     assert.equal(fresh.P.choice, null);
     assert.equal(fresh.P.quests.h7, undefined);
+  });
+});
+
+describe("Geschichte beim Start", () => {
+  it("neuer Spielstand: Fenster offen, bis es gelesen ist; alter Spielstand: nur der Reiter", () => {
+    const G = startGame(createGame("intro"));
+    assert.equal(G.intro, true);
+    assert.ok(!G.P.hints.geschichte);
+    G.P.hints.geschichte = true; G.intro = false;
+    assert.equal(startGame(createGame("intro", G.P)).intro, false, "zeigt das Fenster erneut");
+    const old = newPlayer("alt"); old.kills = 12; delete old.hints.geschichte;
+    const G2 = startGame(createGame("intro2", old));
+    assert.equal(G2.intro, false);
+    assert.equal(G2.P.hints.geschichte, true, "alter Spielstand nicht als gelesen markiert");
+  });
+  it("Text: Titel, fünf Absätze, Hinweise, Wahl angekündigt, Ende nicht verraten", () => {
+    assert.equal(STORY.title, "Die drei Siegel");
+    assert.equal(STORY.paragraphs.length, 5);
+    assert.ok(STORY.tips.length >= 2);
+    const all = STORY.paragraphs.join(" ");
+    assert.match(all, /Kapitel 7/);
+    assert.match(all, /Vargor/);
+    assert.doesNotMatch(all, /stirbt|flicken|brechen/);
   });
 });

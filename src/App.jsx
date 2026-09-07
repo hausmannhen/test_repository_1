@@ -13,6 +13,7 @@ import Scene from "./render3d/Scene.jsx";
 import Hud from "./ui/Hud.jsx";
 import Controls from "./ui/Controls.jsx";
 import Title from "./ui/Title.jsx";
+import StoryIntro, { markStoryRead } from "./ui/Story.jsx";
 import Inventory from "./ui/Inventory.jsx";
 import Shop from "./ui/Shop.jsx";
 import Smith from "./ui/Smith.jsx";
@@ -53,6 +54,7 @@ export default function App() {
   const closePanel = useCallback(() => {
     const G = gRef.current;
     if (G && G.panelReturn) { G.P.x = G.panelReturn.x; G.P.y = G.panelReturn.y; G.panelReturn = null; G.trigCd = 0.5; }
+    if (panelRef.current === "geschichte") markStoryRead(G);
     setPanel(null);
     if (G) persist(G);
   }, [persist]);
@@ -77,7 +79,7 @@ export default function App() {
     G.save = () => persist(G);
     gRef.current = G;
     startGame(G);
-    setPanel(null); setPhase("game");
+    setPanel(G.intro ? "geschichte" : null); setPhase("game");
   }, [persist]);
   const newSave = useCallback((accountId, name) => {
     const seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
@@ -161,6 +163,7 @@ export default function App() {
     if (!panel) return null;
     const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle, audio: audioRef.current };
     if (panel === "inventar") return <Inventory {...props} />;
+    if (panel === "geschichte") return <StoryIntro {...props} />;
     if (panel === "shop") return <Shop {...props} />;
     if (panel === "smith") return <Smith {...props} />;
     if (panel === "heal") return <Healer {...props} />;

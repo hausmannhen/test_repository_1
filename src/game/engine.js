@@ -27,6 +27,7 @@ export function createGame(seed, P = null, slot = null) {
     hintQueue: [],
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
+    intro: false,      // Geschichte-Fenster beim ersten Start noch offen
     openPanel: null,   // (type) => void, von der UI gesetzt
     save: null,        // () => void, von der UI gesetzt
   };
@@ -36,7 +37,10 @@ export function startGame(G) {
   resetStaleRaids(P);
   if (!P.hints) P.hints = {};
   enterScreen(G, P.area, P.sx, P.sy, P.x, P.y, true);
-  if (P.kills === 0 && !Object.keys(P.quests || {}).length) {
+  const fresh = P.kills === 0 && !Object.keys(P.quests || {}).length;
+  // Geschichte: neue Spieler sehen sie als Fenster, bevor sie sich bewegen; wer schon unterwegs ist, findet sie im Menü
+  if (!P.hints.geschichte) { if (fresh) G.intro = true; else P.hints.geschichte = true; }
+  if (fresh) {
     hint(G, "start", "Ältester Bram wartet am Weg in Elmshain. Stell dich neben ihn, der Schwert-Knopf wird zu „Reden“.");
     hint(G, "steuerung", "Steuerkreuz bewegt, Schwert schlägt, Trank heilt 30 %. Das Menü öffnet Ausrüstung, Karte und Aufgaben.");
   }

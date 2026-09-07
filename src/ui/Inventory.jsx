@@ -9,6 +9,7 @@ import { freePoints } from "../game/skills.js";
 import Skills from "./Skills.jsx";
 import Settings from "./Settings.jsx";
 import Quests from "./Quests.jsx";
+import { StoryText } from "./Story.jsx";
 import { activeQuests, isComplete } from "../game/quests.js";
 import { equipItem, unequipItem, dropItem } from "../game/actions.js";
 import Panel from "./Panel.jsx";
@@ -49,7 +50,7 @@ export default function Inventory({ G, onClose, rerender, onQuit, audio }) {
       ? [<Btn key="a" small onClick={() => doUnequip(it)}>Ablegen</Btn>]
       : [<Btn key="e" small tone="gold" onClick={() => doEquip(it)}>Anlegen</Btn>, <Btn key="d" small onClick={() => doDrop(it)}>Wegwerfen</Btn>];
   const minisDone = MINIBOSSES.filter(m => P.cleared["mb:" + m.id]).length;
-  const body = tab === "einstellungen" ? <Settings audio={audio} /> : tab === "aufgaben" ? <Quests G={G} /> : tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
+  const body = tab === "einstellungen" ? <Settings audio={audio} /> : tab === "aufgaben" ? <Quests G={G} /> : tab === "geschichte" ? <StoryText P={P} /> : tab === "fertigkeiten" ? <Skills G={G} rerender={rerender} /> : tab === "karte" ? (
     <div>
       <div className="dim" style={{ fontSize: 13, marginBottom: 8 }}>Erkundete Gebiete. Dörfer in Gold, Dungeons als Dreieck, Reviere der Zwischenbosse als Schädel, du in Grün.</div>
       <div className="map" style={{ gridTemplateColumns: `repeat(${WORLD_W}, 1fr)` }}>
@@ -94,12 +95,12 @@ export default function Inventory({ G, onClose, rerender, onQuit, audio }) {
   );
 
   return (
-    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : tab === "aufgaben" ? "Aufgaben" : tab === "einstellungen" ? "Ton" : "Ausrüstung"} gold={P.gold} footer={<>
+    <Panel title={tab === "fertigkeiten" ? "Fertigkeiten" : tab === "karte" ? "Karte" : tab === "aufgaben" ? "Aufgaben" : tab === "geschichte" ? "Geschichte" : tab === "einstellungen" ? "Ton" : "Ausrüstung"} gold={P.gold} footer={<>
       <Btn onClick={onQuit}>Speichern und zum Titel</Btn>
       <Btn tone="gold" onClick={onClose}>Schließen</Btn>
     </>}>
       <div className="row" style={{ marginBottom: 12 }}>
-        {["ausruestung", "fertigkeiten", "aufgaben", "karte", "einstellungen"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : t === "aufgaben" ? `Aufgaben${questBadge > 0 ? ` (${questBadge})` : ""}` : t === "einstellungen" ? "Ton" : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
+        {["ausruestung", "fertigkeiten", "aufgaben", "geschichte", "karte", "einstellungen"].map(t => <Btn key={t} small tone={tab === t ? "gold" : "default"} onClick={() => setTab(t)}>{t === "ausruestung" ? "Ausrüstung" : t === "karte" ? "Karte" : t === "geschichte" ? "Geschichte" : t === "aufgaben" ? `Aufgaben${questBadge > 0 ? ` (${questBadge})` : ""}` : t === "einstellungen" ? "Ton" : `Fertigkeiten${points > 0 ? ` (${points})` : ""}`}</Btn>)}
       </div>
       {body}
     </Panel>

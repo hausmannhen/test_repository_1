@@ -105,6 +105,8 @@ body { -webkit-text-size-adjust: 100%; }
 .detail { background: var(--panel2); border-radius: 8px; padding: 12px; margin-bottom: 12px; border: 1px solid var(--line); }
 .detail-name { font-size: 16px; }
 .detail-sub { font-size: 11px; color: var(--dim); margin-bottom: 8px; }
+.story-tagline { font-size: 15px; color: var(--gold); }
+.story-p { font-size: 13px; line-height: 1.55; margin: 0 0 10px; color: var(--text); }
 .map { display: grid; gap: 3px; max-width: 300px; }
 .map-cell { aspect-ratio: 1; border-radius: 3px; border: 2px solid transparent; display: flex; align-items: center; justify-content: center; font-size: 10px; }
 .map-cell.here { border-color: var(--green); }
