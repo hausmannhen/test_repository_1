@@ -4,9 +4,10 @@ import { TS, VILLAGES, WORLD_W, WORLD_H, T, idx, DUNGEONS } from "../src/game/co
 import { genOverworldScreen, spawnMobsFor } from "../src/game/world.js";
 import { createGame, startGame, enterScreen, update, killMob } from "../src/game/engine.js";
 import { makeMob } from "../src/game/monsters.js";
-import { QUESTS, QUEST_ORDER, MAIN_QUESTS, NPCS, acceptQuest, acceptWithHistory, canOffer, isComplete, isDone, completeQuest, talkTo, objectiveText, trackerText, storyProgress } from "../src/game/quests.js";
+import { QUESTS, QUEST_ORDER, MAIN_QUESTS, NPCS, acceptQuest, acceptWithHistory, canOffer, isComplete, isDone, completeQuest, talkTo, objectiveText, trackerText, storyProgress, nextChapter } from "../src/game/quests.js";
 import { MINIBOSSES, MINIBOSS_BY_SCREEN } from "../src/data/minibosses.js";
 import { regionAt } from "../src/game/constants.js";
+import { newPlayer } from "../src/game/player.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 
@@ -138,5 +139,22 @@ describe("Aufgaben", () => {
     update(G, 1 / 60, { ...idle, attack: true });
     assert.equal(opened, null);
     assert.ok(G.attack.t > 0, "kein Schlag");
+  });
+});
+
+describe("Nächstes Kapitel", () => {
+  it("zeigt Kapitel, Auftraggeber, Dorf und Richtung; aktiv das Ziel; erfüllt die Rückkehr; am Ende nichts", () => {
+    const P = newPlayer("nx"); P.area = "over"; P.sx = 4; P.sy = 5;
+    let n = nextChapter(P);
+    assert.equal(n.id, "h1"); assert.equal(n.state, "offen"); assert.equal(n.npc.name, NPCS.bram.name); assert.equal(n.village.name, "Elmshain"); assert.equal(n.dir, null);
+    P.quests = { h1: { state: "done", progress: 6 }, h2: { state: "done", progress: 1 } };
+    n = nextChapter(P);
+    assert.equal(n.id, "h3"); assert.equal(n.state, "offen"); assert.equal(n.village.name, "Nebelfurt"); assert.equal(n.dir, "westlich");
+    P.quests.h3 = { state: "active", progress: 0 };
+    assert.equal(nextChapter(P).state, "aktiv");
+    P.quests.h3.progress = 1;
+    assert.equal(nextChapter(P).state, "erfuellt");
+    for (const id of MAIN_QUESTS) P.quests[id] = { state: "done", progress: 1 };
+    assert.equal(nextChapter(P), null);
   });
 });

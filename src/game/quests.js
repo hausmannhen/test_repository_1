@@ -4,7 +4,7 @@ import { GATES } from "../data/gates.js";
 import { NPCS } from "../data/npcs.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
 import { BOSSES, MOBS } from "./monsters.js";
-import { DUNGEONS } from "./constants.js";
+import { DUNGEONS, VILLAGES } from "./constants.js";
 import { mulberry32 } from "./rng.js";
 import { generateItem } from "./items.js";
 import { derive, addToInventory, flash } from "./player.js";
@@ -166,4 +166,21 @@ export function makeChoice(G, choiceId) {
 export function storyProgress(P) {
   const done = MAIN_QUESTS.filter(id => isDone(P, id)).length;
   return { done, total: MAIN_QUESTS.length };
+}
+/* Das nächste Kapitel: was dran ist, bei wem, und in welcher Richtung das Dorf liegt */
+export function nextChapter(P) {
+  const id = MAIN_QUESTS.find(q => !isDone(P, q));
+  if (!id) return null;
+  const q = QUESTS[id];
+  const state = isActive(P, id) ? (isComplete(P, id) ? "erfuellt" : "aktiv") : "offen";
+  const npc = NPCS[state === "erfuellt" ? q.turnIn : q.giver];
+  const village = VILLAGES[npc.village];
+  const [vx, vy] = npc.village.split(",").map(Number);
+  const dx = vx - (P.sx ?? vx), dy = vy - (P.sy ?? vy);
+  let dir = null;
+  if (P.area === "over" && (dx || dy)) {
+    const ns = dy < 0 ? "nördlich" : dy > 0 ? "südlich" : "", ew = dx < 0 ? "westlich" : dx > 0 ? "östlich" : "";
+    dir = Math.abs(dx) > Math.abs(dy) * 2 ? ew : Math.abs(dy) > Math.abs(dx) * 2 ? ns : (ns && ew ? ns.slice(0, -4) + ew : ns || ew);
+  }
+  return { id, q, state, npc, village, dir };
 }

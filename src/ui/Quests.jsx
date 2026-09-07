@@ -1,6 +1,6 @@
 /* Aufgabenliste: laufend, erledigt, Stand der Geschichte */
 import React from "react";
-import { QUESTS, QUEST_ORDER, NPCS, isActive, isDone, isComplete, objectiveText, storyProgress } from "../game/quests.js";
+import { QUESTS, QUEST_ORDER, NPCS, isActive, isDone, isComplete, objectiveText, storyProgress, nextChapter } from "../game/quests.js";
 import { VILLAGES, REGIONS } from "../game/constants.js";
 import { GATES, gateOpen } from "../game/quests.js";
 
@@ -9,12 +9,20 @@ export default function Quests({ G }) {
   const active = QUEST_ORDER.filter(id => isActive(P, id));
   const done = QUEST_ORDER.filter(id => isDone(P, id));
   const sp = storyProgress(P);
+  const nx = nextChapter(P);
+  const nextText = nx && (nx.state === "erfuellt" ? `Erfüllt. Zurück zu ${nx.npc.name} in ${nx.village.name}.`
+    : nx.state === "aktiv" ? objectiveText(P, nx.id)
+    : `${nx.npc.name} in ${nx.village.name} hat die Aufgabe${nx.dir ? `, das Dorf liegt ${nx.dir} von hier` : ""}. Stell dich daneben und drück „Reden“.`);
   const villageOf = (npcId) => VILLAGES[NPCS[npcId].village].name;
   return (
     <div>
       <div className="box">
         <div style={{ fontSize: 15 }}>Stand: Kapitel {sp.done} von {sp.total} erledigt</div>
-        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Worum es geht, steht im Reiter „Geschichte“. Aufgaben holst du dir bei den Bewohnern: daneben stellen, Schwert-Knopf wird zu „Reden“.</div>
+        {nx ? <>
+          <div style={{ fontSize: 14, marginTop: 6 }}><span className="gold">Jetzt dran: Kapitel {nx.q.main} · </span>{nx.q.title}</div>
+          <div className={nx.state === "erfuellt" ? "green" : "dim"} style={{ fontSize: 12, marginTop: 2 }}>{nextText}</div>
+        </> : <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Die Geschichte ist zu Ende. Die Monster werden trotzdem nicht müde.</div>}
+        <div className="dim" style={{ fontSize: 11, marginTop: 6 }}>Worum es geht, steht im Reiter „Geschichte“.</div>
       </div>
       <div className="section">Versperrte Gebiete</div>
       {Object.values(GATES).filter(g => !gateOpen(P, g.id)).length === 0 && <div className="empty">Alle Wege sind offen.</div>}
