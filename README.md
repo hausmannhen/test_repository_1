@@ -52,14 +52,14 @@ Voraussetzung: Node 20 oder neuer.
 - Zauber: Feuerball (Brand), Eissplitter (verlangsamt), Blitzschlag (springt), Erdstoß (Rückstoß rundum), Windschnitt (durchschlägt), Wasserwoge (Welle), Lichtstrahl (heilt), Schattengriff (Lebensraub), Blutpfeil und Aderlass (kosten Leben statt Mana, dafür stark). Tabellen in `src/data/spells.js`.
 - Skilltree in `src/data/skills.js`: Krieger (Kraft, Zähigkeit, Wirbelhieb, Eisenhaut, Raserei), Jäger (Zielen, Schnelle Hand, Doppelschuss, Durchschlag, Adlerauge), Magie (Manaquelle, Meditation, Arkane Macht, ein Knoten je Element, Blutmagie). Rang 1 eines Elements schaltet den Zauber frei, jeder weitere Rang gibt 25 % Schaden. Höhere Ränge brauchen je fünf Stufen mehr als der vorherige. Die Weise setzt alle Punkte gegen Gold zurück.
 - Mana regeneriert langsam. Zwei Tränke: Heiltrank (30 % des Lebens), Manatrank (50 % Mana), beide beim Händler.
-- Ton: Musik und Geräusche werden per WebAudio erzeugt, keine Dateien. Musik wechselt mit der Region, Effekte für Hieb, Schuss, Treffer, Zauber, Beute, Aufstieg. Lautstärke und Stummschalten im Menü unter „Ton“, gespeichert im Browser.
+- Ton: Musik und Geräusche werden per WebAudio erzeugt, keine Dateien. Musik wechselt mit der Region, Effekte für Hieb, Schuss, Treffer, Zauber, Beute, Aufstieg. Lautstärke und Stummschalten im Menü unter „Einstellungen“, gespeichert im Browser.
 - HUD: Minikarte oben rechts mit erkundeten Bildschirmen, Dörfern (Gold), Dungeons (Rot), Revieren (Orange, grau nach Sieg) und eigener Position.
 
 ## Online-Konten (optional)
 
 Mit einem Supabase-Projekt liegen bis zu zehn Konten in der Cloud, jedes mit Name und vierstelliger PIN, spielbar von jedem Gerät. Einrichtung: `supabase/schema.sql` im SQL Editor ausführen, Projekt-Adresse und öffentlichen Schlüssel in `src/cloud.config.js` eintragen. Bleibt die Adresse leer, zeigt das Spiel nur Gerätekonten.
 
-Schutz liegt in der Datenbank: PIN als bcrypt-Hash, fünf Fehlversuche sperren 15 Minuten, Sitzungs-Token 60 Tage, die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt. Gespeichert wird lokal sofort und online gebündelt (alle vier Sekunden höchstens einmal, beim Verlassen sofort). Offline geht es mit dem lokalen Stand weiter, der beim nächsten Kontakt hochgeladen wird. Einladungscode: `update einstellungen set value = 'Wort' where key = 'einladung';` im SQL Editor, danach braucht jedes neue Konto das Wort. PIN zurücksetzen: Kommentar am Ende von `supabase/schema.sql`.
+Schutz liegt in der Datenbank: PIN als bcrypt-Hash, fünf Fehlversuche sperren 15 Minuten, Sitzungs-Token 60 Tage, die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt. Gespeichert wird lokal sofort und online gebündelt (alle vier Sekunden höchstens einmal, beim Verlassen sofort). Offline geht es mit dem lokalen Stand weiter, der beim nächsten Kontakt hochgeladen wird. Einladungscode: `update einstellungen set value = 'Wort' where key = 'einladung';` im SQL Editor, danach braucht jedes neue Konto das Wort. PIN zurücksetzen: Kommentar am Ende von `supabase/schema.sql`. Konto löschen: im Spiel unter Menü, „Einstellungen“, „Konto löschen“, mit PIN; löscht Konto und Spielstand endgültig. Gerätekonten löschen dort ohne PIN, mit Rückfrage.
 
 ## Spielstände
 

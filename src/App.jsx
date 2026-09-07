@@ -90,6 +90,11 @@ export default function App() {
   const importSlot = useCallback((slot) => { writeSlot(slot); setAccounts(listAccounts()); }, []);
   const resetAccount = useCallback((id) => { deleteSlot(id); setAccounts(listAccounts()); }, []);
   const renameAccount = useCallback((id, name) => { renameSlot(id, name); setAccounts(listAccounts()); }, []);
+  // Konto wurde gelöscht: nichts mehr speichern, zurück zum Titel
+  const accountDeleted = useCallback(() => {
+    gRef.current = null; rendererRef.current = null;
+    setPanel(null); setUi(null); setAccounts(listAccounts()); setPhase("title");
+  }, []);
   const quitToTitle = useCallback(() => {
     const G = gRef.current;
     if (G && !G.dead) { persist(G); if (G.slot.cloud) cloudRef.current.flush(); }
@@ -161,7 +166,7 @@ export default function App() {
   const G = gRef.current;
   const renderPanel = () => {
     if (!panel) return null;
-    const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle, audio: audioRef.current };
+    const props = { G, onClose: closePanel, rerender, onQuit: quitToTitle, audio: audioRef.current, cloud: cloudRef.current, onAccountDeleted: accountDeleted };
     if (panel === "inventar") return <Inventory {...props} />;
     if (panel === "geschichte") return <StoryIntro {...props} />;
     if (panel === "shop") return <Shop {...props} />;
