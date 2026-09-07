@@ -38,7 +38,7 @@ Voraussetzung: Node 20 oder neuer.
 - Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
 - Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss, Überfall, Entscheidung. Bereits erledigte Ziele zählen rückwirkend.
 - Barrieren in `src/data/gates.js`: Steinschlag (Höhen) fällt nach Kapitel 4, Sandsturm und Nebelwand nach Kapitel 6, Frostwand und Aschesturm nach der Wahl in Kapitel 7. Am Bildschirmrand als Wand sichtbar, im Aufgaben-Tab aufgelistet.
-- Arenen: Reviere der Zwischenbosse, Bossräume und rund jeder sechste Wildnis-Bildschirm. Beim Betreten schließen Palisaden die Ränder, bis alle Gegner besiegt sind, Banner „Hinterhalt“. Einmal gesäubert, bleibt ein Wildnis-Bildschirm offen. Arenen haben immer eine Kampftruhe mit besserer Beute, dazu gibt es Erfahrung.
+- Arenen: Reviere der Zwischenbosse und Bossräume. Beim Betreten schließen Palisaden die Ränder, bis alle Gegner besiegt sind. Reviere haben immer eine Kampftruhe mit besserer Beute, dazu gibt es Erfahrung.
 - Kampftruhen: Keine Truhe öffnet sich, solange Gegner auf dem Bildschirm sind. Das Schloss pulsiert rot, bis der letzte fällt, dann wird es gold.
 - Überfall: Annehmen sperrt die vier Dorfausgänge mit Palisaden, Monster kommen in Wellen durch die Tore und laufen zum Brunnen. Fällt der Brunnen, ist der Überfall verloren und die Aufgabe wieder annehmbar. Die letzte Welle bringt einen Anführer. „Wachdienst“ in Elmshain ist endlos wiederholbar, jedes Mal eine Welle mehr und stärkere Gegner, Belohnung wächst mit. Logik in `src/game/raid.js`.
 
