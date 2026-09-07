@@ -25,7 +25,7 @@ export const REGIONS = {
   wald:   { name: "Dunkelforst",       level: 4,  ground: [T.GRASS, T.GRASS, T.FLOWER],          decor: [T.TREE, T.TREE, T.TREE, T.BUSH],  decorDensity: 0.2,  mobs: ["wolf", "spinne", "waldgeist"], mobCount: [3, 5] },
   berg:   { name: "Kargstein-Höhen",   level: 8,  ground: [T.GRASS, T.PATH, T.PATH],             decor: [T.ROCK, T.ROCK, T.ROCK, T.DEADTREE], decorDensity: 0.18, mobs: ["fledermaus", "golem", "skelett"], mobCount: [3, 5] },
   wueste: { name: "Glutwüste",         level: 12, ground: [T.SAND, T.SAND, T.SAND],              decor: [T.CACTUS, T.ROCK, T.CACTUS],       decorDensity: 0.08, mobs: ["skorpion", "bandit", "sandwurm"], mobCount: [3, 5] },
-  sumpf:  { name: "Nebelmoor",         level: 15, ground: [T.SWAMP, T.GRASS, T.SWAMP],           decor: [T.DEADTREE, T.WATER, T.WATER, T.BUSH], decorDensity: 0.16, mobs: ["hexe", "schleim", "skelett"], mobCount: [3, 6] },
+  sumpf:  { name: "Nebelmoor",         level: 15, ground: [T.SWAMP, T.GRASS, T.SWAMP],           decor: [T.DEADTREE, T.WATER, T.WATER, T.BUSH], decorDensity: 0.16, mobs: ["hexe", "moorkriecher", "sumpfschrat"], mobCount: [3, 6] },
   eis:    { name: "Frostkamm",         level: 19, ground: [T.SNOW, T.SNOW, T.ICE],               decor: [T.ROCK, T.DEADTREE, T.ROCK],      decorDensity: 0.12, mobs: ["eiswolf", "golem", "schamane"], mobCount: [3, 6] },
   vulkan: { name: "Aschekessel",       level: 24, ground: [T.ASH, T.ASH, T.ASH],                 decor: [T.ROCK, T.LAVA, T.LAVA, T.ROCK],  decorDensity: 0.14, mobs: ["feuerteufel", "golem", "drache"], mobCount: [3, 6] },
 };

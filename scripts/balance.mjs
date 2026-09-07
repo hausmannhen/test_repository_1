@@ -19,7 +19,7 @@ function gear(P, build, level) {
   const w = generateItem(r, level, 0, 2, "waffe");
   Object.assign(w, { baseId: base.id, name: base.name, type: base.type, range: base.range, rate: base.rate, projSpeed: base.projSpeed, proj: base.proj, reach: base.reach || 0 });
   // Basiswerte der gewünschten Waffe, skaliert wie generateItem
-  w.stats = {}; for (const k of ["atk", "def", "hp", "crit", "spd", "luck", "mag", "mana"]) if (base[k]) w.stats[k] = Math.round(base[k] * (["crit", "luck", "spd"].includes(k) ? 1 + level * 0.03 : (1 + level * 0.13)) * 1.55);
+  w.stats = {}; for (const k of ["atk", "def", "hp", "crit", "spd", "luck", "mag", "mana"]) if (base[k]) w.stats[k] = Math.round(base[k] * (["crit", "luck", "spd"].includes(k) ? 1 + level * 0.03 : (1 + level * 0.13)) * 1.2);
   P.equip.waffe = w;
   for (const slot of ["kopf", "rumpf", "schild", "amulett", "ring"]) P.equip[slot] = generateItem(r, level, 0, 1, slot);
   for (const id of BUILDS[build].skills) { if (freePoints(P) <= 0) break; learn(P, id); }

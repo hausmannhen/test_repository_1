@@ -2,9 +2,10 @@
 import { REGIONS, VILLAGES, DUNGEONS, regionAt, WORLD_W, WORLD_H, START_VILLAGE, TS } from "./constants.js";
 import { LEGACY_POTIONS, POTIONS } from "../data/items.js";
 import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
+import { RARITY_BY_ID } from "./items.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 export const ACCOUNT_COUNT = 2;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -69,6 +70,20 @@ export function migrate(data) {
     for (const k of Object.keys(chests)) if (k.startsWith("a") && !MINIBOSS_BY_SCREEN[k.slice(1)]) { chests["w" + k.slice(1)] = true; }
     for (const k of Object.keys(out.P.arenas || {})) if (MINIBOSS_BY_SCREEN[k]) arenas[k] = true;
     out.P = { ...out.P, chests, arenas };
+  }
+  if (v < 7) {
+    // Version 7: Seltenheit gibt nur noch 10 bis 40 % mehr Werte statt bis zu 150 %. Alte Items werden im selben Verhältnis gestutzt.
+    out.saveVersion = 7;
+    const OLD = { gewoehnlich: 1.0, ungewoehnlich: 1.25, selten: 1.55, episch: 1.95, legendaer: 2.5 };
+    const fix = (it) => {
+      if (!it || it.kind !== "gear" || !it.stats) return it;
+      const rar = RARITY_BY_ID[it.rarity]; if (!rar) return it;
+      const f = rar.statMult / (OLD[it.rarity] || 1);
+      const stats = {}; for (const k in it.stats) stats[k] = it.stats[k] > 0 ? Math.max(1, Math.round(it.stats[k] * f)) : it.stats[k];
+      return { ...it, stats };
+    };
+    const equip = {}; for (const k in out.P.equip || {}) equip[k] = fix(out.P.equip[k]);
+    out.P = { ...out.P, equip, inventory: (out.P.inventory || []).map(fix) };
   }
   if (!out.P.hints) out.P = { ...out.P, hints: {} };
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);

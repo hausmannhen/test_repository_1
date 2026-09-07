@@ -261,11 +261,14 @@ export function gainXp(G, amount) {
   }
   G.dirty = true;
 }
+/* Verteidigung: jeder Punkt bringt gleich viel effektives Leben, nie Unverwundbarkeit. 50 % Reduktion bei 50 Verteidigung, 75 % bei 150. */
+export const DEF_K = 2;
+export function damageFactor(def) { return 100 / (100 + Math.max(0, def) * DEF_K); }
 export function hurtPlayer(G, amount) {
   const P = G.P;
   if (G.invT > 0 || G.dead) return;
   const d = derive(P);
-  const dmg = Math.max(1, Math.round(amount * (0.9 + Math.random() * 0.2) - d.def * 0.45));
+  const dmg = Math.max(1, Math.round(amount * (0.9 + Math.random() * 0.2) * damageFactor(d.def)));
   P.hp -= dmg; G.invT = 0.8;
   G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "-" + dmg, color: "#ff5f6d", t: 0.9 });
   G.shake = 0.15;

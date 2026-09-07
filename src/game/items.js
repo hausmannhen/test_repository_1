@@ -41,8 +41,8 @@ export function generateItem(r, ilvl, luck = 0, minRarity = 0, forcedSlot = null
   for (const k of STAT_KEYS) if (base[k]) stats[k] = base[k];
   // Basiswerte skalieren
   for (const k in stats) {
-    if (FLAT_STATS.has(k)) stats[k] = Math.round(stats[k] * (1 + ilvl * 0.03) * rar.mult);
-    else stats[k] = Math.round(statScale(stats[k], ilvl) * rar.mult * (0.9 + r() * 0.2));
+    if (FLAT_STATS.has(k)) stats[k] = Math.round(stats[k] * (1 + ilvl * 0.03) * rar.statMult);
+    else stats[k] = Math.round(statScale(stats[k], ilvl) * rar.statMult * (0.9 + r() * 0.2));
   }
   let prefix = null, suffix = null;
   const affixes = rar.affixes;
@@ -64,7 +64,7 @@ export function generateItem(r, ilvl, luck = 0, minRarity = 0, forcedSlot = null
 }
 export function effectiveStats(item) {
   if (!item || item.kind !== "gear") return {};
-  const m = 1 + item.upg * 0.12;
+  const m = 1 + item.upg * 0.08;
   const out = {};
   for (const k in item.stats) out[k] = item.stats[k] > 0 ? Math.round(item.stats[k] * m) : item.stats[k];   // Abzüge wachsen beim Aufwerten nicht mit
   return out;

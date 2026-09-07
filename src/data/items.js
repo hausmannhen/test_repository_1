@@ -3,11 +3,11 @@
    Waffen haben type: "nah" (Schwert & Co.), "fern" (Bogen, Armbrust, Wurfwaffen), "fokus" (Stäbe, verstärken Magie). */
 
 export const RARITIES = [
-  { id: "gewoehnlich",   name: "Gewöhnlich",   color: "#d8d2c4", mult: 1.0,  affixes: 0, weight: 60 },
-  { id: "ungewoehnlich", name: "Ungewöhnlich", color: "#6fd66f", mult: 1.25, affixes: 1, weight: 22 },
-  { id: "selten",        name: "Selten",       color: "#5aa7ff", mult: 1.55, affixes: 2, weight: 7 },
-  { id: "episch",        name: "Episch",       color: "#c77dff", mult: 1.95, affixes: 3, weight: 2.2 },
-  { id: "legendaer",     name: "Legendär",     color: "#ffb347", mult: 2.5,  affixes: 4, weight: 0.4 },
+  { id: "gewoehnlich",   name: "Gewöhnlich",   color: "#d8d2c4", mult: 1.0,  statMult: 1.0, affixes: 0, weight: 60 },
+  { id: "ungewoehnlich", name: "Ungewöhnlich", color: "#6fd66f", mult: 1.25, statMult: 1.1, affixes: 1, weight: 22 },
+  { id: "selten",        name: "Selten",       color: "#5aa7ff", mult: 1.55, statMult: 1.2, affixes: 2, weight: 7 },
+  { id: "episch",        name: "Episch",       color: "#c77dff", mult: 1.95, statMult: 1.3, affixes: 3, weight: 2.2 },
+  { id: "legendaer",     name: "Legendär",     color: "#ffb347", mult: 2.5,  statMult: 1.4, affixes: 4, weight: 0.4 },
 ];
 export const SLOTS = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Schild", amulett: "Amulett", ring: "Ring" };
 export const SLOT_ORDER = ["waffe", "kopf", "rumpf", "schild", "amulett", "ring"];

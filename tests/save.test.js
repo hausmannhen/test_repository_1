@@ -117,3 +117,19 @@ describe("Arena-Migration", () => {
     assert.equal(mig.P.arenas["3,5"], undefined); assert.equal(mig.P.arenas["3,4"], true);
   });
 });
+
+describe("Migration Version 7", () => {
+  it("stutzt alte Items auf die neuen Seltenheitsfaktoren, Abzüge bleiben, Tränke unberührt", async () => {
+    const { migrate } = await import("../src/game/save.js");
+    const { newPlayer } = await import("../src/game/player.js");
+    const P = newPlayer("v7");
+    P.equip.waffe = { uid: "a", kind: "gear", baseId: "langschwert", name: "L", slot: "waffe", rarity: "legendaer", ilvl: 10, stats: { atk: 100, spd: -5 }, value: 50, upg: 0, type: "nah" };
+    P.inventory.push({ uid: "b", kind: "gear", baseId: "eisenhelm", name: "E", slot: "kopf", rarity: "gewoehnlich", ilvl: 3, stats: { def: 9 }, value: 5, upg: 0 });
+    const mig = migrate({ saveVersion: 6, seed: "s", P, name: "x" });
+    assert.equal(mig.saveVersion, 7);
+    assert.equal(mig.P.equip.waffe.stats.atk, 56);   // 1.4 / 2.5
+    assert.equal(mig.P.equip.waffe.stats.spd, -5);
+    assert.equal(mig.P.inventory.find(i => i.uid === "b").stats.def, 9);
+    assert.ok(mig.P.inventory.some(i => i.kind === "trank"));
+  });
+});
