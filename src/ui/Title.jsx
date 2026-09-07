@@ -1,4 +1,4 @@
-/* Titel mit fünf festen Konten: auswählen, anlegen, umbenennen, als Datei sichern, aus Datei laden, zurücksetzen */
+/* Titel mit zwei festen Gerätekonten: auswählen, anlegen, umbenennen, als Datei sichern, aus Datei laden, zurücksetzen */
 import React, { useRef, useState } from "react";
 import { Btn } from "./bits.jsx";
 import { describeSave, exportSlot, fileNameFor, importSave } from "../game/save.js";

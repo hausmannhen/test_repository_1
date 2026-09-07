@@ -4,7 +4,7 @@ import { LEGACY_POTIONS, POTIONS } from "../data/items.js";
 
 export const STORE_KEY = "eldenfeld_saves";
 export const SAVE_VERSION = 4;
-export const ACCOUNT_COUNT = 5;
+export const ACCOUNT_COUNT = 2;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
 const LEGACY_KEYS = ["eldenfeld_save", "eldenfeld_save_v1"];
@@ -117,7 +117,7 @@ export function writeSlot(slot) {
   store.active = slot.id;
   return writeStore(store);
 }
-/* Die fünf Konten in fester Reihenfolge, leer oder belegt */
+/* Die Gerätekonten in fester Reihenfolge, leer oder belegt */
 export function listAccounts() {
   const saves = listSaves();
   return ACCOUNT_IDS.map((id, i) => ({ id, index: i + 1, slot: saves.find(x => x.id === id) || null }));

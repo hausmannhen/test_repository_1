@@ -16,11 +16,11 @@ describe("Spielstände", () => {
     assert.equal(listAccounts().length, ACCOUNT_COUNT);
     assert.ok(listAccounts().every(a => a.slot === null));
     const a = makeSlot("Hendrik", "seed-a", newPlayer("seed-a"), ACCOUNT_IDS[0]);
-    const b = makeSlot("Kollege", "seed-b", newPlayer("seed-b"), ACCOUNT_IDS[2]);
+    const b = makeSlot("Kollege", "seed-b", newPlayer("seed-b"), ACCOUNT_IDS[1]);
     assert.ok(writeSlot(a)); assert.ok(writeSlot(b));
     assert.equal(listSaves().length, 2);
     const acc = listAccounts();
-    assert.equal(acc[0].slot.name, "Hendrik"); assert.equal(acc[1].slot, null); assert.equal(acc[2].slot.name, "Kollege");
+    assert.equal(acc[0].slot.name, "Hendrik"); assert.equal(acc[1].slot.name, "Kollege");
     assert.ok(renameSlot(a.id, "Hendrik H."));
     assert.equal(loadSlot(a.id).name, "Hendrik H.");
     deleteSlot(a.id);
@@ -46,10 +46,10 @@ describe("Spielstände", () => {
     a.P.level = 7; a.P.gold = 123;
     const text = exportSlot(a);
     assert.ok(text.includes("eldenfeld-save"));
-    const imported = importSave(text, ACCOUNT_IDS[4]);
-    assert.equal(imported.id, ACCOUNT_IDS[4]);
+    const imported = importSave(text, ACCOUNT_IDS[1]);
+    assert.equal(imported.id, ACCOUNT_IDS[1]);
     assert.ok(writeSlot(imported));
-    assert.equal(listAccounts()[4].slot.P.level, 7);
+    assert.equal(listAccounts()[1].slot.P.level, 7);
     assert.equal(imported.P.level, 7);
     assert.equal(imported.P.gold, 123);
     assert.equal(imported.seed, "seed-a");
