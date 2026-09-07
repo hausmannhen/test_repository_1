@@ -1,6 +1,7 @@
 /* Monster-Shapes: blob, quad, ghost, bat, golem, skel, human. Farben aus MOBS. */
 import * as THREE from "three";
 import { lambert, basic, G } from "./materials.js";
+import { ELITES } from "../data/elites.js";
 
 function mesh(geometry, material, x = 0, y = 0, z = 0) {
   const m = new THREE.Mesh(geometry, material);
@@ -133,9 +134,17 @@ export function buildMobModel(m) {
     }
   }
   group.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  // Elite: Aura am Boden in der Farbe der Eigenschaft
+  let aura = null;
+  if (m.elite && ELITES[m.elite]) {
+    aura = new THREE.Mesh(G.ring(0.55, 0.75), new THREE.MeshBasicMaterial({ color: new THREE.Color(ELITES[m.elite].color), transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
+    aura.rotation.x = -Math.PI / 2; aura.position.y = 0.04; aura.scale.setScalar(s);
+    aura.userData.ownMaterial = true;
+    group.add(aura);
+  }
 
   // Lebensbalken (wird vom Renderer zur Kamera gedreht): schwarzer Grund, rotes Leben, immer sichtbar
-  const elite = m.mini || m.leader;
+  const elite = m.mini || m.leader || m.elite;
   const barW = m.boss ? 2.2 : elite ? 1.6 : Math.max(1.0, s + 0.4);
   const barH = m.boss ? 0.09 : elite ? 0.08 : 0.06;
   const bar = new THREE.Group();
@@ -144,7 +153,6 @@ export function buildMobModel(m) {
   const barEdge = new THREE.Mesh(G.plane(barW + 0.05, barH + 0.05), flat("#000000"));
   const barBg = new THREE.Mesh(G.plane(barW, barH), flat("#0a0a0a"));
   const barFg = new THREE.Mesh(G.plane(barW, barH), flat(m.boss ? "#ff1414" : "#ff2a2a"));
-  void elite;
   barEdge.renderOrder = 19; barBg.renderOrder = 20; barFg.renderOrder = 21;
   barEdge.position.z = -0.002; barFg.position.z = 0.001;
   bar.add(barEdge, barBg, barFg);
@@ -168,9 +176,10 @@ export function buildMobModel(m) {
     }
     state.lastX = m.x; state.lastY = m.y;
     group.rotation.y = state.rot;
-    // Trefferblitz
+    // Trefferblitz; während einer Ankündigung glüht der Boss rot
     const flash = m.hitT > 0;
-    for (const mat of mats) mat.emissive.setScalar(flash ? 0.9 : 0);
+    for (const mat of mats) { if (m.tele) mat.emissive.set("#ff2a2a").multiplyScalar(0.4 + Math.sin(time * 16) * 0.2); else mat.emissive.setScalar(flash ? 0.9 : 0); }
+    if (aura) { aura.rotation.z = time * 1.5; aura.material.opacity = 0.5 + Math.sin(time * 4) * 0.2; }
     // Animation
     const ph = time * 6 + m.t;
     if (m.shape === "blob") {
@@ -196,7 +205,7 @@ export function buildMobModel(m) {
     barFg.position.x = -barW / 2 * (1 - f);
     bar.position.set(pos.x, pos.y + height + 0.22, pos.z);
   }
-  function dispose() { for (const mat of mats) mat.dispose(); for (const mat of barMats) mat.dispose(); }
+  function dispose() { for (const mat of mats) mat.dispose(); for (const mat of barMats) mat.dispose(); if (aura) aura.material.dispose(); }
   return { group, bar, update, dispose };
 }
 

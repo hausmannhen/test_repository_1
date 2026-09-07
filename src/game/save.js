@@ -70,6 +70,7 @@ export function migrate(data) {
     for (const k of Object.keys(out.P.arenas || {})) if (MINIBOSS_BY_SCREEN[k]) arenas[k] = true;
     out.P = { ...out.P, chests, arenas };
   }
+  if (!out.P.hints) out.P = { ...out.P, hints: {} };
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";
   if (!out.id) out.id = newSlotId();

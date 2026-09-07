@@ -1,7 +1,9 @@
 /* Weltgenerierung: Bildschirme, Dörfer, Dungeons, Monster-Spawns */
 import { TS, VW, VH, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, regionAt, VILLAGES, DUNGEON_BY_SCREEN } from "./constants.js";
 import { hashStr, rngFor, rint, pick, chance } from "./rng.js";
-import { BOSSES, makeMob } from "./monsters.js";
+import { BOSSES, makeMob, makeElite } from "./monsters.js";
+import { ELITE_ORDER, ELITE_CHANCE } from "../data/elites.js";
+import { BOSS_ABILITIES, MINI_ABILITIES } from "../data/abilities.js";
 import { NPCS_BY_VILLAGE } from "../data/npcs.js";
 import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
 
@@ -196,7 +198,7 @@ export function spawnMobsFor(screen, seed, visitCount, cleared = {}, opts = {}) 
     const mb = screen.miniboss;
     let tx = 7, ty = 3;
     for (let tries = 0; tries < 50 && !walkable(screen.tiles, tx, ty); tries++) { tx = rint(r, 2, VW - 3); ty = rint(r, 1, 3); }
-    mobs.push(makeMob(mb.base, mb.level, tx * TS + 8, ty * TS + 8, { ...mb, mini: mb.id }));
+    mobs.push(makeMob(mb.base, mb.level, tx * TS + 8, ty * TS + 8, { ...mb, mini: mb.id, abilities: MINI_ABILITIES[mb.id] || [] }));
   }
   if (screen.dungeonRoom) {
     const d = screen.dungeonRoom.d;
@@ -207,7 +209,7 @@ export function spawnMobsFor(screen, seed, visitCount, cleared = {}, opts = {}) 
         // Vargor: ganz frei (drei Phasen) oder angekettet (schwächer, weniger Beute)
         bd = opts.choice === "flicken" ? { ...bd, name: "Aschedrache Vargor, gefesselt", hpMult: 2, atkMult: 0.45, weak: true } : { ...bd, name: "Aschedrache Vargor, entfesselt", hpMult: 3, atkMult: 0.6, phases: 2 };
       }
-      mobs.push(makeMob(bd.base, level + 2, 7 * TS + 8, 3 * TS + 8, bd));
+      mobs.push(makeMob(bd.base, level + 2, 7 * TS + 8, 3 * TS + 8, { ...bd, abilities: BOSS_ABILITIES[d.id] || [] }));
       count = 2;
     } else count = screen.dungeonRoom.type === "entry" ? 1 : rint(r, 3, 5);
   } else {
@@ -221,7 +223,9 @@ export function spawnMobsFor(screen, seed, visitCount, cleared = {}, opts = {}) 
     if (!walkable(screen.tiles, tx, ty)) continue;
     if (Math.abs(tx - 7) < 3 && Math.abs(ty - 5) < 3) continue;  // nicht direkt beim Spieler
     const type = pick(r, pool);
-    mobs.push(makeMob(type, level + rint(r, 0, 2), tx * TS + 8, ty * TS + 8));
+    const m = makeMob(type, level + rint(r, 0, 2), tx * TS + 8, ty * TS + 8);
+    if (!screen.village && chance(r, ELITE_CHANCE)) makeElite(m, pick(r, ELITE_ORDER));
+    mobs.push(m);
   }
   return mobs;
 }

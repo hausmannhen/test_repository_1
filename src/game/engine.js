@@ -10,6 +10,9 @@ import { onKill as questKill, gateOpen, gateFor, resetStaleRaids } from "./quest
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
+import { ELITES } from "../data/elites.js";
+import { ABILITIES } from "../data/abilities.js";
+import { freePoints } from "./skills.js";
 export { castSpell };
 
 export const TRANSITION_DUR = 0.4;   // Sekunden Kamera-Slide beim Bildschirmwechsel
@@ -21,6 +24,7 @@ export function createGame(seed, P = null, slot = null) {
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
     pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
+    hintQueue: [],
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -30,8 +34,22 @@ export function createGame(seed, P = null, slot = null) {
 export function startGame(G) {
   const P = G.P;
   resetStaleRaids(P);
+  if (!P.hints) P.hints = {};
   enterScreen(G, P.area, P.sx, P.sy, P.x, P.y, true);
+  if (P.kills === 0 && !Object.keys(P.quests || {}).length) {
+    hint(G, "start", "Ältester Bram wartet am Weg in Elmshain. Stell dich neben ihn, der Schwert-Knopf wird zu „Reden“.");
+    hint(G, "steuerung", "Steuerkreuz bewegt, Schwert schlägt, Trank heilt 30 %. Das Menü öffnet Ausrüstung, Karte und Aufgaben.");
+  }
   return G;
+}
+/* Einmalige Hinweise für neue Spieler, gezeigt, sobald keine andere Meldung läuft */
+export function hint(G, id, text) {
+  const P = G.P;
+  if (!P.hints) P.hints = {};
+  if (P.hints[id]) return false;
+  P.hints[id] = true;
+  G.hintQueue.push(text);
+  return true;
 }
 
 /* ---------- Bildschirmwechsel ---------- */
@@ -176,6 +194,12 @@ export function killMob(G, m) {
   m.dead = true;
   P.kills++;
   emit(G, "kill", { boss: !!(m.boss || m.mini) });
+  if (m.elite === "geladen") {
+    // Explosion beim Tod: Schaden am Spieler im Umkreis
+    const rad = 36;
+    G.fx.push({ kind: "ring", x: m.x, y: m.y, r: rad, color: ELITES.geladen.color, t: 0.4, maxT: 0.4 });
+    if (Math.hypot(P.x - m.x, P.y - m.y) < rad + 5) hurtPlayer(G, m.atk * ELITES.geladen.burst);
+  }
   for (let i = 0; i < 8; i++) G.fx.push({ kind: "part", x: m.x, y: m.y, vx: (Math.random() - 0.5) * 90, vy: (Math.random() - 0.5) * 90, color: m.color, t: 0.5 });
   const d = derive(P);
   const r = mulberry32((Math.random() * 1e9) | 0);
@@ -259,6 +283,11 @@ export function update(G, dt, input) {
   P.mana = Math.min(d.maxMana, (P.mana || 0) + d.manaRegen * dt);
   if (G.pendingXp) { const xp = G.pendingXp; G.pendingXp = 0; gainXp(G, xp); }
   if (G.raid) updateRaid(G, dt);
+  if (P.slowT > 0) P.slowT -= dt;
+  // Hinweise für neue Spieler, nachgeschoben, sobald keine andere Meldung läuft
+  if (freePoints(P) > 0) hint(G, "punkt", "Ein Fertigkeitspunkt ist frei: Menü, dann „Fertigkeiten“. Elemente schalten Zauber frei.");
+  if (P.hp < d.maxHp * 0.4 && !G.dead) hint(G, "trank", "Wenig Leben: Der Trank-Knopf heilt 30 %. Beim Händler gibt es Nachschub.");
+  if (G.hintQueue.length && !G.msg && (!G.banner || G.banner.t < 0.5)) G.msg = { text: G.hintQueue.shift(), color: "#8fd3ff", t: 5.5 };
   // Arena aufgelöst?
   if (G.arenaLock && !G.mobs.some(m => !m.dead)) {
     G.arenaLock = false;
@@ -276,7 +305,7 @@ export function update(G, dt, input) {
     if (Math.abs(ix) > Math.abs(iy)) P.dir = ix > 0 ? "right" : "left"; else P.dir = iy > 0 ? "down" : "up";
   }
   const onSwamp = tiles[idx(clamp(Math.floor(P.x / TS), 0, VW - 1), clamp(Math.floor(P.y / TS), 0, VH - 1))] === T.SWAMP;
-  let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1);
+  let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1) * (P.slowT > 0 ? 0.55 : 1);
   moveWithCollision(tiles, P, ix * speed * dt, iy * speed * dt, 5, 5);
   G.walkT = len > 0.2 ? G.walkT + dt : 0;
   // Nähe zu Bewohnern und Wegweisern: Schwert-Knopf spricht bzw. liest, statt zu schlagen
@@ -413,6 +442,10 @@ export function update(G, dt, input) {
     }
     if (m.slowT > 0) m.slowT -= dt;
     if (m.spawnDelay > 0) continue;
+    // Elite: heilt sich
+    if (m.elite === "heilend" && m.hp < m.maxHp) m.hp = Math.min(m.maxHp, m.hp + m.maxHp * ELITES.heilend.regen * dt);
+    // Fähigkeiten von Bossen und Zwischenbossen
+    if (m.abilities.length) { updateAbilities(G, m, dt, d); if (m.tele) { m.vx = 0; m.vy = 0; continue; } }
     // Bossphasen: bei zwei Dritteln und einem Drittel wird er schneller und ruft Diener
     if (m.boss && m.phases && m.phase < m.phases && m.hp <= m.maxHp * (1 - (m.phase + 1) / (m.phases + 1))) {
       m.phase++; m.atk = Math.round(m.atk * 1.15); m.spd *= 1.2; m.hitT = 0.3;
@@ -460,7 +493,7 @@ export function update(G, dt, input) {
     }
     // Kontaktschaden
     const pd = goal ? Math.hypot(P.x - m.x, P.y - m.y) : dist;
-    if (pd < m.size / 2 + 5) hurtPlayer(G, m.atk);
+    if (pd < m.size / 2 + 5) { const hpBefore = P.hp; hurtPlayer(G, m.atk); if (m.elite === "eisig" && P.hp < hpBefore) { P.slowT = ELITES.eisig.slow; flash(G, "Eisig: du bist verlangsamt", "#9ad8ff"); } }
   }
   G.mobs = G.mobs.filter(m => !m.dead);
 
@@ -483,7 +516,7 @@ export function update(G, dt, input) {
       if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; emit(G, "gold"); }
       else if (dr.type === "potion") { addToInventory(P, makePotion(dr.id, dr.qty)); flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); dr.done = true; emit(G, "pickup"); }
       else if (dr.type === "item") {
-        if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); }
+        if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); hint(G, "beute", "Neue Ausrüstung im Beutel: Menü, antippen, „Anlegen“. Grün heißt besser als das Angelegte."); }
         else if (!dr.warned) { flash(G, "Inventar voll", "#ff5f6d"); dr.warned = true; }
       }
       G.dirty = true;
@@ -540,6 +573,69 @@ export function update(G, dt, input) {
   else if (P.x > W - 3) { if (!tryCross(G, 1, 0)) P.x = W - 3; }
   else if (P.y < 3) { if (!tryCross(G, 0, -1)) P.y = 3; }
   else if (P.y > H - 3) { if (!tryCross(G, 0, 1)) P.y = H - 3; }
+}
+/* ---------- Fähigkeiten: ankündigen, dann ausführen ---------- */
+function updateAbilities(G, m, dt, d) {
+  const P = G.P;
+  const dist = Math.hypot(P.x - m.x, P.y - m.y) || 1;
+  // laufende Ankündigung
+  if (m.tele) {
+    m.tele.t -= dt;
+    if (m.tele.t > 0) return;
+    const tele = m.tele; m.tele = null;
+    const def = ABILITIES[tele.id];
+    const dmg = Math.round(m.atk * def.dmg);
+    const hitPlayer = (kx, ky) => { const hp = P.hp; hurtPlayer(G, dmg); if (P.hp < hp && def.knock) { moveWithCollision(G.screen.tiles, P, kx * def.knock * 12, ky * def.knock * 12, 5, 5); } if (P.hp < hp && def.slow) P.slowT = def.slow; };
+    if (def.kind === "nova") {
+      G.fx.push({ kind: "ring", x: m.x, y: m.y, r: def.radius, color: def.color, t: 0.45, maxT: 0.45 });
+      if (dist < def.radius + 5) hitPlayer((P.x - m.x) / dist, (P.y - m.y) / dist);
+      G.shake = 0.3;
+    } else if (def.kind === "zone") {
+      G.fx.push({ kind: "ring", x: tele.x, y: tele.y, r: def.radius, color: def.color, t: 0.45, maxT: 0.45 });
+      const dz = Math.hypot(P.x - tele.x, P.y - tele.y);
+      if (dz < def.radius + 5) hitPlayer(0, 0);
+    } else if (def.kind === "beam") {
+      G.fx.push({ kind: "beam", x: m.x, y: m.y, x2: m.x + tele.dx * def.length, y2: m.y + tele.dy * def.length, color: def.color, t: 0.35, maxT: 0.35 });
+      const mx = P.x - m.x, my = P.y - m.y, along = mx * tele.dx + my * tele.dy, across = Math.abs(mx * tele.dy - my * tele.dx);
+      if (along > 0 && along < def.length && across < def.width) hitPlayer(tele.dx, tele.dy);
+    } else if (def.kind === "leap") {
+      m.x = tele.x; m.y = tele.y; unstick(m, G.screen.tiles);
+      G.fx.push({ kind: "ring", x: m.x, y: m.y, r: def.radius, color: def.color, t: 0.4, maxT: 0.4 });
+      const dz = Math.hypot(P.x - m.x, P.y - m.y) || 1;
+      if (dz < def.radius + 5) hitPlayer((P.x - m.x) / dz, (P.y - m.y) / dz);
+      G.shake = 0.25;
+    }
+    emit(G, "hit", { crit: true });
+    return;
+  }
+  for (const a of m.abilities) {
+    const def = ABILITIES[a.id];
+    if (def.once !== undefined) {
+      if (a.used || m.hp > m.maxHp * def.once) continue;
+      a.used = true;
+      if (def.kind === "summon") {
+        const pool = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.mobs : (G.screen.region ? REGIONS[G.screen.region].mobs : ["wolf"]);
+        for (let i = 0; i < def.count; i++) G.mobs.push(makeMobFn(pool[i % pool.length], m.level, m.x + (i ? 36 : -36), m.y + 24));
+        G.banner = { text: m.name + " ruft", sub: "Verstärkung kommt", t: 2.5 };
+      } else if (def.kind === "enrage") {
+        m.spd *= def.spdMult; m.atk = Math.round(m.atk * def.atkMult); m.hitT = 0.4;
+        G.banner = { text: m.name + " rast", sub: "Schneller und härter", t: 2.5 };
+      }
+      emit(G, "fanfare");
+      continue;
+    }
+    a.t -= dt;
+    if (a.t > 0 || dist > def.range) continue;
+    a.t = def.cd;
+    // Ankündigung: Ring oder Strahl in Rot, der Boss hält kurz inne
+    const nx = (P.x - m.x) / dist, ny = (P.y - m.y) / dist;
+    if (def.kind === "nova") { m.tele = { id: a.id, t: def.tele }; G.fx.push({ kind: "ring", x: m.x, y: m.y, r: def.radius, color: "#ff2a2a", t: def.tele, maxT: def.tele, warn: true }); }
+    else if (def.kind === "zone" || def.kind === "leap") { m.tele = { id: a.id, t: def.tele, x: P.x, y: P.y }; G.fx.push({ kind: "ring", x: P.x, y: P.y, r: def.radius, color: "#ff2a2a", t: def.tele, maxT: def.tele, warn: true }); }
+    else if (def.kind === "beam") { m.tele = { id: a.id, t: def.tele, dx: nx, dy: ny }; G.fx.push({ kind: "beam", x: m.x, y: m.y, x2: m.x + nx * def.length, y2: m.y + ny * def.length, color: "#ff2a2a", t: def.tele, maxT: def.tele, warn: true }); }
+    G.msg = { text: m.name + ": " + def.name, color: def.color, t: 1.2 };
+    emit(G, "swing");
+    break;
+  }
 }
 export function attackBox(P, dir, reach) {
   const w = 14;

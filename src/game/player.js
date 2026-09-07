@@ -17,7 +17,7 @@ export function newPlayer(seed) {
     equip: { waffe: sword, kopf: null, rumpf: null, schild: null, amulett: null, ring: null },
     area: "over", sx: +START_VILLAGE.split(",")[0], sy: +START_VILLAGE.split(",")[1], x: 7 * TS + 8, y: 8 * TS + 8, dir: "up",
     cleared: {}, chests: {}, lastVillage: START_VILLAGE, visits: {}, buffT: 0,
-    skills: {}, spells: [], activeSpell: null, quests: {},
+    skills: {}, spells: [], activeSpell: null, quests: {}, hints: {}, slowT: 0,
   };
 }
 export function xpNeed(level) { return Math.floor(30 * Math.pow(level, 1.45)); }

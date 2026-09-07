@@ -110,10 +110,11 @@ export class Effects {
         }
         const prog = 1 - f.t / f.maxT;
         const p = toWorld(f.x, f.y);
-        const r = (f.r / 16) * (0.2 + prog * 0.8);
+        // Warnung: voller Radius, pulsiert, wird zum Ende dichter. Wirkung: dehnt sich aus und verblasst.
+        const r = f.warn ? (f.r / 16) * (0.95 + Math.sin(time * 14) * 0.05) : (f.r / 16) * (0.2 + prog * 0.8);
         m.position.set(p.x, p.y + 0.06, p.z);
         m.scale.set(r, r, 1);
-        m.material.opacity = 0.85 * (1 - prog);
+        m.material.opacity = f.warn ? 0.35 + prog * 0.5 : 0.85 * (1 - prog);
       } else if (f.kind === "beam") {
         alive.add(f);
         let m = this.meshByFx.get(f);
@@ -124,11 +125,11 @@ export class Effects {
         }
         const a = toWorld(f.x, f.y), b = toWorld(f.x2, f.y2);
         const len = Math.hypot(b.x - a.x, b.z - a.z) || 0.01;
-        const th = (f.thin ? 0.06 : 0.14) * (0.5 + f.t / f.maxT);
+        const th = f.warn ? 0.05 : (f.thin ? 0.06 : 0.14) * (0.5 + f.t / f.maxT);
         m.position.set((a.x + b.x) / 2, 0.55 - th / 2, (a.z + b.z) / 2);
         m.scale.set(th, th, len);
         m.lookAt(_v.set(b.x, 0.55 - th / 2, b.z));
-        m.material.opacity = 0.9 * (f.t / f.maxT);
+        m.material.opacity = f.warn ? 0.4 + (1 - f.t / f.maxT) * 0.5 : 0.9 * (f.t / f.maxT);
       }
     }
     for (const [f, sp] of this.spriteByFx) if (!alive.has(f)) { this.scene.remove(sp); sp.material.dispose(); this.spriteByFx.delete(f); }

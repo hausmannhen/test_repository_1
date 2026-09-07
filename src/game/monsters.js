@@ -1,6 +1,8 @@
 /* Monster: Typen, Bosse, Skalierung, Drop-Tabellen */
 import { rint, chance } from "./rng.js";
 import { generateItem } from "./items.js";
+import { ELITES } from "../data/elites.js";
+import { ABILITIES } from "../data/abilities.js";
 
 export const MOBS = {
   schleim:     { name: "Schleim",       hp: 16, atk: 4,  spd: 20, size: 10, shape: "blob",  color: "#7fd35a", color2: "#3f8f2a", ai: "chase",   xp: 7,  gold: [1, 4] },
@@ -40,8 +42,23 @@ export function makeMob(typeId, level, x, y, bossDef = null) {
     t: Math.random() * 10, cd: 0, hitT: 0, wx: 0, wy: 0, boss: !!bossDef && !bossDef.mini && !bossDef.leader, mini: (bossDef && bossDef.mini) || null, leader: !!(bossDef && bossDef.leader), dead: false,
     side: 1, sideT: 0,   // Ausweichen bei Blockade (90° drehen)
     phases: (bossDef && bossDef.phases) || 0, phase: 0, weak: !!(bossDef && bossDef.weak),
+    elite: null, abilities: [], tele: null, slowT: 0,
   };
+  if (bossDef && bossDef.abilities) m.abilities = bossDef.abilities.filter(id => ABILITIES[id]).map(id => ({ id, t: ABILITIES[id].cd ? ABILITIES[id].cd * 0.5 : 0, used: false }));
   m.hp = m.maxHp;
+  return m;
+}
+/* Ein gewöhnliches Monster zur Elite machen */
+export function makeElite(m, eliteId) {
+  const e = ELITES[eliteId];
+  if (!e) return m;
+  m.elite = eliteId;
+  m.name = e.name + " " + m.name;
+  m.maxHp = Math.round(m.maxHp * e.hpMult); m.hp = m.maxHp;
+  m.atk = Math.round(m.atk * e.atkMult);
+  if (e.spdMult) m.spd *= e.spdMult;
+  m.size = Math.round(m.size * 1.2);
+  m.xp = Math.round(m.xp * 3);
   return m;
 }
 
@@ -58,8 +75,8 @@ export function rollDrops(r, mob, luck, isBoss, weak = false) {
     drops.push({ type: "potion", id: "heiltrank", qty: 2 });
     return drops;
   }
-  const itemChance = 0.13 + luck * 0.01;
-  if (chance(r, itemChance)) drops.push({ type: "item", item: generateItem(r, ilvl, luck) });
+  const itemChance = mob.elite ? 1 : 0.13 + luck * 0.01;
+  if (chance(r, itemChance)) drops.push({ type: "item", item: generateItem(r, ilvl + (mob.elite ? 1 : 0), luck, mob.elite ? 1 : 0) });
   if (chance(r, 0.12)) drops.push({ type: "potion", id: chance(r, 0.3) ? "manatrank" : "heiltrank", qty: 1 });
   return drops;
 }
