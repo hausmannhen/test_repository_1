@@ -5,8 +5,9 @@ export { SKILLS, SKILL_ORDER };
 
 export function skillRank(P, id) { return (P.skills && P.skills[id]) || 0; }
 export function spentPoints(P) { return Object.values(P.skills || {}).reduce((a, b) => a + b, 0); }
-/* Ein Punkt pro Stufe, Stufe 1 eingeschlossen */
-export function totalPoints(P) { return P.level; }
+/* Ein Punkt alle drei Stufen: Stufe 3, 6, 9, … */
+export const POINT_EVERY = 3;
+export function totalPoints(P) { return Math.floor(P.level / POINT_EVERY); }
 export function freePoints(P) { return Math.max(0, totalPoints(P) - spentPoints(P)); }
 
 export function whyNot(P, id) {

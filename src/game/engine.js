@@ -194,7 +194,7 @@ export function gainXp(G, amount) {
     P.xp -= xpNeed(P.level); P.level++;
     const d = derive(P);
     P.hp = d.maxHp; P.mana = d.maxMana;
-    G.banner = { text: "Stufe " + P.level, sub: "Neuer Fertigkeitspunkt", t: 3 };
+    G.banner = { text: "Stufe " + P.level, sub: P.level % 3 === 0 ? "Neuer Fertigkeitspunkt" : "Angriff und Leben gestiegen", t: 3 };
     emit(G, "levelup");
   }
   G.dirty = true;

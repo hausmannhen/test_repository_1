@@ -47,29 +47,32 @@ describe("Itemdatenbank", () => {
 });
 
 describe("Skilltree", () => {
-  it("ein Punkt pro Stufe, Voraussetzungen und Stufen greifen", () => {
+  it("ein Punkt alle drei Stufen, Voraussetzungen und Stufen greifen", () => {
     const P = newPlayer("s");
+    assert.equal(freePoints(P), 0);
+    assert.equal(whyNot(P, "kraft"), "Keine Punkte");
+    P.level = 3;
     assert.equal(freePoints(P), 1);
     assert.equal(whyNot(P, "wirbel"), "Ab Stufe 4");
     assert.equal(whyNot(P, "blutmagie"), "Ab Stufe 8");
-    P.level = 4;
+    P.level = 6;
     assert.equal(whyNot(P, "wirbel"), "Braucht Kraft");
     assert.ok(learn(P, "kraft"));
-    assert.equal(freePoints(P), 3);
+    assert.equal(freePoints(P), 1);
     assert.ok(learn(P, "wirbel"));
-    P.level = 1;
+    assert.equal(whyNot(P, "wirbel"), "Maximal");
     assert.equal(whyNot(P, "zielen"), "Keine Punkte");
     assert.equal(learn(P, "zielen"), false);
-    P.level = 4;
-    assert.equal(whyNot(P, "wirbel"), "Maximal");
-    P.level = 12;
+    P.level = 15;
     for (let i = 0; i < 3; i++) assert.ok(learn(P, "blutmagie"));
     assert.equal(whyNot(P, "blutmagie"), "Maximal");
+    assert.equal(canLearn(P, "aderlass"), false);
+    P.level = 18;
     assert.ok(canLearn(P, "aderlass"));
     assert.deepEqual(P.spells, ["blutpfeil"]);
     assert.equal(spellRankMult(P, "blutpfeil"), 1.5);
     respec(P);
-    assert.equal(freePoints(P), 12);
+    assert.equal(freePoints(P), 6);
     assert.deepEqual(P.spells, []);
   });
   it("jeder Zauber hängt an genau einem Knoten, jede Voraussetzung existiert", () => {
@@ -77,7 +80,7 @@ describe("Skilltree", () => {
     for (const s of Object.values(SKILLS)) for (const req of s.requires || []) assert.ok(SKILLS[req], s.id + " braucht " + req);
   });
   it("Passive wirken in derive", () => {
-    const P = newPlayer("s"); P.level = 10;
+    const P = newPlayer("s"); P.level = 12;
     const before = derive(P);
     learn(P, "zaehigkeit"); learn(P, "zaehigkeit"); learn(P, "manaquelle"); learn(P, "meditation");
     const after = derive(P);
@@ -105,7 +108,7 @@ describe("Fernkampf", () => {
   });
   it("Feuerrate, Doppelschuss, Durchschlag", () => {
     const G = arena("rate");
-    const P = G.P; P.level = 10;
+    const P = G.P; P.level = 12;
     P.equip.waffe = weapon("wurfmesser");
     for (let i = 0; i < 10; i++) update(G, 1 / 60, { ...idle, attack: true });
     assert.equal(G.pprojs.length, 1, "Feuerrate ignoriert");
@@ -130,7 +133,7 @@ describe("Fernkampf", () => {
 describe("Magie", () => {
   it("Feuerball kostet Mana, trifft, brennt", () => {
     const G = arena("feuer");
-    const P = G.P; P.level = 5; learn(P, "feuer");
+    const P = G.P; P.level = 5; assert.ok(learn(P, "feuer"));
     P.mana = derive(P).maxMana;
     const m = makeMob("schleim", 1, P.x, P.y - 50); m.spd = 0; m.maxHp = m.hp = 500; G.mobs = [m];
     P.dir = "up";
@@ -147,7 +150,7 @@ describe("Magie", () => {
   });
   it("Blutmagie zahlt mit Leben und ist stärker", () => {
     const G = arena("blut");
-    const P = G.P; P.level = 12; learn(P, "feuer"); learn(P, "blutmagie");
+    const P = G.P; P.level = 12; assert.ok(learn(P, "feuer")); assert.ok(learn(P, "blutmagie"));
     const hp0 = P.hp = derive(P).maxHp;
     const cost = spellCost(P, "blutpfeil");
     assert.ok(cost.hp > 0 && cost.mana === undefined);
@@ -161,7 +164,7 @@ describe("Magie", () => {
   });
   it("Nova trifft alle rundum, Strahl nur in Blickrichtung, Kette springt", () => {
     const G = arena("nova");
-    const P = G.P; P.level = 8;
+    const P = G.P; P.level = 15;
     assert.ok(learn(P, "erde")); assert.ok(learn(P, "manaquelle")); assert.ok(learn(P, "arkanmacht")); assert.ok(learn(P, "licht")); assert.ok(learn(P, "blitz"));
     P.mana = 999;
     const around = [[30, 0], [-30, 0], [0, 30], [0, -30]].map(([dx, dy]) => { const m = makeMob("schleim", 1, P.x + dx, P.y + dy); m.spd = 0; m.maxHp = m.hp = 1000; return m; });
@@ -181,7 +184,7 @@ describe("Magie", () => {
   it("kein Zauber ohne Kenntnis oder Mana", () => {
     const G = arena("none");
     assert.equal(castSpell(G), false);
-    learn(G.P, "wind"); G.P.mana = 0;
+    G.P.level = 3; assert.ok(learn(G.P, "wind")); G.P.mana = 0;
     assert.equal(canCast(G, "windschnitt"), "Zu wenig Mana");
   });
   it("Speicherstand Version 1 bekommt Mana und Fertigkeiten", () => {
@@ -189,6 +192,6 @@ describe("Magie", () => {
     assert.equal(mig.saveVersion, SAVE_VERSION);
     assert.equal(mig.P.mana, 30);
     assert.deepEqual(mig.P.skills, {});
-    assert.equal(freePoints(mig.P), 5);
+    assert.equal(freePoints(mig.P), 1);
   });
 });

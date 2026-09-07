@@ -1,4 +1,4 @@
-/* Skilltree: pro Stufe ein Punkt. Drei Zweige: Krieger, Jäger, Magie (Elemente, Blutmagie).
+/* Skilltree: ein Punkt alle drei Stufen. Drei Zweige: Krieger, Jäger, Magie (Elemente, Blutmagie).
    rank: maximale Stufe des Knotens. requires: Knoten-IDs, die mindestens Rang 1 haben müssen. level: Mindeststufe.
    Elementknoten schalten mit Rang 1 den Zauber frei, höhere Ränge geben +25 % Schaden je Rang. */
 export const BRANCHES = { krieger: "Krieger", jaeger: "Jäger", magie: "Magie" };

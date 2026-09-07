@@ -23,7 +23,7 @@ export default function Skills({ G, rerender }) {
     <div>
       <div className="box">
         <div style={{ fontSize: 15 }}>Freie Punkte: <span className={free > 0 ? "gold bold" : "dim"}>{free}</span></div>
-        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Ein Punkt pro Stufe. Die Weise nimmt gegen Gold alle Punkte zurück.</div>
+        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Ein Punkt alle drei Stufen (3, 6, 9 …). Die Weise nimmt gegen Gold alle Punkte zurück.</div>
       </div>
 
       {spells.length > 0 && (

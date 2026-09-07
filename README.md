@@ -4,7 +4,7 @@ Zelda-artiges Fantasy-Action-RPG mit Loot. Welt, Monster, Items und Dropchancen 
 
 Eine Hauptgeschichte in neun Kapiteln vom Wolfsalpha vor Elmshain bis zum Aschedrachen Vargor, dazu Nebenaufgaben. Aufgaben gibt es bei den Bewohnern der Dörfer: auf sie zulaufen, Gespräch öffnet sich.
 
-Drei Kampfarten: Nahkampf (Schwert, Axt, Speer), Fernkampf (Bogen, Armbrust, Wurfmesser, Wurfaxt) und Magie mit acht Elementen plus Blutmagie. Ein Skilltree mit drei Zweigen, ein Punkt pro Stufe.
+Drei Kampfarten: Nahkampf (Schwert, Axt, Speer), Fernkampf (Bogen, Armbrust, Wurfmesser, Wurfaxt) und Magie mit acht Elementen plus Blutmagie. Ein Skilltree mit drei Zweigen, ein Punkt alle drei Stufen.
 
 Rendering: stilisiertes Low-Poly-3D mit Three.js, feste Kamera schräg von oben, weicher Kamera-Slide beim Bildschirmwechsel. Mobil zuerst, Touch-Steuerung und Tastatur.
 
