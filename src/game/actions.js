@@ -1,5 +1,5 @@
 /* Aktionen aus den Panels: Ausrüsten, Handel, Schmied, Heilerin. Reine Zustandsänderungen. */
-import { INVENTORY_MAX, derive, addToInventory } from "./player.js";
+import { INVENTORY_MAX, derive, addToInventory, POTION_MAX, potionCount } from "./player.js";
 import { makePotion, POTIONS, upgradeCost } from "./items.js";
 
 export function equipItem(P, it) {
@@ -21,7 +21,7 @@ export function dropItem(P, it) { P.inventory = P.inventory.filter(i => i !== it
 
 export function buyPotion(P, id) {
   const p = POTIONS[id];
-  if (P.gold < p.price) return false;
+  if (P.gold < p.price || potionCount(P, id) >= POTION_MAX) return false;
   P.gold -= p.price;
   addToInventory(P, makePotion(id, 1));
   return true;

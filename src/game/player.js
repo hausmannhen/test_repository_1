@@ -5,6 +5,8 @@ import { generateItem, makePotion, effectiveStats, POTIONS, BASE_BY_ID } from ".
 import { skillBonuses } from "./skills.js";
 
 export const INVENTORY_MAX = 30;
+export const POTION_MAX = 20;   // je Sorte
+export function potionCount(P, id) { const ex = P.inventory.find(i => i.kind === "trank" && i.potId === id); return ex ? ex.qty : 0; }
 
 export function newPlayer(seed) {
   const r = rngFor(seed, "start");
@@ -56,7 +58,8 @@ export function derive(P) {
 export function addToInventory(P, item) {
   if (item.kind === "trank") {
     const ex = P.inventory.find(i => i.kind === "trank" && i.potId === item.potId);
-    if (ex) { ex.qty += item.qty; return true; }
+    if (ex) { if (ex.qty >= POTION_MAX) return false; ex.qty = Math.min(POTION_MAX, ex.qty + item.qty); return true; }
+    item.qty = Math.min(POTION_MAX, item.qty);
   }
   if (P.inventory.length >= INVENTORY_MAX) return false;
   P.inventory.push(item);

@@ -159,3 +159,24 @@ describe("Letzte Worte der Endbosse", () => {
     assert.equal(G.mobs.some(m => m.boss), false);
   });
 });
+
+describe("Tod im Dungeon", () => {
+  it("Wiederbelebung im Eingangsraum des Dungeons, draußen im letzten Dorf", async () => {
+    const { respawn } = await import("../src/game/engine.js");
+    const { DUNGEON_ENTRY } = await import("../src/game/world.js");
+    const G = startGame(createGame("tod"));
+    const d = genDungeon(G.seed, DUNGEONS[0]);
+    const bossKey = Object.keys(d.rooms).find(k => d.rooms[k].dungeonRoom.type === "boss");
+    const [bx, by] = bossKey.split(",").map(Number);
+    enterScreen(G, "d0", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    G.P.hp = 0; G.dead = true; G.P.gold = 100;
+    respawn(G);
+    assert.equal(G.dead, false);
+    assert.equal(G.P.area, "d0"); assert.equal(G.P.sx, DUNGEON_ENTRY.x); assert.equal(G.P.sy, DUNGEON_ENTRY.y);
+    assert.equal(G.screen.dungeonRoom.type, "entry");
+    assert.equal(G.P.gold, 90);
+    enterScreen(G, "over", 4, 5, 7 * TS + 8, 8 * TS + 8, false);
+    G.dead = true; respawn(G);
+    assert.equal(G.P.area, "over"); assert.equal(`${G.P.sx},${G.P.sy}`, "4,5");
+  });
+});

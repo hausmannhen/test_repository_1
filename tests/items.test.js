@@ -72,9 +72,18 @@ describe("Items", () => {
     assert.ok(upgradeCost(it) > upgradeCost({ ...it, upg: 0 }));
   });
 
-  it("Tränke stapeln", () => {
+  it("Tränke stapeln, höchstens 20 je Sorte, Händler verkauft dann nicht", async () => {
     const p = makePotion("heiltrank", 2);
     assert.equal(p.kind, "trank"); assert.equal(p.qty, 2); assert.ok(p.value > 0);
+    const { addToInventory, potionCount, POTION_MAX } = await import("../src/game/player.js");
+    const { buyPotion } = await import("../src/game/actions.js");
+    const P = { inventory: [makePotion("heiltrank", 19)], gold: 100000 };
+    assert.equal(addToInventory(P, makePotion("heiltrank", 2)), true);
+    assert.equal(potionCount(P, "heiltrank"), POTION_MAX);
+    assert.equal(addToInventory(P, makePotion("heiltrank", 1)), false);
+    assert.equal(buyPotion(P, "heiltrank"), false);
+    assert.equal(buyPotion(P, "manatrank"), true);
+    assert.equal(P.inventory.length, 2);
   });
 });
 

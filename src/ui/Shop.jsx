@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { POTIONS, potionDesc } from "../game/items.js";
 import { buyPotion, sellItem, sellPrice } from "../game/actions.js";
+import { POTION_MAX, potionCount } from "../game/player.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemRow } from "./bits.jsx";
 import { ItemDetail } from "./Inventory.jsx";
@@ -20,7 +21,7 @@ export default function Shop({ G, onClose, rerender }) {
         <div key={id} className="item-row"><div className="item-row-head">
           <ItemIcon item={{ kind: "trank", potId: id }} />
           <div className="item-row-text"><span style={{ color: p.color, fontSize: 14 }}>{p.name}</span><div className="item-row-sub">{potionDesc(id)}</div></div>
-          <Btn small tone={P.gold >= p.price ? "gold" : "default"} disabled={P.gold < p.price} onClick={() => { buyPotion(P, id); rerender(); }}>{p.price} G</Btn>
+          <Btn small tone={P.gold >= p.price && potionCount(P, id) < POTION_MAX ? "gold" : "default"} disabled={P.gold < p.price || potionCount(P, id) >= POTION_MAX} onClick={() => { buyPotion(P, id); rerender(); }}>{potionCount(P, id) >= POTION_MAX ? `Voll (${POTION_MAX})` : `${p.price} G`}</Btn>
         </div></div>
       )) : (
         <div>

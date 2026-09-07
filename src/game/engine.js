@@ -3,8 +3,8 @@ import { TS, VW, VH, W, H, WORLD_W, WORLD_H, DG, T, SOLID, idx, REGIONS, DUNGEON
 import { mulberry32, rint, clamp } from "./rng.js";
 import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
-import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
-import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
+import { genOverworldScreen, genDungeon, spawnMobsFor, DUNGEON_ENTRY } from "./world.js";
+import { newPlayer, derive, xpNeed, addToInventory, flash, emit, POTION_MAX } from "./player.js";
 import { castSpell, aimDir, ELEMENTS } from "./magic.js";
 import { onKill as questKill, gateOpen, gateFor, resetStaleRaids, QUESTS } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
@@ -278,10 +278,11 @@ export function hurtPlayer(G, amount) {
 }
 export function respawn(G) {
   const P = G.P;
-  const [sx, sy] = (VILLAGES[P.lastVillage] ? P.lastVillage : START_VILLAGE).split(",").map(Number);
   const d = derive(P);
   P.gold = Math.floor(P.gold * 0.9); P.hp = Math.ceil(d.maxHp / 2); P.mana = d.maxMana;
   G.dead = false; G.invT = 1.5;
+  if (P.area !== "over") { enterScreen(G, P.area, DUNGEON_ENTRY.x, DUNGEON_ENTRY.y, 7 * TS + 8, (VH - 3) * TS + 8, true); return; }   // im Dungeon: zurück zum Eingangsraum
+  const [sx, sy] = (VILLAGES[P.lastVillage] ? P.lastVillage : START_VILLAGE).split(",").map(Number);
   enterScreen(G, "over", sx, sy, 7 * TS + 8, 8 * TS + 8, true);
 }
 
@@ -548,7 +549,7 @@ export function update(G, dt, input) {
     if (dr.type === "gold" && dist < 36 && dr.t > 0.3) { dr.x += (P.x - dr.x) * 8 * dt; dr.y += (P.y - dr.y) * 8 * dt; }
     if (dist < 19 && dr.t > 0.3) {
       if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; emit(G, "gold"); }
-      else if (dr.type === "potion") { addToInventory(P, makePotion(dr.id, dr.qty)); flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); dr.done = true; emit(G, "pickup"); }
+      else if (dr.type === "potion") { if (addToInventory(P, makePotion(dr.id, dr.qty))) { flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); emit(G, "pickup"); } else flash(G, `Höchstens ${POTION_MAX} ${POTIONS[dr.id].name} im Beutel`, "#e9dcb8"); dr.done = true; }
       else if (dr.type === "item") {
         if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); hint(G, "beute", "Neue Ausrüstung im Beutel: Menü, antippen, „Anlegen“. Grün heißt besser als das Angelegte."); }
         else if (!dr.warned) { flash(G, "Inventar voll", "#ff5f6d"); dr.warned = true; }

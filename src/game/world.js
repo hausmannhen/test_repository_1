@@ -28,6 +28,7 @@ export function ambushScreens(seed) {
   return set;
 }
 
+export const DUNGEON_ENTRY = { x: 1, y: 2 };   // Eingangsraum jedes Dungeons
 export function isProtected(x, y) {
   // Kreuz durch die Mitte + Öffnungen an den Rändern: garantiert Durchgang
   if (x >= 6 && x <= 8) return true;
@@ -134,7 +135,7 @@ export function buildDungeonEntrance(screen, d, regId) {
 /* ---------- Dungeons ---------- */
 export function genDungeon(seed, d) {
   const r = rngFor(seed, "dungeon" + d.id);
-  const entry = { x: 1, y: 2 };
+  const entry = { ...DUNGEON_ENTRY };
   const conn = {};
   const K = (x, y) => `${x},${y}`;
   for (let y = 0; y < DG; y++) for (let x = 0; x < DG; x++) conn[K(x, y)] = { n: false, s: false, e: false, w: false };
