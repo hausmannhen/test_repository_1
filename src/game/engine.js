@@ -24,7 +24,7 @@ export function createGame(seed, P = null, slot = null) {
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
     pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
-    hintQueue: [], aim: null,
+    hintQueue: [], aim: null, epilog: null,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     intro: false,      // Geschichte-Fenster beim ersten Start noch offen
@@ -242,6 +242,8 @@ export function killMob(G, m) {
     const dId = G.screen.dungeonRoom.d.id;
     P.cleared[dId] = true; P.hearts += 1; P.hp = derive(P).maxHp;
     G.banner = { text: m.name + " besiegt", sub: "Herzcontainer erhalten", t: 4 };
+    if (!P.epilogs) P.epilogs = {};
+    if (!P.epilogs[dId]) G.epilog = dId;   // letzte Worte, sobald der Raum leer ist
     emit(G, "fanfare");
   }
   questKill(G, m);
@@ -308,6 +310,13 @@ export function update(G, dt, input) {
   if (freePoints(P) > 0) hint(G, "punkt", "Ein Fertigkeitspunkt ist frei: Menü, dann „Fertigkeiten“. Elemente schalten Zauber frei.");
   if (P.hp < d.maxHp * 0.4 && !G.dead) hint(G, "trank", "Wenig Leben: Der Trank-Knopf heilt 30 %. Beim Händler gibt es Nachschub.");
   if (G.hintQueue.length && !G.msg && (!G.banner || G.banner.t < 0.5)) G.msg = { text: G.hintQueue.shift(), color: "#8fd3ff", t: 5.5 };
+  // Letzte Worte des Endbosses: erst, wenn kein Gegner mehr im Raum steht
+  if (G.epilog !== null && G.epilog !== undefined && !G.mobs.some(m => !m.dead)) {
+    const id = G.epilog; G.epilog = null;
+    P.epilogs[id] = true; G.dirty = true;
+    G.panelReturn = null;
+    G.openPanel && G.openPanel("epilog:" + id);
+  }
   // Arena aufgelöst?
   if (G.arenaLock && !G.mobs.some(m => !m.dead)) {
     G.arenaLock = false;

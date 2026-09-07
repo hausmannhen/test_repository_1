@@ -14,6 +14,7 @@ import Hud from "./ui/Hud.jsx";
 import Controls from "./ui/Controls.jsx";
 import Title from "./ui/Title.jsx";
 import StoryIntro, { markStoryRead } from "./ui/Story.jsx";
+import Epilog from "./ui/Epilog.jsx";
 import Inventory from "./ui/Inventory.jsx";
 import Shop from "./ui/Shop.jsx";
 import Smith from "./ui/Smith.jsx";
@@ -175,6 +176,7 @@ export default function App() {
     if (panel === "sage") return <Sage {...props} />;
     if (panel === "tot") return <Death G={G} onRespawn={() => { respawn(G); setPanel(null); }} />;
     if (panel.startsWith("npc:")) return <Npc {...props} npcId={panel.slice(4)} />;
+    if (panel.startsWith("epilog:")) return <Epilog {...props} id={+panel.slice(7)} />;
     return null;
   };
 

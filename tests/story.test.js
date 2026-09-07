@@ -7,6 +7,7 @@ import { gateOpen, makeChoice, isDone, isActive, doneText, canOffer, talkTo, CHO
 import { migrate } from "../src/game/save.js";
 import { newPlayer } from "../src/game/player.js";
 import { STORY } from "../src/data/story.js";
+import { EPILOGUES, epilogueFor } from "../src/data/epilogues.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 const doneUpTo = (n) => { const q = {}; for (let i = 1; i <= n; i++) q["h" + i] = { state: "done", progress: 1 }; return q; };
@@ -124,5 +125,37 @@ describe("Geschichte beim Start", () => {
     assert.match(all, /Vargor/);
     assert.doesNotMatch(all, /Kapitel 7|Wahl|Überf/);
     assert.doesNotMatch(all, /stirbt|flicken|brechen/);
+  });
+});
+
+describe("Letzte Worte der Endbosse", () => {
+  it("Texte: jeder Boss, Vargor beide Enden, Dank und Siegel kommen vor", () => {
+    for (const id of [0, 1]) { const e = epilogueFor(id); assert.ok(e.title && e.words.length >= 2 && e.after.length > 80); assert.match(e.words.join(" "), /Dank|danke/i); assert.match(e.after, /Siegel/); }
+    assert.notEqual(epilogueFor(2, "brechen").title, epilogueFor(2, "flicken").title);
+    assert.equal(epilogueFor(2, undefined), EPILOGUES[2].brechen);
+    assert.equal(epilogueFor(7), null);
+  });
+  it("Fenster öffnet erst, wenn der Raum leer ist, und nur einmal", () => {
+    const G = startGame(createGame("epilog"));
+    const opened = []; G.openPanel = (t) => opened.push(t);
+    const d = genDungeon(G.seed, DUNGEONS[0]);
+    const bossKey = Object.keys(d.rooms).find(k => d.rooms[k].dungeonRoom.type === "boss");
+    const [bx, by] = bossKey.split(",").map(Number);
+    enterScreen(G, "d0", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    const boss = G.mobs.find(m => m.boss);
+    for (const m of G.mobs) m.spawnDelay = 0;
+    killMob(G, boss);
+    assert.equal(G.epilog, 0);
+    update(G, 1 / 60, idle);
+    assert.equal(opened.length, 0, "Fenster trotz lebender Diener");
+    for (const m of [...G.mobs]) if (!m.dead) killMob(G, m);
+    update(G, 1 / 60, idle);
+    assert.deepEqual(opened, ["epilog:0"]);
+    assert.equal(G.P.epilogs[0], true);
+    update(G, 1 / 60, idle);
+    assert.equal(opened.length, 1, "Fenster erneut");
+    // Zweiter Besuch: kein Boss mehr, kein Fenster
+    enterScreen(G, "d0", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    assert.equal(G.mobs.some(m => m.boss), false);
   });
 });
