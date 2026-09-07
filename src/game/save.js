@@ -1,9 +1,10 @@
 /* Speichern: mehrere Spielstände im localStorage, Versionierung, Export und Import als Datei */
 import { REGIONS, VILLAGES, DUNGEONS, regionAt, WORLD_W, WORLD_H, START_VILLAGE, TS } from "./constants.js";
 import { LEGACY_POTIONS, POTIONS } from "../data/items.js";
+import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
 
 export const STORE_KEY = "eldenfeld_saves";
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const ACCOUNT_COUNT = 2;
 export const ACCOUNT_IDS = Array.from({ length: ACCOUNT_COUNT }, (_, i) => "konto" + (i + 1));
 export const MAX_SLOTS = ACCOUNT_COUNT;
@@ -60,6 +61,14 @@ export function migrate(data) {
     if (old7) q.h8 = old7;
     if (old7 || old8 || old9) { q.h7 = { state: "done", progress: 1 }; out.P.choice = out.P.choice || "brechen"; }
     out.P = { ...out.P, quests: q, choice: out.P.choice || null };
+  }
+  if (v < 6) {
+    // Version 6: Arenen nur noch an Revieren. Truhen ehemaliger Zufallsarenen gelten als geplündert, damit nichts doppelt fällt.
+    out.saveVersion = 6;
+    const chests = { ...(out.P.chests || {}) }, arenas = {};
+    for (const k of Object.keys(chests)) if (k.startsWith("a") && !MINIBOSS_BY_SCREEN[k.slice(1)]) { chests["w" + k.slice(1)] = true; }
+    for (const k of Object.keys(out.P.arenas || {})) if (MINIBOSS_BY_SCREEN[k]) arenas[k] = true;
+    out.P = { ...out.P, chests, arenas };
   }
   if (typeof out.seed !== "string") out.seed = "eldenfeld-" + Math.random().toString(36).slice(2, 8);
   if (!out.name) out.name = "Spielstand";

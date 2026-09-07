@@ -106,3 +106,14 @@ describe("Tränke-Migration", () => {
     assert.equal(pots.find(p => p.potId === "manatrank").qty, 2);
   });
 });
+
+describe("Arena-Migration", () => {
+  it("Truhen ehemaliger Zufallsarenen gelten als geplündert", () => {
+    const P = newPlayer("x");
+    P.chests = { "a3,5": true, "a3,4": true, "w1,1": true }; P.arenas = { "3,5": true, "3,4": true };
+    const mig = migrate({ saveVersion: 5, seed: "s", P });
+    assert.equal(mig.P.chests["w3,5"], true, "Truhe nicht als geplündert markiert");
+    assert.equal(mig.P.chests["a3,4"], true, "Revier-Truhe verloren");
+    assert.equal(mig.P.arenas["3,5"], undefined); assert.equal(mig.P.arenas["3,4"], true);
+  });
+});
