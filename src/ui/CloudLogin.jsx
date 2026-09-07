@@ -58,13 +58,6 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
   return (
     <div className="cloud">
       <div className="section" style={{ textAlign: "left" }}>Online-Konten {cloud.online ? "" : <span className="red">· offline</span>}</div>
-      {session && !mode && (
-        <div className="save-row">
-          <div className="save-main"><div className="save-name">{session.name}</div><div className="save-sub">Angemeldet auf diesem Gerät</div></div>
-          <div className="save-actions"><Btn small tone="gold" disabled={busy} onClick={doResume}>Weiterspielen</Btn><Btn small onClick={() => { cloud.logout(); setMode(null); refresh(); }}>Abmelden</Btn></div>
-        </div>
-      )}
-      {list === null && <div className="dim" style={{ fontSize: 13 }}>Lade Konten …</div>}
       {list && list.length > 1 && !mode && (
         <div className="box" style={{ marginBottom: 10 }}>
           <div className="section" style={{ marginTop: 0 }}>Rangliste</div>
@@ -77,6 +70,13 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
           ))}
         </div>
       )}
+      {session && !mode && (
+        <div className="save-row">
+          <div className="save-main"><div className="save-name">{session.name}</div><div className="save-sub">Angemeldet auf diesem Gerät</div></div>
+          <div className="save-actions"><Btn small tone="gold" disabled={busy} onClick={doResume}>Weiterspielen</Btn><Btn small onClick={() => { cloud.logout(); setMode(null); refresh(); }}>Abmelden</Btn></div>
+        </div>
+      )}
+      {list === null && <div className="dim" style={{ fontSize: 13 }}>Lade Konten …</div>}
       {list && list.length === 0 && !mode && <div className="empty">Noch kein Online-Konto.</div>}
       {list && !mode && list.filter(k => !session || k.name !== session.name).map(k => (
         <div key={k.name} className="save-row">
