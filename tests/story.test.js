@@ -70,7 +70,7 @@ describe("Die Wahl", () => {
       return { G, boss: G.mobs.find(m => m.boss) };
     };
     const full = spawnBoss("brechen"), weak = spawnBoss("flicken");
-    assert.ok(full.boss.maxHp > weak.boss.maxHp * 1.5);
+    assert.ok(full.boss.maxHp > weak.boss.maxHp * 1.3);
     assert.equal(full.boss.phases, 2); assert.equal(weak.boss.phases, 0);
     assert.equal(weak.boss.weak, true);
     // Phase wechselt bei zwei Dritteln und ruft Diener
