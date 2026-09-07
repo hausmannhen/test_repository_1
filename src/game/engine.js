@@ -88,7 +88,7 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   const isBossRoom = !!(screen.dungeonRoom && screen.dungeonRoom.type === "boss" && !P.cleared[screen.dungeonRoom.d.id]);
   const alive = G.mobs.some(m => !m.dead);
   G.arenaLock = !!(alive && (isBossRoom || (screen.arena && !(P.arenas && P.arenas[screen.key]))));
-  if (screen.village) { P.lastVillage = `${sx},${sy}`; if (banner) G.banner = { text: screen.village.name, sub: "Dorf", t: 2.6 }; }
+  if (screen.village) { P.lastVillage = `${sx},${sy}`; if (banner) G.banner = { text: screen.village.name, sub: "Dorf · Spielstand gespeichert", t: 2.6 }; }
   else if (screen.dungeonRoom) { if (banner && screen.dungeonRoom.type === "entry") G.banner = { text: screen.dungeonRoom.d.name, sub: "Dungeon, Stufe " + screen.dungeonRoom.d.level, t: 2.6 }; }
   else if (banner && screen.region !== prevRegion) G.banner = { text: REGIONS[screen.region].name, sub: "Stufe " + REGIONS[screen.region].level + "+", t: 2.6 };
   if (G.arenaLock && banner) G.banner = { text: isBossRoom ? "Kein Zurück" : "Hinterhalt", sub: isBossRoom ? "Der Raum schließt sich hinter dir" : "Besiege alle Gegner, um weiterzukommen", t: 3 };
