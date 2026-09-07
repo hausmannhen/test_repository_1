@@ -118,8 +118,8 @@ export default function App() {
       }
       G.events.length = 0;
       const P = G.P, d = derive(P);
-      const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].heal).reduce((a, b) => a + b.qty, 0);
-      const manaPots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId].mana).reduce((a, b) => a + b.qty, 0);
+      const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].healPct).reduce((a, b) => a + b.qty, 0);
+      const manaPots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].manaPct).reduce((a, b) => a + b.qty, 0);
       const spells = knownSpells(P);
       const sp = P.activeSpell && SPELLS[P.activeSpell] ? SPELLS[P.activeSpell] : null;
       const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),

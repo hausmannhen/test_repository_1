@@ -135,20 +135,20 @@ export function buildMobModel(m) {
   group.traverse(o => { if (o.isMesh) o.castShadow = true; });
 
   // Lebensbalken (wird vom Renderer zur Kamera gedreht): schwarzer Grund, rotes Leben, immer sichtbar
-  const barW = m.boss ? 2.4 : m.mini ? 1.8 : Math.max(1.2, s + 0.6);
-  const barH = m.boss ? 0.3 : m.mini ? 0.26 : 0.22;
+  const barW = m.boss ? 2.2 : m.mini ? 1.6 : Math.max(1.0, s + 0.4);
+  const barH = m.boss ? 0.09 : m.mini ? 0.08 : 0.06;
   const bar = new THREE.Group();
   const flat = (hex, extra = {}) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex), depthTest: false, depthWrite: false, toneMapped: false, ...extra });
-  const barEdge = new THREE.Mesh(G.plane(barW + 0.1, barH + 0.1), flat("#000000"));
+  // flache Linie: schwarzer Rand, schwarzer Grund, rotes Leben
+  const barEdge = new THREE.Mesh(G.plane(barW + 0.05, barH + 0.05), flat("#000000"));
   const barBg = new THREE.Mesh(G.plane(barW, barH), flat("#0a0a0a"));
   const barFg = new THREE.Mesh(G.plane(barW, barH), flat(m.boss ? "#ff1414" : "#ff2a2a"));
-  const barSheen = new THREE.Mesh(G.plane(barW, barH * 0.35), flat("#ff7a7a", { transparent: true, opacity: 0.35 }));
-  barEdge.renderOrder = 19; barBg.renderOrder = 20; barFg.renderOrder = 21; barSheen.renderOrder = 22;
-  barEdge.position.z = -0.002; barFg.position.z = 0.001; barSheen.position.z = 0.002; barSheen.position.y = barH * 0.28;
-  bar.add(barEdge, barBg, barFg, barSheen);
+  barEdge.renderOrder = 19; barBg.renderOrder = 20; barFg.renderOrder = 21;
+  barEdge.position.z = -0.002; barFg.position.z = 0.001;
+  bar.add(barEdge, barBg, barFg);
   bar.visible = true;
   bar.userData.ownMaterial = true;
-  const barMats = [barEdge.material, barBg.material, barFg.material, barSheen.material];
+  const barMats = [barEdge.material, barBg.material, barFg.material];
   const height = m.shape === "bat" ? 1.3 : m.shape === "golem" ? 1.5 * s : m.shape === "ghost" ? 1.5 * s : 1.2 * s;
 
   const state = { rot: Math.PI, lastX: m.x, lastY: m.y };
@@ -190,9 +190,9 @@ export function buildMobModel(m) {
     }
     // Lebensbalken: Anteil von links, Rest bleibt schwarz
     const f = Math.max(0, Math.min(1, m.hp / m.maxHp));
-    barFg.scale.x = Math.max(0.001, f); barSheen.scale.x = Math.max(0.001, f);
-    barFg.position.x = -barW / 2 * (1 - f); barSheen.position.x = -barW / 2 * (1 - f);
-    bar.position.set(pos.x, pos.y + height + 0.3, pos.z);
+    barFg.scale.x = Math.max(0.001, f);
+    barFg.position.x = -barW / 2 * (1 - f);
+    bar.position.set(pos.x, pos.y + height + 0.22, pos.z);
   }
   function dispose() { for (const mat of mats) mat.dispose(); for (const mat of barMats) mat.dispose(); }
   return { group, bar, update, dispose };
