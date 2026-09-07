@@ -23,7 +23,7 @@ export const MOBS = {
 export const BOSSES = {
   0: { base: "waldgeist", name: "Eichenkönig",        hpMult: 8,  atkMult: 1.4, size: 20, color: "#5aa06a", color2: "#1f4a2a" },
   1: { base: "golem",     name: "Gebirgswächter",     hpMult: 7,  atkMult: 1.5, size: 24, color: "#6f7a90", color2: "#2a3040" },
-  2: { base: "drache",    name: "Aschedrache Vargor", hpMult: 6,  atkMult: 1.6, size: 26, color: "#e04a2a", color2: "#3a0a0a" },
+  2: { base: "drache",    name: "Aschedrache Vargor", hpMult: 3,  atkMult: 0.6, size: 26, color: "#e04a2a", color2: "#3a0a0a" },
 };
 
 export function makeMob(typeId, level, x, y, bossDef = null) {

@@ -311,8 +311,9 @@ export function update(G, dt, input) {
       for (const a of angles) {
         const ca = Math.cos(a), sa = Math.sin(a);
         const vx = dx * ca - dy * sa, vy = dx * sa + dy * ca;
+        // Schaden je Schuss wächst mit der Feuerrate: langsame Waffen treffen hart, schnelle leicht
         G.pprojs.push({ x: P.x + vx * 6, y: P.y + vy * 6, vx: vx * d.projSpeed, vy: vy * d.projSpeed, t: d.range / d.projSpeed, kind: d.proj, color: "#e8e2d0", color2: "#8a6a3a",
-          dmg: d.atk * d.rangedMult, critChance: d.crit + d.critRanged, pierce: d.pierce, hit: new Set(), knock: 0.6 });
+          dmg: d.atk * d.rangedMult * d.rate * 2.7 / (angles.length > 1 ? 1.4 : 1), critChance: d.crit + d.critRanged, pierce: d.pierce, hit: new Set(), knock: 0.6 });
       }
     }
   } else if (input.attack && G.attack.t <= -0.08 / atkSpeed) {

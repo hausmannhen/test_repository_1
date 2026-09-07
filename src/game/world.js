@@ -205,7 +205,7 @@ export function spawnMobsFor(screen, seed, visitCount, cleared = {}, opts = {}) 
       let bd = BOSSES[d.id];
       if (d.id === 2) {
         // Vargor: ganz frei (drei Phasen) oder angekettet (schwächer, weniger Beute)
-        bd = opts.choice === "flicken" ? { ...bd, name: "Aschedrache Vargor, gefesselt", hpMult: 3.5, atkMult: 1.2, weak: true } : { ...bd, name: "Aschedrache Vargor, entfesselt", hpMult: 6.5, atkMult: 1.7, phases: 2 };
+        bd = opts.choice === "flicken" ? { ...bd, name: "Aschedrache Vargor, gefesselt", hpMult: 2, atkMult: 0.45, weak: true } : { ...bd, name: "Aschedrache Vargor, entfesselt", hpMult: 3, atkMult: 0.6, phases: 2 };
       }
       mobs.push(makeMob(bd.base, level + 2, 7 * TS + 8, 3 * TS + 8, bd));
       count = 2;

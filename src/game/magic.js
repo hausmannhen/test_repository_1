@@ -77,17 +77,18 @@ export function castSpell(G, spellId = G.P.activeSpell) {
   return true;
 }
 
-/* Nächster Gegner innerhalb ±50° zur Blickrichtung, sonst null */
+/* Zielhilfe: nächster Gegner im Kegel vor dem Spieler (±50°); ist dort keiner, der nächste in Reichweite überhaupt.
+   So kann man rückwärts laufen und trotzdem schießen, was auf dem Handy die einzige Art zu kiten ist. */
 export function aimAt(G, dx, dy, range) {
   const P = G.P;
-  let best = null, bestD = range;
+  let best = null, bestD = range, any = null, anyD = range;
   for (const m of G.mobs) {
-    if (m.dead) continue;
+    if (m.dead || m.spawnDelay > 0) continue;
     const mx = m.x - P.x, my = m.y - P.y, dist = Math.hypot(mx, my) || 1;
-    if (dist > bestD) continue;
+    if (dist > range) continue;
     const cos = (mx * dx + my * dy) / dist;
-    if (cos < 0.64) continue;
-    best = { x: mx / dist, y: my / dist }; bestD = dist;
+    if (cos >= 0.64 && dist < bestD) { best = { x: mx / dist, y: my / dist }; bestD = dist; }
+    if (dist < anyD) { any = { x: mx / dist, y: my / dist }; anyD = dist; }
   }
-  return best;
+  return best || any;
 }
