@@ -18,6 +18,7 @@ function fakeServer() {
     calls.push({ fn, a, auth: !!opts.headers.Authorization });
     if (fn === "konten_liste") return ok([...db.values()].map(k => ({ name: k.name, level: k.save ? k.save.P.level : 1, updated_at: new Date(k.updated).toISOString() })));
     if (fn === "konto_anlegen") {
+      if (srv.code && (a.p_code || "").toLowerCase() !== srv.code.toLowerCase()) return fail("Einladungscode fehlt oder ist falsch");
       if (!/^[0-9]{4}$/.test(a.p_pin)) return fail("PIN: genau vier Ziffern");
       if (db.size >= 10) return fail("Höchstens 10 Konten");
       if (db.has(a.p_name.toLowerCase())) return fail("Name ist schon vergeben");
@@ -40,7 +41,8 @@ function fakeServer() {
     if (fn === "konto_loeschen") { if (k.pin !== a.p_pin) return fail("Falsche PIN"); db.delete(k.name.toLowerCase()); return ok({ ok: true }); }
     return fail("unbekannt", 404);
   };
-  return { db, calls, fetch };
+  const srv = { db, calls, fetch, code: null };
+  return srv;
 }
 const mk = (srv) => new CloudClient({ url: "https://x.supabase.co", key: "sb_publishable_test", fetch: srv.fetch });
 
@@ -111,6 +113,14 @@ describe("Online-Konten", () => {
     const c = new CloudClient({ url: "https://x.supabase.co", key: "k", fetch });
     await c.register("D", "1234");
     assert.ok(srv.calls.some(x => x.fn === "konto_anlegen" && !x.auth));
+  });
+
+  it("Einladungscode schützt das Anlegen", async () => {
+    const srv = fakeServer(); srv.code = "Elmshain"; const c = mk(srv);
+    await assert.rejects(() => c.register("F", "1234"), /Einladungscode/);
+    await assert.rejects(() => c.register("F", "1234", null, "falsch"), /Einladungscode/);
+    const slot = await c.register("F", "1234", null, "elmshain");
+    assert.equal(slot.name, "F");
   });
 
   it("PIN ändern und Konto löschen", async () => {

@@ -51,7 +51,7 @@ Voraussetzung: Node 20 oder neuer.
 
 Mit einem Supabase-Projekt liegen bis zu zehn Konten in der Cloud, jedes mit Name und vierstelliger PIN, spielbar von jedem Gerät. Einrichtung: `supabase/schema.sql` im SQL Editor ausführen, Projekt-Adresse und öffentlichen Schlüssel in `src/cloud.config.js` eintragen. Bleibt die Adresse leer, zeigt das Spiel nur Gerätekonten.
 
-Schutz liegt in der Datenbank: PIN als bcrypt-Hash, fünf Fehlversuche sperren 15 Minuten, Sitzungs-Token 60 Tage, die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt. Gespeichert wird lokal sofort und online gebündelt (alle vier Sekunden höchstens einmal, beim Verlassen sofort). Offline geht es mit dem lokalen Stand weiter, der beim nächsten Kontakt hochgeladen wird. PIN zurücksetzen: Kommentar am Ende von `supabase/schema.sql`.
+Schutz liegt in der Datenbank: PIN als bcrypt-Hash, fünf Fehlversuche sperren 15 Minuten, Sitzungs-Token 60 Tage, die Tabelle selbst ist für den öffentlichen Schlüssel gesperrt. Gespeichert wird lokal sofort und online gebündelt (alle vier Sekunden höchstens einmal, beim Verlassen sofort). Offline geht es mit dem lokalen Stand weiter, der beim nächsten Kontakt hochgeladen wird. Einladungscode: `update einstellungen set value = 'Wort' where key = 'einladung';` im SQL Editor, danach braucht jedes neue Konto das Wort. PIN zurücksetzen: Kommentar am Ende von `supabase/schema.sql`.
 
 ## Spielstände
 

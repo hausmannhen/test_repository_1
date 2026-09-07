@@ -45,8 +45,8 @@ export class CloudClient {
   logout() { this.writeCache(null); }
 
   async list() { return this.rpc("konten_liste"); }
-  async register(name, pin, save = null) {
-    const r = await this.rpc("konto_anlegen", { p_name: name, p_pin: pin, p_save: save });
+  async register(name, pin, save = null, code = null) {
+    const r = await this.rpc("konto_anlegen", { p_name: name, p_pin: pin, p_save: save, p_code: code || null });
     this.writeCache({ name: r.name, token: r.token, save: r.save || null, savedAt: Date.now(), dirty: false });
     return this.toSlot(r.name, r.save);
   }

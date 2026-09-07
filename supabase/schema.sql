@@ -19,6 +19,15 @@ create table if not exists public.konten (
 alter table public.konten enable row level security;
 revoke all on public.konten from anon, authenticated;
 
+-- Einstellungen, z. B. der Einladungscode zum Anlegen von Konten
+create table if not exists public.einstellungen (
+  key   text primary key,
+  value text
+);
+alter table public.einstellungen enable row level security;
+revoke all on public.einstellungen from anon, authenticated;
+insert into public.einstellungen(key, value) values ('einladung', null) on conflict do nothing;
+
 -- ---------- Hilfsfunktionen ----------
 create or replace function public._konto_name_ok(p_name text) returns boolean
 language sql immutable as $$
@@ -46,12 +55,15 @@ language sql security definer set search_path = public, extensions stable as $$
   from konten order by updated_at desc;
 $$;
 
--- Konto anlegen: Name, vierstellige PIN, optional ein vorhandener Spielstand
-create or replace function public.konto_anlegen(p_name text, p_pin text, p_save jsonb default null)
+-- Konto anlegen: Name, vierstellige PIN, optional ein vorhandener Spielstand, Einladungscode falls gesetzt
+drop function if exists public.konto_anlegen(text, text, jsonb);
+create or replace function public.konto_anlegen(p_name text, p_pin text, p_save jsonb default null, p_code text default null)
 returns jsonb
 language plpgsql security definer set search_path = public, extensions as $$
-declare t text; n int;
+declare t text; n int; code text;
 begin
+  select value into code from einstellungen where key = 'einladung';
+  if code is not null and code <> '' and (p_code is null or lower(trim(p_code)) <> lower(trim(code))) then raise exception 'Einladungscode fehlt oder ist falsch'; end if;
   if not _konto_name_ok(p_name) then raise exception 'Name: 2 bis 20 Zeichen, Buchstaben, Ziffern, Leerzeichen'; end if;
   if p_pin !~ '^[0-9]{4}$' then raise exception 'PIN: genau vier Ziffern'; end if;
   select count(*) into n from konten;
@@ -137,12 +149,14 @@ end $$;
 revoke all on function public._konto_pruefen(text, text) from public, anon, authenticated;
 revoke all on function public._konto_name_ok(text) from public, anon, authenticated;
 grant execute on function public.konten_liste() to anon, authenticated;
-grant execute on function public.konto_anlegen(text, text, jsonb) to anon, authenticated;
+grant execute on function public.konto_anlegen(text, text, jsonb, text) to anon, authenticated;
 grant execute on function public.konto_login(text, text) to anon, authenticated;
 grant execute on function public.konto_laden(text, text) to anon, authenticated;
 grant execute on function public.konto_speichern(text, text, jsonb) to anon, authenticated;
 grant execute on function public.konto_pin_aendern(text, text, text, text) to anon, authenticated;
 grant execute on function public.konto_loeschen(text, text, text) to anon, authenticated;
 
+-- Einladungscode setzen (nur hier im SQL Editor). Ohne Code kann jeder Konten anlegen:
+-- update einstellungen set value = 'GeheimesWort' where key = 'einladung';
 -- PIN eines Kontos zurücksetzen (nur hier im SQL Editor, nie im Spiel):
 -- update konten set pin_hash = crypt('1234', gen_salt('bf', 8)), fails = 0, locked_until = null where name = 'Hendrik';

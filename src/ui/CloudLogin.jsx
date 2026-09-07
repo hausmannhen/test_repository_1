@@ -21,6 +21,7 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [pin2, setPin2] = useState("");
+  const [code, setCode] = useState("");
   const session = cloud.session();
 
   const refresh = () => cloud.list().then(l => { setList(l); setError(null); }).catch(e => { setList([]); setError(e.message); });
@@ -35,11 +36,11 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
   const doLogin = () => run(async () => cloud.login(mode.name, pin));
   const doNew = () => run(async () => {
     if (pin !== pin2) throw new Error("Die PINs stimmen nicht überein");
-    return cloud.register(name.trim(), pin, null);
+    return cloud.register(name.trim(), pin, null, code);
   });
   const doUpload = () => run(async () => {
     if (pin !== pin2) throw new Error("Die PINs stimmen nicht überein");
-    const slot = await cloud.register(name.trim(), pin, { saveVersion: mode.slot.saveVersion, seed: mode.slot.seed, P: mode.slot.P });
+    const slot = await cloud.register(name.trim(), pin, { saveVersion: mode.slot.saveVersion, seed: mode.slot.seed, P: mode.slot.P }, code);
     onImportLocal && onImportLocal(mode.slot);
     return slot;
   });
@@ -85,6 +86,7 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
           <input className="input" value={name} maxLength={20} placeholder="Name" onChange={e => setName(e.target.value)} autoFocus />
           {pinInput(pin, setPin, "PIN, vier Ziffern")}
           {pinInput(pin2, setPin2, "PIN wiederholen")}
+          <input className="input" value={code} maxLength={40} placeholder="Einladungscode (von Hendrik)" onChange={e => setCode(e.target.value)} />
           <div className="row"><Btn tone="gold" disabled={busy || name.trim().length < 2 || pin.length !== 4} onClick={mode.kind === "new" ? doNew : doUpload}>{mode.kind === "new" ? "Konto anlegen" : "Hochladen und spielen"}</Btn><Btn onClick={() => setMode(null)}>Abbrechen</Btn></div>
         </div>
       )}
