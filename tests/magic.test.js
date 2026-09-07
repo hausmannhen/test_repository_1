@@ -65,10 +65,12 @@ describe("Skilltree", () => {
     assert.equal(learn(P, "zielen"), false);
     P.level = 15;
     assert.ok(learn(P, "blutmagie"));
-    assert.ok(learn(P, "blutmagie"));            // Rang 2 ab Stufe 13
-    assert.equal(whyNot(P, "blutmagie"), "Rang 3 ab Stufe 18");
+    assert.ok(learn(P, "blutmagie"));            // Rang 2 ab Stufe 14
+    assert.equal(whyNot(P, "blutmagie"), "Rang 3 ab Stufe 20");
     assert.equal(learn(P, "blutmagie"), false);
-    P.level = 18;
+    P.level = 19;
+    assert.equal(learn(P, "blutmagie"), false, "Rang 3 vor Stufe 20");
+    P.level = 20;
     assert.ok(learn(P, "blutmagie"));
     assert.equal(whyNot(P, "blutmagie"), "Maximal");
     assert.ok(canLearn(P, "aderlass"));
@@ -203,5 +205,15 @@ describe("Magie", () => {
     assert.equal(mig.P.mana, 30);
     assert.deepEqual(mig.P.skills, {});
     assert.equal(freePoints(mig.P), 1);
+  });
+});
+
+describe("Rangschwellen", () => {
+  it("Rang 2 nie vor Stufe 10, Rang 3 nie vor Stufe 20, sonst sechs Stufen nach der Freischaltung", async () => {
+    const { levelForRank, RANK_FLOOR } = await import("../src/game/skills.js");
+    assert.deepEqual(RANK_FLOOR, [1, 10, 20]);
+    assert.deepEqual([1, 2, 3].map(r => levelForRank("feuer", r)), [1, 10, 20]);
+    assert.deepEqual([1, 2, 3].map(r => levelForRank("blutmagie", r)), [8, 14, 20]);
+    assert.deepEqual([1, 2, 3].map(r => levelForRank("aderlass", r)), [12, 18, 24]);
   });
 });
