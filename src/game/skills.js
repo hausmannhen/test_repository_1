@@ -10,13 +10,17 @@ export const POINT_EVERY = 3;
 export function totalPoints(P) { return Math.floor(P.level / POINT_EVERY); }
 export function freePoints(P) { return Math.max(0, totalPoints(P) - spentPoints(P)); }
 
+/* Mindeststufe für einen Rang: Grundstufe des Knotens, dann je weiterer Rang fünf Stufen mehr */
+export const RANK_STEP = 5;
+export function levelForRank(id, rank) { const s = SKILLS[id]; return (s.level || 1) + (rank - 1) * RANK_STEP; }
 export function whyNot(P, id) {
   const s = SKILLS[id];
   if (!s) return "Unbekannt";
   const rank = skillRank(P, id);
   if (rank >= s.rank) return "Maximal";
   if (freePoints(P) <= 0) return "Keine Punkte";
-  if (s.level && P.level < s.level) return `Ab Stufe ${s.level}`;
+  const need = levelForRank(id, rank + 1);
+  if (P.level < need) return rank === 0 ? `Ab Stufe ${need}` : `Rang ${rank + 1} ab Stufe ${need}`;
   for (const req of s.requires || []) if (skillRank(P, req) < 1) return `Braucht ${SKILLS[req].name}`;
   return null;
 }

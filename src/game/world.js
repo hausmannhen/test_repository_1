@@ -57,8 +57,8 @@ export function genOverworldScreen(seed, sx, sy) {
   if (VILLAGES[key]) buildVillage(screen, r, VILLAGES[key], regId);
   else if (DUNGEON_BY_SCREEN[key]) buildDungeonEntrance(screen, DUNGEON_BY_SCREEN[key], regId);
   else {
-    // Arena: nur die Reviere der Zwischenbosse. Arenen haben immer eine Kampftruhe.
-    screen.arena = !!screen.miniboss;
+    // Arena: Reviere der Zwischenbosse und rund jeder zehnte Wildnis-Bildschirm (Hinterhalt). Arenen haben immer eine Kampftruhe.
+    screen.arena = !!screen.miniboss || hashStr(seed + "|hinterhalt|" + key) % 10 === 0;
     if (screen.arena || chance(r, 0.25)) {
       const spots = [];
       for (let y = 2; y < VH - 2; y++) for (let x = 2; x < VW - 2; x++) if (!isProtected(x, y) && !SOLID.has(tiles[idx(x, y)]) && !(Math.abs(x - 7) < 2 && Math.abs(y - 5) < 2)) spots.push([x, y]);

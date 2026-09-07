@@ -14,11 +14,11 @@ describe("Items", () => {
     const count = Object.fromEntries(RARITIES.map(x => [x.id, 0]));
     for (let i = 0; i < 10000; i++) count[generateItem(r, 1).rarity]++;
     const share = id => count[id] / 10000;
-    assert.ok(share("gewoehnlich") > 0.52 && share("gewoehnlich") < 0.66, "gewöhnlich " + share("gewoehnlich"));
-    assert.ok(share("ungewoehnlich") > 0.2 && share("ungewoehnlich") < 0.32, "ungewöhnlich " + share("ungewoehnlich"));
+    assert.ok(share("gewoehnlich") > 0.55 && share("gewoehnlich") < 0.68, "gewöhnlich " + share("gewoehnlich"));
+    assert.ok(share("ungewoehnlich") > 0.2 && share("ungewoehnlich") < 0.33, "ungewöhnlich " + share("ungewoehnlich"));
     assert.ok(share("selten") > 0.06 && share("selten") < 0.14, "selten " + share("selten"));
-    assert.ok(share("episch") > 0.015 && share("episch") < 0.05, "episch " + share("episch"));
-    assert.ok(share("legendaer") > 0.002 && share("legendaer") < 0.02, "legendär " + share("legendaer"));
+    assert.ok(share("episch") > 0.006 && share("episch") < 0.025, "episch " + share("episch"));
+    assert.ok(share("legendaer") > 0.0005 && share("legendaer") < 0.006, "legendär " + share("legendaer"));
   });
 
   it("Glück verschiebt die Verteilung nach oben", () => {
@@ -79,7 +79,7 @@ describe("Items", () => {
 });
 
 describe("Drops", () => {
-  it("Gold immer, Item rund 13 %, Trank rund 12 %", () => {
+  it("Gold immer, Item rund 8 %, Trank rund 12 %", () => {
     const r = mulberry32(42);
     const mob = makeMob("wolf", 3, 0, 0);
     let items = 0, pots = 0;
@@ -89,7 +89,7 @@ describe("Drops", () => {
       if (d.some(x => x.type === "item")) items++;
       if (d.some(x => x.type === "potion")) pots++;
     }
-    assert.ok(items > 1100 && items < 1500, "items " + items);
+    assert.ok(items > 650 && items < 950, "items " + items);
     assert.ok(pots > 1000 && pots < 1400, "pots " + pots);
   });
   it("Bosse: zwei Items, eines mindestens Episch, Großer Heiltrank", () => {

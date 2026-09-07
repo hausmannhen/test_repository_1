@@ -75,7 +75,7 @@ export function rollDrops(r, mob, luck, isBoss, weak = false) {
     drops.push({ type: "potion", id: "heiltrank", qty: 2 });
     return drops;
   }
-  const itemChance = mob.elite ? 1 : 0.13 + luck * 0.01;
+  const itemChance = mob.elite ? 1 : 0.08 + luck * 0.006;
   if (chance(r, itemChance)) drops.push({ type: "item", item: generateItem(r, ilvl + (mob.elite ? 1 : 0), luck, mob.elite ? 1 : 0) });
   if (chance(r, 0.12)) drops.push({ type: "potion", id: chance(r, 0.3) ? "manatrank" : "heiltrank", qty: 1 });
   return drops;

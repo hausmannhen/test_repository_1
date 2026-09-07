@@ -1,6 +1,6 @@
 /* Fertigkeiten: Skilltree in drei Zweigen, Zauberwahl */
 import React from "react";
-import { SKILLS, SKILL_ORDER, skillRank, freePoints, whyNot, learn, knownSpells } from "../game/skills.js";
+import { SKILLS, SKILL_ORDER, skillRank, freePoints, whyNot, learn, knownSpells, levelForRank } from "../game/skills.js";
 import { BRANCHES } from "../data/skills.js";
 import { SPELLS, ELEMENTS } from "../data/spells.js";
 import { spellCost, spellDamage, selectSpell } from "../game/magic.js";
@@ -23,7 +23,7 @@ export default function Skills({ G, rerender }) {
     <div>
       <div className="box">
         <div style={{ fontSize: 15 }}>Freie Punkte: <span className={free > 0 ? "gold bold" : "dim"}>{free}</span></div>
-        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Ein Punkt alle drei Stufen (3, 6, 9 …). Die Weise nimmt gegen Gold alle Punkte zurück.</div>
+        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Ein Punkt alle drei Stufen (3, 6, 9 …). Höhere Ränge brauchen je fünf Stufen mehr. Die Weise nimmt gegen Gold alle Punkte zurück.</div>
       </div>
 
       {spells.length > 0 && (
@@ -51,7 +51,7 @@ export default function Skills({ G, rerender }) {
             return (
               <div key={id} className={`skill-row${rank > 0 ? " learned" : ""}`}>
                 <div className="skill-main">
-                  <div className="skill-name" style={el ? { color: el.color } : undefined}>{s.name} <span className="dim">{rank} / {s.rank}</span></div>
+                  <div className="skill-name" style={el ? { color: el.color } : undefined}>{s.name} <span className="dim">{rank} / {s.rank}{rank < s.rank ? ` · nächster Rang ab Stufe ${levelForRank(id, rank + 1)}` : ""}</span></div>
                   <div className="skill-desc">{desc}</div>
                   {why && why !== "Maximal" && why !== "Keine Punkte" && <div className="skill-lock">{why}</div>}
                 </div>

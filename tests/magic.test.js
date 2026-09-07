@@ -64,10 +64,13 @@ describe("Skilltree", () => {
     assert.equal(whyNot(P, "zielen"), "Keine Punkte");
     assert.equal(learn(P, "zielen"), false);
     P.level = 15;
-    for (let i = 0; i < 3; i++) assert.ok(learn(P, "blutmagie"));
-    assert.equal(whyNot(P, "blutmagie"), "Maximal");
-    assert.equal(canLearn(P, "aderlass"), false);
+    assert.ok(learn(P, "blutmagie"));
+    assert.ok(learn(P, "blutmagie"));            // Rang 2 ab Stufe 13
+    assert.equal(whyNot(P, "blutmagie"), "Rang 3 ab Stufe 18");
+    assert.equal(learn(P, "blutmagie"), false);
     P.level = 18;
+    assert.ok(learn(P, "blutmagie"));
+    assert.equal(whyNot(P, "blutmagie"), "Maximal");
     assert.ok(canLearn(P, "aderlass"));
     assert.deepEqual(P.spells, ["blutpfeil"]);
     assert.equal(spellRankMult(P, "blutpfeil"), 1.5);
@@ -82,7 +85,7 @@ describe("Skilltree", () => {
   it("Passive wirken in derive", () => {
     const P = newPlayer("s"); P.level = 12;
     const before = derive(P);
-    learn(P, "zaehigkeit"); learn(P, "zaehigkeit"); learn(P, "manaquelle"); learn(P, "meditation");
+    assert.ok(learn(P, "zaehigkeit")); assert.ok(learn(P, "zaehigkeit")); assert.ok(learn(P, "manaquelle")); assert.ok(learn(P, "meditation"));
     const after = derive(P);
     assert.equal(after.maxHp, before.maxHp + 16);
     assert.equal(after.maxMana, before.maxMana + 12);

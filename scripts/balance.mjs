@@ -34,6 +34,7 @@ function fight(G, build, seconds) {
     const d = derive(P);
     let m = null, best = Infinity;
     for (const mm of G.mobs) { const dd = Math.hypot(mm.x - P.x, mm.y - P.y); if (dd < best) { best = dd; m = mm; } }
+    if (best < 0.001) best = 0.001; // sonst 0/0 in der Richtung
     const dx = m.x - P.x, dy = m.y - P.y;
     let input;
     if (build === "bogen") { const inRange = best < d.range - 10; input = { x: inRange ? 0 : dx / best, y: inRange ? 0 : dy / best, attack: inRange, cast: false }; if (best < 40) input = { x: -dx / best, y: -dy / best, attack: true, cast: false }; }

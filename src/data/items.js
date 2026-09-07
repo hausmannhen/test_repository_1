@@ -6,8 +6,8 @@ export const RARITIES = [
   { id: "gewoehnlich",   name: "Gewöhnlich",   color: "#d8d2c4", mult: 1.0,  affixes: 0, weight: 60 },
   { id: "ungewoehnlich", name: "Ungewöhnlich", color: "#6fd66f", mult: 1.25, affixes: 1, weight: 26 },
   { id: "selten",        name: "Selten",       color: "#5aa7ff", mult: 1.55, affixes: 2, weight: 10 },
-  { id: "episch",        name: "Episch",       color: "#c77dff", mult: 1.95, affixes: 3, weight: 3.2 },
-  { id: "legendaer",     name: "Legendär",     color: "#ffb347", mult: 2.5,  affixes: 4, weight: 0.8 },
+  { id: "episch",        name: "Episch",       color: "#c77dff", mult: 1.95, affixes: 3, weight: 1.4 },
+  { id: "legendaer",     name: "Legendär",     color: "#ffb347", mult: 2.5,  affixes: 4, weight: 0.25 },
 ];
 export const SLOTS = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Schild", amulett: "Amulett", ring: "Ring" };
 export const SLOT_ORDER = ["waffe", "kopf", "rumpf", "schild", "amulett", "ring"];

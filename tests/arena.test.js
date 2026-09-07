@@ -8,12 +8,12 @@ import { MINIBOSSES } from "../src/data/minibosses.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 function findArena(seed) {
-  for (let y = 0; y < WORLD_H; y++) for (let x = 0; x < WORLD_W; x++) { const s = genOverworldScreen(seed, x, y); if (s.arena) return [x, y, s]; }
+  for (let y = 0; y < WORLD_H; y++) for (let x = 0; x < WORLD_W; x++) { const s = genOverworldScreen(seed, x, y); if (s.arena && !s.miniboss) return [x, y, s]; }
   return null;
 }
 
 describe("Arenen", () => {
-  it("nur die Reviere sind Arenen, immer mit Truhe", () => {
+  it("Reviere und rund jeder zehnte Wildnis-Bildschirm sind Arenen, immer mit Truhe", () => {
     let arenas = 0, wild = 0;
     for (let y = 0; y < WORLD_H; y++) for (let x = 0; x < WORLD_W; x++) {
       const s = genOverworldScreen("arena-seed", x, y);
@@ -22,7 +22,8 @@ describe("Arenen", () => {
       if (s.arena) { arenas++; assert.ok(s.chest && s.chest.id.startsWith("a"), `${x},${y} Arena ohne Truhe`); }
       if (s.miniboss) assert.ok(s.arena, "Revier ist keine Arena");
     }
-    assert.equal(arenas, MINIBOSSES.length, `${arenas} Arenen von ${wild}`);
+    const extra = arenas - MINIBOSSES.length;
+    assert.ok(extra >= wild * 0.05 && extra <= wild * 0.16, `${extra} Hinterhalte bei ${wild} Wildnis-Bildschirmen`);
   });
 
   it("sperrt die Ränder, bis alle Gegner tot sind, dann Erfahrung und offener Weg, einmalig", () => {
@@ -31,7 +32,6 @@ describe("Arenen", () => {
     enterScreen(G, "over", x, y, 7 * TS + 8, 5 * TS + 8, true);
     assert.ok(G.arenaLock, "keine Sperre");
     assert.equal(G.banner.text, "Hinterhalt");
-    assert.ok(G.mobs.some(m => m.mini));
     G.P.x = 1; G.P.y = 5 * TS + 8; G.trigCd = 0;
     update(G, 1 / 60, { ...idle, x: -1 });
     assert.equal(G.P.sx, x, "Rand durchlässig");

@@ -30,6 +30,8 @@ describe("Barrieren", () => {
     const G = startGame(createGame("gate"));
     // Elmshain (4,5) nach Norden: (4,4) ist Wiese, (4,3) ist Wiese, (4,2) Kargstein (berg)
     enterScreen(G, "over", 4, 3, 7 * TS + 8, 1 * TS + 8, false);
+    // (4,3) kann per Seed ein Hinterhalt sein: Feinde weg, Sperre auf, damit nur das Tor zählt
+    G.mobs = []; G.arenaLock = false;
     G.P.y = 2; G.trigCd = 0;
     update(G, 1 / 60, { ...idle, y: -1 });
     assert.equal(G.P.sy, 3, "Barriere durchlässig");
