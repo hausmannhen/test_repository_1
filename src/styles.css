@@ -144,3 +144,5 @@ body { -webkit-text-size-adjust: 100%; }
 .raidbar-text { font-size: 12px; color: var(--text); text-shadow: 0 1px 2px #000; margin-bottom: 3px; }
 .raidbar-track { height: 6px; background: rgba(0,0,0,0.7); border: 1px solid #000; border-radius: 3px; }
 .raidbar-fill { height: 100%; background: #5aa7ff; border-radius: 3px; }
+.btn-talk { border-color: #6fe28a !important; color: #6fe28a !important; }
+.talk-hint { color: #6fe28a; }

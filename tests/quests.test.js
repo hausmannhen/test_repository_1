@@ -118,14 +118,25 @@ describe("Aufgaben", () => {
     assert.match(objectiveText(P, "h4"), /Eichenkönig/);
     assert.equal(storyProgress(P).done, 3);
   });
-  it("Anrempeln eines Bewohners öffnet sein Gespräch", () => {
+  it("Schwert-Knopf neben einem Bewohner öffnet sein Gespräch, weiter weg schlägt er", () => {
     const G = startGame(createGame("talk"));
     let opened = null;
     G.openPanel = (t) => { opened = t; };
     const P = G.P;
     const n = NPCS.bram;
     P.x = n.x * TS + 8; P.y = (n.y + 1) * TS + 8; P.dir = "up"; G.trigCd = 0;
-    update(G, 1 / 60, { ...idle, y: -1 });
+    update(G, 1 / 60, idle);
+    assert.equal(G.nearNpc, "bram");
+    update(G, 1 / 60, { ...idle, attack: true });
     assert.equal(opened, "npc:bram");
+    assert.ok(G.attack.t <= 0, "Schlag statt Gespräch");
+    // weg vom Bewohner: kein Gespräch, normaler Schlag
+    opened = null; G.trigCd = 0;
+    P.x = n.x * TS + 8; P.y = (n.y + 3) * TS + 8;
+    for (let i = 0; i < 10; i++) update(G, 1 / 60, idle);
+    assert.equal(G.nearNpc, null);
+    update(G, 1 / 60, { ...idle, attack: true });
+    assert.equal(opened, null);
+    assert.ok(G.attack.t > 0, "kein Schlag");
   });
 });

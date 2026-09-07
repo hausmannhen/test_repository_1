@@ -14,7 +14,7 @@ export default function Quests({ G }) {
     <div>
       <div className="box">
         <div style={{ fontSize: 15 }}>Geschichte: Kapitel {sp.done} von {sp.total}</div>
-        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Sprich mit den Bewohnern der Dörfer, indem du auf sie zuläufst. Ein Ausrufezeichen heißt: Aufgabe. Ein Häkchen: abholen.</div>
+        <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Stell dich neben einen Bewohner und drück den Schwert-Knopf, er wird zu „Reden“. Ein Ausrufezeichen heißt: Aufgabe. Ein Häkchen: abholen.</div>
       </div>
       <div className="section">Versperrte Gebiete</div>
       {Object.values(GATES).filter(g => !gateOpen(P, g.id)).length === 0 && <div className="empty">Alle Wege sind offen.</div>}

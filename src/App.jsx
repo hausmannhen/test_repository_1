@@ -22,6 +22,7 @@ import Death from "./ui/Death.jsx";
 import Npc from "./ui/Npc.jsx";
 import { trackerText } from "./game/quests.js";
 import { GameAudio } from "./game/audio.js";
+import { NPCS } from "./data/npcs.js";
 import { CloudClient } from "./game/cloud.js";
 
 export default function App() {
@@ -125,6 +126,7 @@ export default function App() {
       const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),
         spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null,
         loc: locationName(G), quest: trackerText(P), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0,
+        talk: G.nearNpc && NPCS[G.nearNpc] ? NPCS[G.nearNpc].name : G.nearSign ? "Wegweiser" : null,
         area: P.area, pos: [P.sx, P.sy], visited: Object.keys(P.visits).filter(k => /^\d+,\d+$/.test(k)), cleared: P.cleared,
         raid: G.raid && G.raid.state !== "done" ? { wave: G.raid.wave, waves: G.raid.waves, well: Math.round(G.raid.wellHp), wellMax: G.raid.wellMax, left: G.mobs.filter(m => !m.dead).length, pause: G.raid.state === "pause" ? Math.ceil(G.raid.t) : 0 } : null };
       const s = JSON.stringify(next);
@@ -182,6 +184,7 @@ export default function App() {
             </div></div>
           )}
           {ui && ui.msg && <div className="msg-wrap"><span className="msg" style={{ color: ui.msg.color }}>{ui.msg.text}</span></div>}
+          {ui && ui.talk && !ui.msg && <div className="msg-wrap"><span className="msg talk-hint">{ui.talk === "Wegweiser" ? "Schwert-Knopf: Wegweiser lesen" : `Schwert-Knopf: mit ${ui.talk} sprechen`}</span></div>}
           {ui && ui.raid && (
             <div className="raidbar">
               <div className="raidbar-text">Brunnen {ui.raid.well} / {ui.raid.wellMax} · Welle {ui.raid.wave || 1} von {ui.raid.waves}{ui.raid.pause ? ` · nächste in ${ui.raid.pause} s` : ` · ${ui.raid.left} Angreifer`}</div>
@@ -190,7 +193,7 @@ export default function App() {
           )}
         </div>
         <Controls input={inputRef.current} onPotion={drinkPotion} onManaPotion={drinkMana} onMenu={toggleInventory} pots={ui ? ui.pots : 0} manaPots={ui ? ui.manaPots : 0}
-          menuOpen={panel === "inventar"} spells={ui ? ui.spells : []} activeSpell={ui ? ui.activeSpell : null} onSelectSpell={pickSpell} />
+          menuOpen={panel === "inventar"} spells={ui ? ui.spells : []} activeSpell={ui ? ui.activeSpell : null} onSelectSpell={pickSpell} talk={ui ? ui.talk : null} />
         {renderPanel()}
       </div>
     </div>

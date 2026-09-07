@@ -35,7 +35,7 @@ Voraussetzung: Node 20 oder neuer.
 
 - Karte 10×10 in `REGION_MAP` (`src/game/constants.js`). Start in Elmshain in der Mitte. Dörfer: Elmshain, Nebelfurt (Wald), Kargstein (Berge), Dünenruh (Wüste), Moorhall (Moor), Frosthain (Frost).
 - Zwischenbosse in `src/data/minibosses.js`, einer je Region auf einem festen Bildschirm. Einmal besiegt, kehren sie nicht zurück, hinterlassen ein Item ab Selten und extra Gold. Auf der Karte als Schädel.
-- Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
+- Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Neben einem Bewohner wird der Schwert-Knopf zu „Reden“, neben einem Wegweiser zu „Lesen“. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
 - Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss, Überfall, Entscheidung. Bereits erledigte Ziele zählen rückwirkend.
 - Barrieren in `src/data/gates.js`: Steinschlag (Höhen) fällt nach Kapitel 4, Sandsturm und Nebelwand nach Kapitel 6, Frostwand und Aschesturm nach der Wahl in Kapitel 7. Am Bildschirmrand als Wand sichtbar, im Aufgaben-Tab aufgelistet.
 - Arenen: Reviere der Zwischenbosse und Bossräume. Beim Betreten schließen Palisaden die Ränder, bis alle Gegner besiegt sind. Reviere haben immer eine Kampftruhe mit besserer Beute, dazu gibt es Erfahrung.

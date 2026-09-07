@@ -20,7 +20,7 @@ export function createGame(seed, P = null, slot = null) {
     seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
-    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false,
+    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -279,18 +279,25 @@ export function update(G, dt, input) {
   let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1);
   moveWithCollision(tiles, P, ix * speed * dt, iy * speed * dt, 5, 5);
   G.walkT = len > 0.2 ? G.walkT + dt : 0;
-  // Anrempeln: Wegweiser lesen, mit Bewohnern sprechen
-  if (len > 0.2 && G.trigCd <= 0) {
+  // Nähe zu Bewohnern und Wegweisern: Schwert-Knopf spricht bzw. liest, statt zu schlagen
+  G.nearNpc = null; G.nearSign = false;
+  if (!raidActive(G)) {
+    const ptx = Math.floor(P.x / TS), pty = Math.floor(P.y / TS);
     const [fx, fy] = DIRV[P.dir];
-    const ftx = Math.floor((P.x + fx * 9) / TS), fty = Math.floor((P.y + fy * 9) / TS);
-    if (ftx >= 0 && fty >= 0 && ftx < VW && fty < VH) {
-      const ft = tiles[idx(ftx, fty)];
-      if (ft === T.SIGN) { G.trigCd = 3; flash(G, G.screen.village ? G.screen.village.greeting : "Ein Wegweiser", "#e9dcb8"); }
-      else if (ft === T.NPC) {
-        const who = G.screen.doors[`${ftx},${fty}`];
-        if (who) { G.trigCd = 0.8; G.panelReturn = null; G.openPanel && G.openPanel(who); }
-      }
+    const cand = [[ptx + fx, pty + fy], [ptx + 1, pty], [ptx - 1, pty], [ptx, pty + 1], [ptx, pty - 1]];
+    for (const [cx, cy] of cand) {
+      if (cx < 0 || cy < 0 || cx >= VW || cy >= VH) continue;
+      const ct = tiles[idx(cx, cy)];
+      if (ct === T.NPC) { const who = G.screen.doors[`${cx},${cy}`]; if (who) { G.nearNpc = who.slice(4); break; } }
+      if (ct === T.SIGN) { G.nearSign = true; break; }
     }
+  }
+  const attackPressed = input.attack && !G.attackHeld;
+  G.attackHeld = !!input.attack;
+  if (attackPressed && G.trigCd <= 0 && (G.nearNpc || G.nearSign)) {
+    if (G.nearNpc) { G.trigCd = 0.8; G.panelReturn = null; G.openPanel && G.openPanel("npc:" + G.nearNpc); }
+    else { G.trigCd = 3; flash(G, G.screen.village ? G.screen.village.greeting : "Ein Wegweiser", "#e9dcb8"); }
+    return;
   }
 
   // --- Zauber ---

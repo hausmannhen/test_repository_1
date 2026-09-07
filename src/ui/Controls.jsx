@@ -3,7 +3,7 @@ import React, { useRef } from "react";
 import { Btn } from "./bits.jsx";
 import { SPELLS, ELEMENTS } from "../data/spells.js";
 
-export default function Controls({ input, onPotion, onManaPotion, onMenu, pots, manaPots, menuOpen, spells, activeSpell, onSelectSpell }) {
+export default function Controls({ input, onPotion, onManaPotion, onMenu, pots, manaPots, menuOpen, spells, activeSpell, onSelectSpell, talk }) {
   const el = activeSpell && SPELLS[activeSpell] ? ELEMENTS[SPELLS[activeSpell].element] : null;
   const padRef = useRef(null);
   const pad = (e, end) => {
@@ -45,9 +45,9 @@ export default function Controls({ input, onPotion, onManaPotion, onMenu, pots, 
           <button type="button" className="btn-cast" disabled={!activeSpell} style={el ? { borderColor: el.color, color: el.color } : undefined}
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); input.cast = true; }}
             onPointerUp={() => { input.cast = false; }} onPointerCancel={() => { input.cast = false; }}>{activeSpell ? "Zauber" : "–"}</button>
-          <button type="button" className="btn-sword"
+          <button type="button" className={`btn-sword${talk ? " btn-talk" : ""}`}
             onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); input.attack = true; }}
-            onPointerUp={() => { input.attack = false; }} onPointerCancel={() => { input.attack = false; }}>Schwert</button>
+            onPointerUp={() => { input.attack = false; }} onPointerCancel={() => { input.attack = false; }}>{talk ? (talk === "Wegweiser" ? "Lesen" : "Reden") : "Schwert"}</button>
         </div>
         <Btn small onClick={onMenu}>{menuOpen ? "Schließen" : "Menü"}</Btn>
       </div>
