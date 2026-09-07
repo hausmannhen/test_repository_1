@@ -116,13 +116,13 @@ describe("Geschichte beim Start", () => {
     assert.equal(G2.intro, false);
     assert.equal(G2.P.hints.geschichte, true, "alter Spielstand nicht als gelesen markiert");
   });
-  it("Text: Titel, fünf Absätze, Hinweise, Wahl angekündigt, Ende nicht verraten", () => {
+  it("Text: Titel, fünf Absätze, Hinweise, weder Wahl noch Überfälle noch Ende verraten", () => {
     assert.equal(STORY.title, "Die drei Siegel");
     assert.equal(STORY.paragraphs.length, 5);
     assert.ok(STORY.tips.length >= 2);
     const all = STORY.paragraphs.join(" ");
-    assert.match(all, /Kapitel 7/);
     assert.match(all, /Vargor/);
+    assert.doesNotMatch(all, /Kapitel 7|Wahl|Überf/);
     assert.doesNotMatch(all, /stirbt|flicken|brechen/);
   });
 });
