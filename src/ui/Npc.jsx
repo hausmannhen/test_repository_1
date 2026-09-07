@@ -1,6 +1,7 @@
 /* Gespräch mit einem Bewohner: Aufgabe anbieten, Fortschritt zeigen, abschließen */
 import React, { useState } from "react";
-import { QUESTS, talkTo, acceptWithHistory, completeQuest, objectiveText } from "../game/quests.js";
+import { QUESTS, talkTo, acceptWithHistory, completeQuest, objectiveText, raidLevel } from "../game/quests.js";
+import { startRaid } from "../game/engine.js";
 import { NPCS } from "../data/npcs.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemName } from "./bits.jsx";
@@ -33,10 +34,13 @@ export default function Npc({ G, npcId, onClose, rerender }) {
         <div className="box">
           <div className="section" style={{ marginTop: 0 }}>{q.main ? `Kapitel ${q.main}: ` : "Nebenaufgabe: "}{q.title}</div>
           <div className="dim" style={{ fontSize: 13 }}>{objectiveText(P, d.quest)}</div>
-          {q.reward && <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Belohnung: {q.reward.gold} Gold, {q.reward.xp} Erfahrung{q.reward.item ? ", ein Ausrüstungsstück" : ""}</div>}
+          {q.raid && <div className="red" style={{ fontSize: 12, marginTop: 4 }}>Startet sofort: {q.raid.waves + (q.raid.scale ? raidLevel(P, d.quest) - 1 : 0)} Wellen, die Ausgänge werden gesperrt. Vorher heilen und Tränke prüfen.</div>}
+          {q.reward && <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Belohnung: {q.reward.gold} Gold, {q.reward.xp} Erfahrung{q.reward.item ? ", ein Ausrüstungsstück" : ""}{q.raid && q.raid.scale ? ", steigt mit jedem Sieg" : ""}</div>}
         </div>
       </div>
     );
+  } else if (d.mode === "raid") {
+    body = <div className="prose"><p className="quote">„Nicht jetzt! Der Brunnen! Lauf!“</p></div>;
   } else if (d.mode === "complete") {
     body = (
       <div className="prose">
@@ -58,7 +62,11 @@ export default function Npc({ G, npcId, onClose, rerender }) {
   const footer = reward ? <Btn tone="gold" onClick={onClose}>Weiter</Btn>
     : d.mode === "offer" ? <>
         <Btn onClick={onClose}>Später</Btn>
-        <Btn tone="gold" onClick={() => { acceptWithHistory(P, d.quest); setPhase("accepted"); rerender(); onClose(); }}>Annehmen</Btn>
+        <Btn tone="gold" onClick={() => {
+          acceptWithHistory(P, d.quest);
+          if (q.raid) { const lvl = q.raid.scale ? raidLevel(P, d.quest) : 1; startRaid(G, { waves: q.raid.waves + (q.raid.scale ? lvl - 1 : 0), level: lvl, questId: d.quest }); }
+          setPhase("accepted"); rerender(); onClose();
+        }}>{q.raid ? "Palisaden schließen" : "Annehmen"}</Btn>
       </>
     : d.mode === "complete" ? <Btn tone="gold" onClick={() => { const got = completeQuest(G, d.quest); setReward({ id: d.quest, ...got }); rerender(); }}>Abschließen</Btn>
     : <Btn tone="gold" onClick={onClose}>Weiter</Btn>;

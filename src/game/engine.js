@@ -7,6 +7,8 @@ import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
 import { castSpell, aimAt, ELEMENTS } from "./magic.js";
 import { onKill as questKill } from "./quests.js";
+import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
+export { startRaid, raidActive } from "./raid.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
 export { castSpell };
 
@@ -18,7 +20,7 @@ export function createGame(seed, P = null, slot = null) {
     seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
-    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [],
+    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -47,6 +49,8 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   const prev = G.screen;
   const prevRegion = prev ? prev.region : null;
   const fromX = P.x, fromY = P.y;
+  if (G.raid && G.raid.state !== "done") endRaid(G, false);
+  G.raid = null;
   P.area = area; P.sx = sx; P.sy = sy; P.x = px; P.y = py;
   const screen = getScreen(G, area, sx, sy);
   G.screen = screen;
@@ -96,6 +100,7 @@ export function landingSpot(tiles, x, y, dx, dy) {
 }
 function tryCross(G, dx, dy) {
   const P = G.P, isOver = P.area === "over";
+  if (raidActive(G)) { if (G.trigCd <= 0) { flash(G, "Die Palisaden halten dich hier", "#ffb347"); G.trigCd = 1.5; } return false; }
   const maxX = isOver ? WORLD_W - 1 : DG - 1, maxY = isOver ? WORLD_H - 1 : DG - 1;
   const nsx = P.sx + dx, nsy = P.sy + dy;
   if (nsx < 0 || nsy < 0 || nsx > maxX || nsy > maxY) return false;
@@ -208,7 +213,7 @@ export function hurtPlayer(G, amount) {
   G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "-" + dmg, color: "#ff5f6d", t: 0.9 });
   G.shake = 0.15;
   emit(G, "hurt");
-  if (P.hp <= 0) { P.hp = 0; G.dead = true; }
+  if (P.hp <= 0) { P.hp = 0; G.dead = true; if (raidActive(G)) endRaid(G, false); }
   G.dirty = true;
 }
 export function respawn(G) {
@@ -242,6 +247,7 @@ export function update(G, dt, input) {
   // Mana regeneriert
   P.mana = Math.min(d.maxMana, (P.mana || 0) + d.manaRegen * dt);
   if (G.pendingXp) { const xp = G.pendingXp; G.pendingXp = 0; gainXp(G, xp); }
+  if (G.raid) updateRaid(G, dt);
 
   // --- Spielerbewegung ---
   let ix = input.x, iy = input.y;
@@ -379,10 +385,13 @@ export function update(G, dt, input) {
       if (m.burnTick >= 0.5) { m.burnTick -= 0.5; damageMob(G, m, Math.max(1, Math.round(m.burnDps * 0.5)), false, 0, 0, ELEMENTS.feuer.color); if (m.dead) continue; }
     }
     if (m.slowT > 0) m.slowT -= dt;
-    const dx = P.x - m.x, dy = P.y - m.y, dist = Math.hypot(dx, dy) || 1;
+    if (m.spawnDelay > 0) continue;
+    const goal = m.raid && raidActive(G) ? raidTarget(G, m) : null;
+    const gx = goal ? goal.x : P.x, gy = goal ? goal.y : P.y;
+    const dx = gx - m.x, dy = gy - m.y, dist = Math.hypot(dx, dy) || 1;
     const nx = dx / dist, ny = dy / dist;
     let mx = 0, my = 0;
-    const aware = dist < 130 || !!G.screen.dungeonRoom;
+    const aware = dist < 130 || !!G.screen.dungeonRoom || !!goal;
     if (m.ai === "chase") {
       if (aware) { mx = nx; my = ny; } else { mx = Math.cos(m.t * 0.7 + m.wx); my = Math.sin(m.t * 0.9 + m.wy); }
     } else if (m.ai === "ranged") {
@@ -415,7 +424,8 @@ export function update(G, dt, input) {
       m.side = Math.random() < 0.5 ? 1 : -1; m.sideT = 0.5;
     }
     // Kontaktschaden
-    if (dist < m.size / 2 + 5) hurtPlayer(G, m.atk);
+    const pd = goal ? Math.hypot(P.x - m.x, P.y - m.y) : dist;
+    if (pd < m.size / 2 + 5) hurtPlayer(G, m.atk);
   }
   G.mobs = G.mobs.filter(m => !m.dead);
 

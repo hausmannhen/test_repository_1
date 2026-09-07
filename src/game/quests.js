@@ -39,6 +39,7 @@ export function objectiveText(P, id) {
   if (o.type === "mini") return `${MINIBOSS_BY_ID[o.id].name} besiegen${prog ? " (erledigt)" : ""}`;
   if (o.type === "boss") return `${BOSSES[o.id].name} in ${DUNGEONS[o.id].name} besiegen${prog ? " (erledigt)" : ""}`;
   if (o.type === "talk") return `Mit ${NPCS[o.npc].name} sprechen`;
+  if (o.type === "raid") return prog ? "Dorf gehalten" : `Überfall abwehren${q.raid && q.raid.scale ? ` (Stufe ${raidLevel(P, id)})` : ""}`;
   return "";
 }
 /* Hinweis, wo es weitergeht (für den Tracker im HUD) */
@@ -57,6 +58,19 @@ function bump(G, id) {
   if (st.progress >= objectiveTarget(id)) return;
   st.progress++;
   if (st.progress >= objectiveTarget(id)) G.banner = { text: "Aufgabe erfüllt", sub: `${QUESTS[id].title}, zurück zu ${NPCS[QUESTS[id].turnIn].name}`, t: 3.5 };
+  G.dirty = true;
+}
+/* Schwierigkeit eines wiederholbaren Überfalls: steigt mit jedem gewonnenen */
+export function raidLevel(P, id) {
+  const q = QUESTS[id];
+  if (!q.raid || !q.raid.scale) return 1;
+  return 1 + ((P.raidWins && P.raidWins[id]) || 0);
+}
+export function onRaidEnd(G, won) {
+  const P = G.P, id = G.raid && G.raid.questId;
+  if (!id || !isActive(P, id)) return;
+  if (won) { P.quests[id].progress = 1; if (QUESTS[id].raid && QUESTS[id].raid.scale) { if (!P.raidWins) P.raidWins = {}; P.raidWins[id] = (P.raidWins[id] || 0) + 1; } G.banner = { text: "Aufgabe erfüllt", sub: `${QUESTS[id].title}, zurück zu ${NPCS[QUESTS[id].turnIn].name}`, t: 3.5 }; }
+  else { delete P.quests[id]; }   // verloren: Aufgabe wieder annehmbar
   G.dirty = true;
 }
 export function onKill(G, m) {
@@ -80,13 +94,14 @@ export function completeQuest(G, id) {
   const P = G.P;
   if (!isComplete(P, id)) return null;
   const q = QUESTS[id], rw = q.reward || {};
-  P.quests[id].state = "done";
-  const got = { gold: rw.gold || 0, xp: rw.xp || 0, item: null };
+  const lvl = q.raid && q.raid.scale ? raidLevel(P, id) - 1 : 1;   // Wiederholungen: Belohnung wächst
+  if (q.repeat) delete P.quests[id]; else P.quests[id].state = "done";
+  const got = { gold: Math.round((rw.gold || 0) * (1 + 0.4 * (lvl - 1))), xp: Math.round((rw.xp || 0) * (1 + 0.4 * (lvl - 1))), item: null };
   P.gold += got.gold;
   if (rw.item) {
     const d = derive(P);
     const r = mulberry32((Math.random() * 1e9) | 0);
-    const item = generateItem(r, P.level + 2, d.luck, rw.item.minRarity || 0, rw.item.slot || null);
+    const item = generateItem(r, P.level + 2 + Math.min(6, lvl - 1), d.luck, Math.min(4, (rw.item.minRarity || 0) + Math.floor((lvl - 1) / 3)), rw.item.slot || null);
     if (addToInventory(P, item)) got.item = item;
     else { G.drops.push({ type: "item", item, x: P.x, y: P.y + 10, vx: 0, vy: 20, t: 0 }); got.item = item; }
   }
@@ -97,6 +112,7 @@ export function completeQuest(G, id) {
 export function talkTo(G, npcId) {
   const P = G.P;
   const npc = NPCS[npcId];
+  if (G.raid && G.raid.state !== "done") return { npc, mode: "raid", quest: G.raid.questId };
   // Erst abschließen, dann anbieten, dann Fortschritt zeigen, sonst Alltagsspruch
   for (const id of QUEST_ORDER) if (QUESTS[id].turnIn === npcId && isComplete(P, id)) return { npc, mode: "complete", quest: id };
   for (const id of QUEST_ORDER) if (QUESTS[id].giver === npcId && canOffer(P, id)) return { npc, mode: "offer", quest: id };

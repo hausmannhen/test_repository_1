@@ -11,7 +11,7 @@ import { NPCS } from "../data/npcs.js";
 import { talkTo } from "../game/quests.js";
 import { buildDropModel } from "./drops.js";
 import { Effects } from "./effects.js";
-import { disposeObject } from "./materials.js";
+import { disposeObject, lambert, G as GEO } from "./materials.js";
 
 const SKY = {
   wiese:  { sky: "#9fd3ff", ground: "#4f7a3a", sun: "#fff1d0", sunI: 2.6, hemiI: 1.1 },
@@ -73,6 +73,26 @@ export class Renderer3D {
     this.drops = new Map();
     this.npcs = [];
     this.markerMats = {};
+    // Palisaden an den vier Dorfausgängen, sichtbar während eines Überfalls
+    this.palisades = new THREE.Group();
+    const post = GEO.cyl(0.09, 0.11, 1.3, 6), beam = GEO.box(1, 0.12, 0.12);
+    const wood = lambert("#6a4a2a", { roughness: 1 });
+    const spots = [[6, 0.5, true], [7, 0.5, true], [8, 0.5, true], [6, VH - 0.5, true], [7, VH - 0.5, true], [8, VH - 0.5, true], [0.5, 4, false], [0.5, 5, false], [0.5, 6, false], [VW - 0.5, 4, false], [VW - 0.5, 5, false], [VW - 0.5, 6, false]];
+    for (const [x, z, horizontal] of spots) {
+      for (let i = -0.35; i <= 0.36; i += 0.35) {
+        const p = new THREE.Mesh(post, wood);
+        p.position.set(horizontal ? x + i : x, -0.1, horizontal ? z : z + i);
+        p.rotation.z = (Math.random() - 0.5) * 0.12;
+        p.castShadow = true;
+        this.palisades.add(p);
+      }
+      const b = new THREE.Mesh(beam, wood);
+      b.position.set(horizontal ? x : x, 0.7, horizontal ? z : z);
+      if (!horizontal) b.rotation.y = Math.PI / 2;
+      this.palisades.add(b);
+    }
+    this.palisades.visible = false;
+    this.scene.add(this.palisades);
     this.effects = new Effects(this.scene);
 
     this.screenKey = null;
@@ -242,6 +262,8 @@ export class Renderer3D {
     for (const [id, mm] of this.mobs) {
       if (!seen.has(id)) { this.scene.remove(mm.group, mm.bar); mm.dispose(); this.mobs.delete(id); }
     }
+    // Palisaden
+    this.palisades.visible = !!(G.raid && G.raid.state !== "done");
     // Bewohner
     for (const n of this.npcs) {
       const y = this.groundY(n.x, n.z);

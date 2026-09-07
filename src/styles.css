@@ -139,3 +139,8 @@ body { -webkit-text-size-adjust: 100%; }
 .rank-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 3px 0; }
 .rank-medal { width: 22px; }
 .rank-name { flex: 1; color: var(--text); }
+/* Überfall */
+.raidbar { position: absolute; top: 40px; left: 8px; right: 8px; pointer-events: none; }
+.raidbar-text { font-size: 12px; color: var(--text); text-shadow: 0 1px 2px #000; margin-bottom: 3px; }
+.raidbar-track { height: 6px; background: rgba(0,0,0,0.7); border: 1px solid #000; border-radius: 3px; }
+.raidbar-fill { height: 100%; background: #5aa7ff; border-radius: 3px; }

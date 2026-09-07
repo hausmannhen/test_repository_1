@@ -36,7 +36,8 @@ Voraussetzung: Node 20 oder neuer.
 - Karte 10×10 in `REGION_MAP` (`src/game/constants.js`). Start in Elmshain in der Mitte. Dörfer: Elmshain, Nebelfurt (Wald), Kargstein (Berge), Dünenruh (Wüste), Moorhall (Moor), Frosthain (Frost).
 - Zwischenbosse in `src/data/minibosses.js`, einer je Region auf einem festen Bildschirm. Einmal besiegt, kehren sie nicht zurück, hinterlassen ein Item ab Selten und extra Gold. Auf der Karte als Schädel.
 - Bewohner in `src/data/npcs.js`, Aufgaben in `src/data/quests.js`. Ausrufezeichen über dem Kopf: Aufgabe verfügbar. Häkchen: erfüllt, Belohnung abholen. Der Tracker unter dem Ortsnamen zeigt das aktuelle Ziel.
-- Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss. Bereits erledigte Ziele zählen rückwirkend.
+- Aufgabenarten: Monster einer Art besiegen, Zwischenboss, Dungeon-Boss, Überfall. Bereits erledigte Ziele zählen rückwirkend.
+- Überfall: Annehmen sperrt die vier Dorfausgänge mit Palisaden, Monster kommen in Wellen durch die Tore und laufen zum Brunnen. Fällt der Brunnen, ist der Überfall verloren und die Aufgabe wieder annehmbar. Die letzte Welle bringt einen Anführer. „Wachdienst“ in Elmshain ist endlos wiederholbar, jedes Mal eine Welle mehr und stärkere Gegner, Belohnung wächst mit. Logik in `src/game/raid.js`.
 
 ## Kampf, Magie, Skilltree
 
