@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Btn } from "./bits.jsx";
 import { MAX_CLOUD_ACCOUNTS } from "../game/cloud.js";
+import { rankAccounts } from "../game/rank.js";
 import { REGIONS, VILLAGES, regionAt, WORLD_W, WORLD_H } from "../game/constants.js";
 
 function fmtDate(ts) {
@@ -12,6 +13,8 @@ function locOf(loc) {
   if (loc.area === "over") { const k = `${loc.sx},${loc.sy}`; if (VILLAGES[k]) return VILLAGES[k].name; if (loc.sx >= 0 && loc.sy >= 0 && loc.sx < WORLD_W && loc.sy < WORLD_H) return REGIONS[regionAt(loc.sx, loc.sy)].name; }
   return "Dungeon";
 }
+
+const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default function CloudLogin({ cloud, localAccounts, onStart, onImportLocal }) {
   const [list, setList] = useState(null);
@@ -62,6 +65,18 @@ export default function CloudLogin({ cloud, localAccounts, onStart, onImportLoca
         </div>
       )}
       {list === null && <div className="dim" style={{ fontSize: 13 }}>Lade Konten …</div>}
+      {list && list.length > 1 && !mode && (
+        <div className="box" style={{ marginBottom: 10 }}>
+          <div className="section" style={{ marginTop: 0 }}>Rangliste</div>
+          {rankAccounts(list).slice(0, 3).map((k, i) => (
+            <div key={k.name} className="rank-row">
+              <span className="rank-medal">{MEDALS[i]}</span>
+              <span className="rank-name">{k.name}</span>
+              <span className="dim">Stufe {k.level}{k.bosse ? ` · ${k.bosse} Boss${k.bosse > 1 ? "e" : ""}` : ""}{typeof k.kills === "number" ? ` · ${k.kills} Monster` : ""}</span>
+            </div>
+          ))}
+        </div>
+      )}
       {list && list.length === 0 && !mode && <div className="empty">Noch kein Online-Konto.</div>}
       {list && !mode && list.filter(k => !session || k.name !== session.name).map(k => (
         <div key={k.name} className="save-row">

@@ -136,3 +136,6 @@ body { -webkit-text-size-adjust: 100%; }
 /* Online-Konten */
 .cloud { text-align: left; margin-bottom: 6px; }
 .cloud .save-row { margin-bottom: 8px; }
+.rank-row { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 3px 0; }
+.rank-medal { width: 22px; }
+.rank-name { flex: 1; color: var(--text); }

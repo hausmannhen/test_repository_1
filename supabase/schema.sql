@@ -45,12 +45,15 @@ begin
 end $$;
 
 -- ---------- Öffentliche Funktionen ----------
--- Liste aller Konten für die Auswahl (ohne Spielstand)
+-- Liste aller Konten für Auswahl und Rangliste (ohne Spielstand)
+drop function if exists public.konten_liste();
 create or replace function public.konten_liste()
-returns table(name text, level int, updated_at timestamptz, gold int, loc jsonb)
+returns table(name text, level int, updated_at timestamptz, gold int, kills int, bosse int, loc jsonb)
 language sql security definer set search_path = public, extensions stable as $$
   select name, level, updated_at,
          coalesce((save->'P'->>'gold')::int, 0) as gold,
+         coalesce((save->'P'->>'kills')::int, 0) as kills,
+         coalesce((select count(*) from jsonb_object_keys(coalesce(save->'P'->'cleared', '{}'::jsonb)) k where k in ('0','1','2')), 0)::int as bosse,
          jsonb_build_object('area', save->'P'->>'area', 'sx', save->'P'->'sx', 'sy', save->'P'->'sy') as loc
   from konten order by updated_at desc;
 $$;
