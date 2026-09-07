@@ -6,7 +6,7 @@ import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
 import { castSpell, aimDir, ELEMENTS } from "./magic.js";
-import { onKill as questKill, gateOpen, gateFor, resetStaleRaids } from "./quests.js";
+import { onKill as questKill, gateOpen, gateFor, resetStaleRaids, QUESTS } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
@@ -155,7 +155,7 @@ function tryCross(G, dx, dy) {
   const ny = dy < 0 ? H - inset : dy > 0 ? inset : P.y;
   const target = getScreen(G, P.area, nsx, nsy);
   if (isOver && target.region !== G.screen.region && !gateOpen(P, target.region)) {
-    if (G.trigCd <= 0) { flash(G, gateFor(target.region).blocked, "#e9dcb8"); G.trigCd = 2.5; }
+    if (G.trigCd <= 0) { const g = gateFor(target.region), q = QUESTS[g.opensAfter]; flash(G, `${g.blocked} Öffnet sich nach Kapitel ${q.main}, „${q.title}“.`, "#e9dcb8"); G.msg.t = 4; G.trigCd = 4; }
     return false;
   }
   const spot = landingSpot(target.tiles, nx, ny, dx, dy);
