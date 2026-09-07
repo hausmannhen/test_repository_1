@@ -269,8 +269,9 @@ export class Renderer3D {
       const y = this.groundY(n.x, n.z);
       n.model.update(time, this._v.set(n.x, y, n.z), this._pos.set(P.x / TS, 0, P.y / TS));
       const mode = talkTo(G, n.id).mode;
-      n.marker.visible = mode !== "idle";
-      if (mode !== "idle") { n.marker.material = this.markerMaterial(mode); n.marker.position.set(n.x, y + 1.55 + Math.sin(time * 3) * 0.05, n.z); }
+      const show = mode === "offer" || mode === "complete" || mode === "progress";
+      n.marker.visible = show;
+      if (show) { n.marker.material = this.markerMaterial(mode); n.marker.position.set(n.x, y + 1.55 + Math.sin(time * 3) * 0.05, n.z); }
     }
     // Drops
     const seenD = new Set();
