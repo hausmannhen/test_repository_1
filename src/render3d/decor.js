@@ -199,10 +199,19 @@ function buildChest(cx, h, cz, opened) {
   lidMesh.position.set(0, 0, 0.21);
   lid.add(lidMesh);
   lid.position.set(0, 0.36, -0.21);
-  g.add(body, band, lid);
+  // Schloss: rot und pulsierend, solange Gegner auf dem Bildschirm sind, sonst gold
+  const lockMat = new THREE.MeshStandardMaterial({ color: new THREE.Color("#c9a24a"), emissive: new THREE.Color("#c9a24a"), emissiveIntensity: 0.4, roughness: 0.4 });
+  const lock = new THREE.Mesh(G.box(0.12, 0.14, 0.06), lockMat);
+  lock.position.set(0, 0.2, 0.23);
+  lock.userData.ownMaterial = true;
+  g.add(body, band, lid, lock);
   g.position.set(cx, h, cz);
   g.userData.lid = lid;
-  g.userData.setOpened = (o) => { lid.rotation.x = o ? -1.9 : 0; };
+  g.userData.setOpened = (o) => { lid.rotation.x = o ? -1.9 : 0; lock.visible = !o; };
+  g.userData.setLocked = (locked, time) => {
+    if (locked) { lockMat.color.set("#ff2a2a"); lockMat.emissive.set("#ff2a2a"); lockMat.emissiveIntensity = 0.6 + Math.sin(time * 6) * 0.4; }
+    else { lockMat.color.set("#ffd23f"); lockMat.emissive.set("#c9a24a"); lockMat.emissiveIntensity = 0.5; }
+  };
   g.userData.setOpened(opened);
   return g;
 }

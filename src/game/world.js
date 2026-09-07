@@ -50,15 +50,18 @@ export function genOverworldScreen(seed, sx, sy) {
   for (let x = 0; x < VW; x++) { if (sy === 0) tiles[idx(x, 0)] = border; if (sy === WORLD_H - 1) tiles[idx(x, VH - 1)] = border; }
   for (let y = 0; y < VH; y++) { if (sx === 0) tiles[idx(0, y)] = border; if (sx === WORLD_W - 1) tiles[idx(VW - 1, y)] = border; }
 
-  const screen = { key, tiles, region: regId, doors: {}, village: null, dungeon: null, chest: null, npcs: [], miniboss: MINIBOSS_BY_SCREEN[key] || null };
+  const screen = { key, tiles, region: regId, doors: {}, village: null, dungeon: null, chest: null, npcs: [], miniboss: MINIBOSS_BY_SCREEN[key] || null, arena: false };
 
   if (VILLAGES[key]) buildVillage(screen, r, VILLAGES[key], regId);
   else if (DUNGEON_BY_SCREEN[key]) buildDungeonEntrance(screen, DUNGEON_BY_SCREEN[key], regId);
-  else if (chance(r, 0.25)) {
-    // Weltkiste
-    const spots = [];
-    for (let y = 2; y < VH - 2; y++) for (let x = 2; x < VW - 2; x++) if (!isProtected(x, y) && !SOLID.has(tiles[idx(x, y)])) spots.push([x, y]);
-    if (spots.length) { const [cx, cy] = pick(r, spots); tiles[idx(cx, cy)] = T.CHEST; screen.chest = { x: cx, y: cy, id: "w" + key }; }
+  else {
+    // Arena: Reviere der Zwischenbosse und rund jeder sechste Wildnis-Bildschirm. Arenen haben immer eine Kampftruhe.
+    screen.arena = !!screen.miniboss || hashStr(seed + "|arena|" + key) % 6 === 0;
+    if (screen.arena || chance(r, 0.25)) {
+      const spots = [];
+      for (let y = 2; y < VH - 2; y++) for (let x = 2; x < VW - 2; x++) if (!isProtected(x, y) && !SOLID.has(tiles[idx(x, y)]) && !(Math.abs(x - 7) < 2 && Math.abs(y - 5) < 2)) spots.push([x, y]);
+      if (spots.length) { const [cx, cy] = pick(r, spots); tiles[idx(cx, cy)] = T.CHEST; screen.chest = { x: cx, y: cy, id: (screen.arena ? "a" : "w") + key }; }
+    }
   }
   return screen;
 }

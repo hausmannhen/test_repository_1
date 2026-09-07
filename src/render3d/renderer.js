@@ -296,7 +296,7 @@ export class Renderer3D {
       if (!seen.has(id)) { this.scene.remove(mm.group, mm.bar); mm.dispose(); this.mobs.delete(id); }
     }
     // Palisaden und Barrieren
-    this.palisades.visible = !!(G.raid && G.raid.state !== "done");
+    this.palisades.visible = !!(G.raid && G.raid.state !== "done") || !!G.arenaLock;
     const gateKey = Object.keys(G.P.quests || {}).length + ":" + (G.P.choice || "");
     if (gateKey !== this._gateKey) { this._gateKey = gateKey; this.updateWalls(G); }
     // Bewohner
@@ -321,7 +321,14 @@ export class Renderer3D {
       if (!seenD.has(dr)) { this.scene.remove(dm.group); this.drops.delete(dr); }
     }
     // Truhen
-    if (this.current) for (const ch of this.current.chests) ch.userData.setOpened(!!(ch.userData.chestId && P.chests[ch.userData.chestId]));
+    if (this.current) {
+      const enemies = G.mobs.some(m => !m.dead);
+      for (const ch of this.current.chests) {
+        const opened = !!(ch.userData.chestId && P.chests[ch.userData.chestId]);
+        ch.userData.setOpened(opened);
+        if (ch.userData.setLocked) ch.userData.setLocked(!opened && enemies, time);
+      }
+    }
     // Wasser, Lava
     for (const s of [this.current, this.prev]) if (s) for (const l of s.liquids) l.material.uniforms.uTime.value = time;
     // Effekte

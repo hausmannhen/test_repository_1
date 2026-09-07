@@ -20,7 +20,7 @@ export function createGame(seed, P = null, slot = null) {
     seed, P: P || newPlayer(seed), slot,
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
-    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null,
+    pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     openPanel: null,   // (type) => void, von der UI gesetzt
@@ -61,9 +61,15 @@ export function enterScreen(G, area, sx, sy, px, py, banner = true, slide = null
   G.projs = []; G.pprojs = []; G.pending = []; G.drops = []; G.fx = [];
   unstick(P, screen.tiles);
   G.transition = slide && prev ? { t: 0, dur: TRANSITION_DUR, dx: slide.dx, dy: slide.dy, prevScreen: prev, fromX, fromY } : null;
+  // Arena: Ränder sind gesperrt, bis alle Gegner besiegt sind. Einmal je Bildschirm, Bossräume bis zum Sieg.
+  const isBossRoom = !!(screen.dungeonRoom && screen.dungeonRoom.type === "boss" && !P.cleared[screen.dungeonRoom.d.id]);
+  const alive = G.mobs.some(m => !m.dead);
+  G.arenaLock = !!(alive && (isBossRoom || (screen.arena && !(P.arenas && P.arenas[screen.key]))));
   if (screen.village) { P.lastVillage = `${sx},${sy}`; if (banner) G.banner = { text: screen.village.name, sub: "Dorf", t: 2.6 }; }
   else if (screen.dungeonRoom) { if (banner && screen.dungeonRoom.type === "entry") G.banner = { text: screen.dungeonRoom.d.name, sub: "Dungeon, Stufe " + screen.dungeonRoom.d.level, t: 2.6 }; }
   else if (banner && screen.region !== prevRegion) G.banner = { text: REGIONS[screen.region].name, sub: "Stufe " + REGIONS[screen.region].level + "+", t: 2.6 };
+  if (G.arenaLock && banner) G.banner = { text: isBossRoom ? "Kein Zurück" : "Hinterhalt", sub: isBossRoom ? "Der Raum schließt sich hinter dir" : "Besiege alle Gegner, um weiterzukommen", t: 3 };
+
   G.dirty = true;
   G.save && G.save();
 }
@@ -101,6 +107,7 @@ export function landingSpot(tiles, x, y, dx, dy) {
 function tryCross(G, dx, dy) {
   const P = G.P, isOver = P.area === "over";
   if (raidActive(G)) { if (G.trigCd <= 0) { flash(G, "Die Palisaden halten dich hier", "#ffb347"); G.trigCd = 1.5; } return false; }
+  if (G.arenaLock) { if (G.trigCd <= 0) { flash(G, "Kein Entkommen, solange Feinde hier sind", "#ffb347"); G.trigCd = 1.5; } return false; }
   const maxX = isOver ? WORLD_W - 1 : DG - 1, maxY = isOver ? WORLD_H - 1 : DG - 1;
   const nsx = P.sx + dx, nsy = P.sy + dy;
   if (nsx < 0 || nsy < 0 || nsx > maxX || nsy > maxY) return false;
@@ -252,6 +259,14 @@ export function update(G, dt, input) {
   P.mana = Math.min(d.maxMana, (P.mana || 0) + d.manaRegen * dt);
   if (G.pendingXp) { const xp = G.pendingXp; G.pendingXp = 0; gainXp(G, xp); }
   if (G.raid) updateRaid(G, dt);
+  // Arena aufgelöst?
+  if (G.arenaLock && !G.mobs.some(m => !m.dead)) {
+    G.arenaLock = false;
+    if (!G.screen.dungeonRoom) { if (!P.arenas) P.arenas = {}; P.arenas[G.screen.key] = true; }
+    G.banner = { text: "Arena gesäubert", sub: G.screen.chest && !P.chests[G.screen.chest.id] ? "Die Kampftruhe ist offen" : "Der Weg ist frei", t: 3 };
+    gainXp(G, Math.round(10 + P.level * 4));
+    emit(G, "fanfare");
+  }
 
   // --- Spielerbewegung ---
   let ix = input.x, iy = input.y;
@@ -495,11 +510,15 @@ export function update(G, dt, input) {
         G.trigCd = 1;
         enterScreen(G, "over", sx, sy, 7 * TS + 8, 5 * TS + 8);
         return;
+      } else if (t === T.CHEST && G.screen.chest && !P.chests[G.screen.chest.id] && G.mobs.some(m => !m.dead)) {
+        // Kampftruhe: verriegelt, solange Gegner auf dem Bildschirm sind
+        G.trigCd = 1.2; flash(G, `Verriegelt. Noch ${G.mobs.filter(m => !m.dead).length} Gegner hier.`, "#ff5f6d"); emit(G, "hurt");
       } else if (t === T.CHEST && G.screen.chest && !P.chests[G.screen.chest.id]) {
         P.chests[G.screen.chest.id] = true; G.trigCd = 1;
         const r = mulberry32((Math.random() * 1e9) | 0);
-        const lvl = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.level + 2 : REGIONS[G.screen.region].level + 1;
-        const item = generateItem(r, lvl, d.luck, G.screen.dungeonRoom ? 2 : 1);
+        const arenaChest = G.screen.chest.id.startsWith("a");
+        const lvl = G.screen.dungeonRoom ? G.screen.dungeonRoom.d.level + 2 : REGIONS[G.screen.region].level + (arenaChest ? 2 : 1);
+        const item = generateItem(r, lvl, d.luck, G.screen.dungeonRoom || arenaChest ? 2 : 1);
         const gold = rint(r, lvl * 4, lvl * 9);
         G.drops.push({ type: "item", item, x: P.x, y: P.y + 10, vx: 0, vy: 30, t: 0 });
         G.drops.push({ type: "gold", amount: gold, x: P.x - 6, y: P.y + 10, vx: -20, vy: 30, t: 0 });
