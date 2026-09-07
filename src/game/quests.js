@@ -68,6 +68,13 @@ export function raidLevel(P, id) {
   if (!q.raid || !q.raid.scale) return 1;
   return 1 + ((P.raidWins && P.raidWins[id]) || 0);
 }
+/* Beim Laden: ein Überfall lebt nicht im Spielstand. Angenommene, nicht gewonnene Überfälle werden wieder annehmbar. */
+export function resetStaleRaids(P) {
+  for (const id of Object.keys(P.quests || {})) {
+    const q = QUESTS[id];
+    if (q && q.objective.type === "raid" && P.quests[id].state === "active" && P.quests[id].progress < 1) delete P.quests[id];
+  }
+}
 export function onRaidEnd(G, won) {
   const P = G.P, id = G.raid && G.raid.questId;
   if (!id || !isActive(P, id)) return;

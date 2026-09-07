@@ -44,7 +44,7 @@ function spawnWave(G) {
   if (R.wave === R.waves) {
     const g = GATES[rint(r, 0, GATES.length - 1)];
     const type = pick(r, R.pool);
-    const boss = makeMob(type, R.mobLevel + 3, g.x, g.y, { name: "Anführer der Horde", hpMult: 3 + R.level * 0.5, atkMult: 1.3, size: 16, color: "#c83a2a", color2: "#3a0a0a", mini: "raid" + R.wave });
+    const boss = makeMob(type, R.mobLevel + 3, g.x, g.y, { name: "Anführer der Horde", hpMult: 3 + R.level * 0.5, atkMult: 1.3, size: 16, color: "#c83a2a", color2: "#3a0a0a", leader: true });
     boss.raid = true; boss.spawnDelay = 2;
     G.mobs.push(boss);
   }

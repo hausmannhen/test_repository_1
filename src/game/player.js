@@ -98,3 +98,10 @@ export function useManaPotion(G) {
   G.dirty = true;
   return true;
 }
+
+/* Trank aus dem Inventar trinken: Heil- oder Manatrank je nach Art */
+export function drinkItem(G, it) {
+  const def = it && it.kind === "trank" ? POTIONS[it.potId] : null;
+  if (!def) return false;
+  return def.manaPct ? useManaPotion(G) : usePotion(G);
+}

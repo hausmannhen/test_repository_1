@@ -1,5 +1,6 @@
 import React from "react";
 import Panel from "./Panel.jsx";
+import { DUNGEONS } from "../game/constants.js";
 import { Btn } from "./bits.jsx";
 import { respec, spentPoints } from "../game/skills.js";
 import { respecCost } from "../game/actions.js";
@@ -53,7 +54,7 @@ export default function Sage({ G, onClose, rerender }) {
       </Panel>
     );
   }
-  const cleared = Object.keys(P.cleared).length;
+  const cleared = DUNGEONS.filter(d => P.cleared[d.id]).length;
   const h = isDone(P, "h10") ? (gone ? "Sie hat mir alles beigebracht, bevor sie ging. Auch, wie man Wissen löst." : "Die Weise schläft viel, seit das Siegel hält. Sie sagt, es sei ein guter Schlaf.")
     : gone ? "Ihr Stuhl ist leer. Ich führe das Haus weiter, so gut ich kann. Frag mich, was du sie gefragt hättest."
     : cleared >= 3 ? "Du hast alle drei Wächter bezwungen. Die Welt gehört dir. Die Monster werden trotzdem nicht müde." : HINTS[(P.kills + P.level) % HINTS.length];

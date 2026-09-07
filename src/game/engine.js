@@ -6,7 +6,7 @@ import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit } from "./player.js";
 import { castSpell, aimAt, ELEMENTS } from "./magic.js";
-import { onKill as questKill, gateOpen, gateFor } from "./quests.js";
+import { onKill as questKill, gateOpen, gateFor, resetStaleRaids } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
 import { MINIBOSS_BY_ID } from "../data/minibosses.js";
@@ -29,6 +29,7 @@ export function createGame(seed, P = null, slot = null) {
 }
 export function startGame(G) {
   const P = G.P;
+  resetStaleRaids(P);
   enterScreen(G, P.area, P.sx, P.sy, P.x, P.y, true);
   return G;
 }
@@ -183,14 +184,13 @@ export function killMob(G, m) {
     const ang = Math.random() * Math.PI * 2;
     G.drops.push({ ...dr, x: m.x + Math.cos(ang) * 6, y: m.y + Math.sin(ang) * 6, vx: Math.cos(ang) * 40, vy: Math.sin(ang) * 40, t: 0 });
   }
-  if (m.mini) {
-    // Zwischenboss: sichere Beute, kehrt nicht zurück
-    P.cleared["mb:" + m.mini] = true;
-    const mb = MINIBOSS_BY_ID[m.mini];
+  if (m.mini || m.leader) {
+    // Zwischenboss und Hordenanführer: sichere Beute. Nur der Zwischenboss kehrt nicht zurück.
+    const mb = m.mini ? MINIBOSS_BY_ID[m.mini] : null;
     const extra = generateItem(r, (mb ? mb.level : m.level) + 2, d.luck, 2);
     G.drops.push({ type: "item", item: extra, x: m.x + 8, y: m.y, vx: 30, vy: 0, t: 0 });
     G.drops.push({ type: "gold", amount: rint(r, m.level * 6, m.level * 12), x: m.x - 8, y: m.y, vx: -30, vy: 0, t: 0 });
-    G.banner = { text: m.name + " besiegt", sub: "Das Revier ist frei", t: 3.5 };
+    if (m.mini) { P.cleared["mb:" + m.mini] = true; G.banner = { text: m.name + " besiegt", sub: "Das Revier ist frei", t: 3.5 }; }
     emit(G, "fanfare");
   }
   gainXp(G, m.xp);
@@ -263,7 +263,7 @@ export function update(G, dt, input) {
   if (G.arenaLock && !G.mobs.some(m => !m.dead)) {
     G.arenaLock = false;
     if (!G.screen.dungeonRoom) { if (!P.arenas) P.arenas = {}; P.arenas[G.screen.key] = true; }
-    G.banner = { text: "Arena gesäubert", sub: G.screen.chest && !P.chests[G.screen.chest.id] ? "Die Kampftruhe ist offen" : "Der Weg ist frei", t: 3 };
+    if (!G.banner || G.banner.t < 1) G.banner = { text: "Arena gesäubert", sub: G.screen.chest && !P.chests[G.screen.chest.id] ? "Die Kampftruhe ist offen" : "Der Weg ist frei", t: 3 };
     gainXp(G, Math.round(10 + P.level * 4));
     emit(G, "fanfare");
   }

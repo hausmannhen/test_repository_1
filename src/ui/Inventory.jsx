@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { WORLD_W, WORLD_H, VILLAGES, DUNGEON_BY_SCREEN, DUNGEONS, REGIONS, REGION_MAP_COLORS, regionAt } from "../game/constants.js";
 import { MINIBOSS_BY_SCREEN, MINIBOSSES } from "../data/minibosses.js";
 import { SLOTS, SLOT_ORDER, effectiveStats, sumStats } from "../game/items.js";
-import { derive, xpNeed, usePotion, useManaPotion, INVENTORY_MAX } from "../game/player.js";
+import { derive, xpNeed, drinkItem, INVENTORY_MAX } from "../game/player.js";
 import { POTIONS } from "../game/items.js";
 import { freePoints } from "../game/skills.js";
 import Skills from "./Skills.jsx";
@@ -39,7 +39,7 @@ export default function Inventory({ G, onClose, rerender, onQuit, audio }) {
   const doEquip = (it) => { equipItem(P, it); setSelected(it); rerender(); };
   const doUnequip = (it) => { if (unequipItem(P, it)) { setSelected(it); rerender(); } };
   const doDrop = (it) => { dropItem(P, it); setSelected(null); rerender(); };
-  const doUse = (it) => { const p = POTIONS[it.potId]; if (p.mana && !p.heal) useManaPotion(G); else usePotion(G); rerender(); };
+  const doUse = (it) => { drinkItem(G, it); rerender(); };
 
   const points = freePoints(P);
   const questBadge = activeQuests(P).filter(id => isComplete(P, id)).length;

@@ -135,14 +135,16 @@ export function buildMobModel(m) {
   group.traverse(o => { if (o.isMesh) o.castShadow = true; });
 
   // Lebensbalken (wird vom Renderer zur Kamera gedreht): schwarzer Grund, rotes Leben, immer sichtbar
-  const barW = m.boss ? 2.2 : m.mini ? 1.6 : Math.max(1.0, s + 0.4);
-  const barH = m.boss ? 0.09 : m.mini ? 0.08 : 0.06;
+  const elite = m.mini || m.leader;
+  const barW = m.boss ? 2.2 : elite ? 1.6 : Math.max(1.0, s + 0.4);
+  const barH = m.boss ? 0.09 : elite ? 0.08 : 0.06;
   const bar = new THREE.Group();
   const flat = (hex, extra = {}) => new THREE.MeshBasicMaterial({ color: new THREE.Color(hex), depthTest: false, depthWrite: false, toneMapped: false, ...extra });
   // flache Linie: schwarzer Rand, schwarzer Grund, rotes Leben
   const barEdge = new THREE.Mesh(G.plane(barW + 0.05, barH + 0.05), flat("#000000"));
   const barBg = new THREE.Mesh(G.plane(barW, barH), flat("#0a0a0a"));
   const barFg = new THREE.Mesh(G.plane(barW, barH), flat(m.boss ? "#ff1414" : "#ff2a2a"));
+  void elite;
   barEdge.renderOrder = 19; barBg.renderOrder = 20; barFg.renderOrder = 21;
   barEdge.position.z = -0.002; barFg.position.z = 0.001;
   bar.add(barEdge, barBg, barFg);

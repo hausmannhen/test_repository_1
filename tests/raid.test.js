@@ -75,9 +75,48 @@ describe("Überfall", () => {
     enterScreen(G, "over", 4, 5, 7 * TS + 8, 8 * TS + 8, false);
     startRaid(G, { waves: 1 });
     G.raid.t = 0; step(G, 1);
-    assert.ok(G.mobs.some(m => m.mini && m.name.includes("Anführer")));
+    assert.ok(G.mobs.some(m => m.leader && m.name.includes("Anführer")));
     enterScreen(G, "over", 3, 5, 7 * TS + 8, 5 * TS + 8, false);
     assert.equal(G.raid, null);
     assert.ok(G.mobs.every(m => !m.raid));
+  });
+});
+
+describe("Überfall, Randfälle aus der Code-Prüfung", () => {
+  it("angenommener Überfall ohne Sieg ist nach dem Laden wieder annehmbar", async () => {
+    const { resetStaleRaids, canOffer: co } = await import("../src/game/quests.js");
+    const P = startGame(createGame("stale")).P;
+    P.quests = { h1: { state: "done", progress: 6 }, r1: { state: "active", progress: 0 } };
+    resetStaleRaids(P);
+    assert.equal(P.quests.r1, undefined);
+    assert.ok(co(P, "r1"));
+    P.quests.r1 = { state: "active", progress: 1 };
+    resetStaleRaids(P);
+    assert.ok(P.quests.r1, "gewonnener Überfall darf nicht verfallen");
+  });
+  it("Anführer der Horde ist kein Zwischenboss und kein Endboss", () => {
+    const G = startGame(createGame("leader"));
+    enterScreen(G, "over", 4, 5, 7 * TS + 8, 8 * TS + 8, false);
+    startRaid(G, { waves: 1 });
+    G.raid.t = 0; step(G, 1);
+    const l = G.mobs.find(m => m.leader);
+    assert.ok(l); assert.equal(l.boss, false); assert.equal(l.mini, null);
+    const hearts = G.P.hearts;
+    killMob(G, l);
+    assert.equal(G.P.hearts, hearts);
+    assert.ok(!Object.keys(G.P.cleared).some(k => k.startsWith("mb:raid")), "Anführer als Revier eingetragen");
+    assert.ok(G.drops.some(d => d.type === "item"), "Anführer ohne Beute");
+  });
+  it("Manatrank trinken nimmt den Manatrank", async () => {
+    const { drinkItem } = await import("../src/game/player.js");
+    const { makePotion } = await import("../src/game/items.js");
+    const G = startGame(createGame("drink"));
+    const P = G.P;
+    P.inventory = [makePotion("heiltrank", 2), makePotion("manatrank", 2)];
+    P.hp = 10; P.mana = 0;
+    assert.ok(drinkItem(G, P.inventory[1]));
+    assert.equal(P.inventory.find(i => i.potId === "manatrank").qty, 1);
+    assert.equal(P.inventory.find(i => i.potId === "heiltrank").qty, 2);
+    assert.ok(P.mana > 0);
   });
 });
