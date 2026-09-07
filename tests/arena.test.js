@@ -1,10 +1,10 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { TS, VW, VH, WORLD_W, WORLD_H, T, idx, DUNGEONS } from "../src/game/constants.js";
-import { genOverworldScreen, genDungeon } from "../src/game/world.js";
+import { TS, VW, VH, WORLD_W, WORLD_H, T, idx, DUNGEONS, VILLAGES, DUNGEON_BY_SCREEN } from "../src/game/constants.js";
+import { genOverworldScreen, genDungeon, ambushScreens, AMBUSH_GAP } from "../src/game/world.js";
 import { createGame, startGame, enterScreen, update, killMob } from "../src/game/engine.js";
 import { makeMob } from "../src/game/monsters.js";
-import { MINIBOSSES } from "../src/data/minibosses.js";
+import { MINIBOSSES, MINIBOSS_BY_SCREEN } from "../src/data/minibosses.js";
 
 const idle = { x: 0, y: 0, attack: false, cast: false };
 function findArena(seed) {
@@ -24,6 +24,25 @@ describe("Arenen", () => {
     }
     const extra = arenas - MINIBOSSES.length;
     assert.ok(extra >= wild * 0.05 && extra <= wild * 0.16, `${extra} Hinterhalte bei ${wild} Wildnis-Bildschirmen`);
+  });
+
+  it("Hinterhalte liegen in Schlangenlinie 8 bis 12 Bildschirme auseinander, nie auf Dorf, Dungeon oder Revier", () => {
+    for (const seed of ["arena-seed", "zwei", "drei"]) {
+      const set = ambushScreens(seed);
+      assert.ok(set.size >= 6 && set.size <= 12, `${set.size} Hinterhalte`);
+      const order = [];
+      for (let y = 0; y < WORLD_H; y++) for (let i = 0; i < WORLD_W; i++) order.push(`${y % 2 === 0 ? i : WORLD_W - 1 - i},${y}`);
+      let last = -1;
+      order.forEach((key, i) => {
+        if (!set.has(key)) return;
+        assert.ok(!VILLAGES[key] && !DUNGEON_BY_SCREEN[key] && !MINIBOSS_BY_SCREEN[key], `${key} ist belegt`);
+        const gap = last < 0 ? i + 1 : i - last;
+        assert.ok(gap >= AMBUSH_GAP[0] && gap <= AMBUSH_GAP[1] + 3, `Abstand ${gap} vor ${key}`);
+        last = i;
+      });
+      assert.deepEqual(ambushScreens(seed), set, "nicht stabil");
+    }
+    assert.notDeepEqual([...ambushScreens("zwei")], [...ambushScreens("drei")], "Seed ohne Wirkung");
   });
 
   it("sperrt die Ränder, bis alle Gegner tot sind, dann Erfahrung und offener Weg, einmalig", () => {

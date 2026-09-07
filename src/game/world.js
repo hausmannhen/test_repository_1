@@ -7,6 +7,27 @@ import { BOSS_ABILITIES, MINI_ABILITIES } from "../data/abilities.js";
 import { NPCS_BY_VILLAGE } from "../data/npcs.js";
 import { MINIBOSS_BY_SCREEN } from "../data/minibosses.js";
 
+/* Hinterhalte: Wildnis-Bildschirme in Schlangenlinie abgelaufen (Zeile für Zeile, abwechselnd hin und zurück),
+   zwischen zwei Hinterhalten liegen immer 8 bis 12 Bildschirme; per Seed festgelegt, also für alle Spieler gleich.
+   Reviere, Dörfer und Dungeon-Eingänge zählen mit, werden aber nie selbst zum Hinterhalt. */
+export const AMBUSH_GAP = [8, 12];
+const ambushCache = new Map();
+export function ambushScreens(seed) {
+  if (ambushCache.has(seed)) return ambushCache.get(seed);
+  const r = rngFor(seed, "hinterhalt");
+  const set = new Set();
+  let gap = rint(r, AMBUSH_GAP[0], AMBUSH_GAP[1]);
+  for (let y = 0; y < WORLD_H; y++) for (let i = 0; i < WORLD_W; i++) {
+    const x = y % 2 === 0 ? i : WORLD_W - 1 - i, key = `${x},${y}`;
+    if (--gap > 0) continue;
+    if (VILLAGES[key] || DUNGEON_BY_SCREEN[key] || MINIBOSS_BY_SCREEN[key]) continue; // nächster freier Bildschirm
+    set.add(key);
+    gap = rint(r, AMBUSH_GAP[0], AMBUSH_GAP[1]);
+  }
+  ambushCache.set(seed, set);
+  return set;
+}
+
 export function isProtected(x, y) {
   // Kreuz durch die Mitte + Öffnungen an den Rändern: garantiert Durchgang
   if (x >= 6 && x <= 8) return true;
@@ -57,8 +78,8 @@ export function genOverworldScreen(seed, sx, sy) {
   if (VILLAGES[key]) buildVillage(screen, r, VILLAGES[key], regId);
   else if (DUNGEON_BY_SCREEN[key]) buildDungeonEntrance(screen, DUNGEON_BY_SCREEN[key], regId);
   else {
-    // Arena: Reviere der Zwischenbosse und rund jeder zehnte Wildnis-Bildschirm (Hinterhalt). Arenen haben immer eine Kampftruhe.
-    screen.arena = !!screen.miniboss || hashStr(seed + "|hinterhalt|" + key) % 10 === 0;
+    // Arena: Reviere der Zwischenbosse und Hinterhalte alle 8 bis 12 Wildnis-Bildschirme. Arenen haben immer eine Kampftruhe.
+    screen.arena = !!screen.miniboss || ambushScreens(seed).has(key);
     if (screen.arena || chance(r, 0.25)) {
       const spots = [];
       for (let y = 2; y < VH - 2; y++) for (let x = 2; x < VW - 2; x++) if (!isProtected(x, y) && !SOLID.has(tiles[idx(x, y)]) && !(Math.abs(x - 7) < 2 && Math.abs(y - 5) < 2)) spots.push([x, y]);
