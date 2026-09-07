@@ -14,11 +14,11 @@ describe("Items", () => {
     const count = Object.fromEntries(RARITIES.map(x => [x.id, 0]));
     for (let i = 0; i < 10000; i++) count[generateItem(r, 1).rarity]++;
     const share = id => count[id] / 10000;
-    assert.ok(share("gewoehnlich") > 0.55 && share("gewoehnlich") < 0.68, "gewöhnlich " + share("gewoehnlich"));
-    assert.ok(share("ungewoehnlich") > 0.2 && share("ungewoehnlich") < 0.33, "ungewöhnlich " + share("ungewoehnlich"));
-    assert.ok(share("selten") > 0.06 && share("selten") < 0.14, "selten " + share("selten"));
-    assert.ok(share("episch") > 0.006 && share("episch") < 0.025, "episch " + share("episch"));
-    assert.ok(share("legendaer") > 0.0005 && share("legendaer") < 0.006, "legendär " + share("legendaer"));
+    assert.ok(share("gewoehnlich") > 0.6 && share("gewoehnlich") < 0.71, "gewöhnlich " + share("gewoehnlich"));
+    assert.ok(share("ungewoehnlich") > 0.18 && share("ungewoehnlich") < 0.3, "ungewöhnlich " + share("ungewoehnlich"));
+    assert.ok(share("selten") > 0.045 && share("selten") < 0.11, "selten " + share("selten"));
+    assert.ok(share("episch") > 0.012 && share("episch") < 0.036, "episch " + share("episch"));
+    assert.ok(share("legendaer") > 0.0015 && share("legendaer") < 0.009, "legendär " + share("legendaer"));
   });
 
   it("Glück verschiebt die Verteilung nach oben", () => {
@@ -79,7 +79,7 @@ describe("Items", () => {
 });
 
 describe("Drops", () => {
-  it("Gold immer, Item rund 8 %, Trank rund 12 %", () => {
+  it("Gold immer, Item rund 5 %, Trank rund 5 %", () => {
     const r = mulberry32(42);
     const mob = makeMob("wolf", 3, 0, 0);
     let items = 0, pots = 0;
@@ -89,8 +89,8 @@ describe("Drops", () => {
       if (d.some(x => x.type === "item")) items++;
       if (d.some(x => x.type === "potion")) pots++;
     }
-    assert.ok(items > 650 && items < 950, "items " + items);
-    assert.ok(pots > 1000 && pots < 1400, "pots " + pots);
+    assert.ok(items > 380 && items < 620, "items " + items);
+    assert.ok(pots > 380 && pots < 620, "pots " + pots);
   });
   it("Bosse: zwei Items, eines mindestens Episch, Großer Heiltrank", () => {
     const r = mulberry32(7);
@@ -108,5 +108,17 @@ describe("Drops", () => {
       const a = makeMob(id, 1, 0, 0), b = makeMob(id, 10, 0, 0);
       assert.ok(b.maxHp > a.maxHp && b.atk > a.atk && b.xp > a.xp, id);
     }
+  });
+});
+
+describe("Verkauf", () => {
+  it("Händler zahlen ein Viertel des Werts, mindestens 1 Gold", async () => {
+    const { sellItem, sellPrice } = await import("../src/game/actions.js");
+    const r = rngFor("test", "verkauf");
+    const it = generateItem(r, 10);
+    const P = { inventory: [it], gold: 0 };
+    assert.equal(sellPrice(it), Math.max(1, Math.round(it.value * 0.25)));
+    sellItem(P, it);
+    assert.equal(P.gold, sellPrice(it)); assert.equal(P.inventory.length, 0);
   });
 });

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { POTIONS, potionDesc } from "../game/items.js";
-import { buyPotion, sellItem } from "../game/actions.js";
+import { buyPotion, sellItem, sellPrice } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemRow } from "./bits.jsx";
 import { ItemDetail } from "./Inventory.jsx";
@@ -25,7 +25,7 @@ export default function Shop({ G, onClose, rerender }) {
       )) : (
         <div>
           {P.inventory.length === 0 && <div className="empty">Nichts zu verkaufen.</div>}
-          {P.inventory.map(it => <ItemRow key={it.uid} item={it} selected={sel === it} onClick={() => setSelected(sel === it ? null : it)} right={<Btn small onClick={(e) => { e.stopPropagation(); sellItem(P, it); rerender(); }}>{it.value} G</Btn>}>
+          {P.inventory.map(it => <ItemRow key={it.uid} item={it} selected={sel === it} onClick={() => setSelected(sel === it ? null : it)} right={<Btn small onClick={(e) => { e.stopPropagation(); sellItem(P, it); rerender(); }}>{sellPrice(it)} G</Btn>}>
             <ItemDetail P={P} item={it} actions={[]} />
           </ItemRow>)}
         </div>

@@ -11,7 +11,7 @@ import Settings from "./Settings.jsx";
 import Quests from "./Quests.jsx";
 import { StoryText } from "./Story.jsx";
 import { activeQuests, isComplete } from "../game/quests.js";
-import { equipItem, unequipItem, dropItem } from "../game/actions.js";
+import { equipItem, unequipItem, dropItem, sellPrice } from "../game/actions.js";
 import Panel from "./Panel.jsx";
 import { Btn, ItemName, ItemRow, StatLine } from "./bits.jsx";
 
@@ -24,7 +24,7 @@ export function ItemDetail({ P, item, actions }) {
       {item.kind === "gear" && <StatLine stats={effectiveStats(item)} compare={compare ? effectiveStats(other) : null} />}
       {compare && <div className="detail-sub" style={{ marginTop: 6 }}>Vergleich mit angelegtem {SLOTS[item.slot]}: <ItemName item={other} />. Grün ist besser, Rot schlechter.</div>}
       {item.kind === "gear" && item.type === "fern" && <div className="detail-sub">Reichweite {item.range}, alle {item.rate} s ein Schuss</div>}
-      <div className="detail-sub" style={{ margin: "6px 0 8px" }}>Wert: {item.value} Gold</div>
+      <div className="detail-sub" style={{ margin: "6px 0 8px" }}>Wert: {item.value} Gold, Händler zahlt {sellPrice(item)}</div>
       <div className="row">{actions}</div>
     </div>
   );

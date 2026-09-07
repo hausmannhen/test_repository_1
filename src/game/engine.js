@@ -655,6 +655,7 @@ function updateAbilities(G, m, dt, d) {
     else if (def.kind === "zone" || def.kind === "leap") { m.tele = { id: a.id, t: def.tele, x: P.x, y: P.y }; G.fx.push({ kind: "ring", x: P.x, y: P.y, r: def.radius, color: "#ff2a2a", t: def.tele, maxT: def.tele, warn: true }); }
     else if (def.kind === "beam") { m.tele = { id: a.id, t: def.tele, dx: nx, dy: ny }; G.fx.push({ kind: "beam", x: m.x, y: m.y, x2: m.x + nx * def.length, y2: m.y + ny * def.length, color: "#ff2a2a", t: def.tele, maxT: def.tele, warn: true }); }
     G.msg = { text: m.name + ": " + def.name, color: def.color, t: 1.2 };
+    break;   // eine Ankündigung zur Zeit
     emit(G, "swing");
     break;
   }

@@ -66,7 +66,7 @@ export function effectiveStats(item) {
   if (!item || item.kind !== "gear") return {};
   const m = 1 + item.upg * 0.12;
   const out = {};
-  for (const k in item.stats) out[k] = Math.round(item.stats[k] * m);
+  for (const k in item.stats) out[k] = item.stats[k] > 0 ? Math.round(item.stats[k] * m) : item.stats[k];   // Abzüge wachsen beim Aufwerten nicht mit
   return out;
 }
 export function weaponType(item) { return item && item.slot === "waffe" ? (item.type || "nah") : null; }

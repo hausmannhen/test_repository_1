@@ -80,7 +80,7 @@ export function genOverworldScreen(seed, sx, sy) {
   else {
     // Arena: Reviere der Zwischenbosse und Hinterhalte alle 8 bis 12 Wildnis-Bildschirme. Arenen haben immer eine Kampftruhe.
     screen.arena = !!screen.miniboss || ambushScreens(seed).has(key);
-    if (screen.arena || chance(r, 0.25)) {
+    if (screen.arena || chance(r, 0.1)) {
       const spots = [];
       for (let y = 2; y < VH - 2; y++) for (let x = 2; x < VW - 2; x++) if (!isProtected(x, y) && !SOLID.has(tiles[idx(x, y)]) && !(Math.abs(x - 7) < 2 && Math.abs(y - 5) < 2)) spots.push([x, y]);
       if (spots.length) { const [cx, cy] = pick(r, spots); tiles[idx(cx, cy)] = T.CHEST; screen.chest = { x: cx, y: cy, id: (screen.arena ? "a" : "w") + key }; }

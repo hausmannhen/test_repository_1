@@ -49,8 +49,8 @@ describe("Elites", () => {
 });
 
 describe("Fähigkeiten", () => {
-  it("jeder Boss hat zwei, jeder Zwischenboss eine, alle Verweise existieren", () => {
-    for (const d of DUNGEONS) { assert.equal(BOSS_ABILITIES[d.id].length, 2); for (const a of BOSS_ABILITIES[d.id]) assert.ok(ABILITIES[a], a); }
+  it("jeder Boss hat drei, davon mindestens zwei aktive Angriffe, jeder Zwischenboss eine, alle Verweise existieren", () => {
+    for (const d of DUNGEONS) { assert.equal(BOSS_ABILITIES[d.id].length, 3); assert.ok(BOSS_ABILITIES[d.id].filter(a => ABILITIES[a].once === undefined).length >= 2, "zu wenig aktive Angriffe"); for (const a of BOSS_ABILITIES[d.id]) assert.ok(ABILITIES[a], a); }
     for (const mb of MINIBOSSES) { assert.ok(MINI_ABILITIES[mb.id] && MINI_ABILITIES[mb.id].length >= 1, mb.id); for (const a of MINI_ABILITIES[mb.id]) assert.ok(ABILITIES[a], a); }
   });
   it("Bodenstampfer: erst Ankündigung, dann Schaden im Umkreis, Boss steht still", () => {

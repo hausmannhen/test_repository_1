@@ -72,11 +72,11 @@ export function rollDrops(r, mob, luck, isBoss, weak = false) {
   if (isBoss) {
     drops.push({ type: "item", item: generateItem(r, ilvl + (weak ? 1 : 3), luck, weak ? 2 : 3) });
     if (!weak) drops.push({ type: "item", item: generateItem(r, ilvl + 1, luck, 2) });
-    drops.push({ type: "potion", id: "heiltrank", qty: 2 });
+    drops.push({ type: "potion", id: "heiltrank", qty: 1 });
     return drops;
   }
-  const itemChance = mob.elite ? 1 : 0.08 + luck * 0.006;
+  const itemChance = mob.elite ? 1 : 0.05 + luck * 0.005;
   if (chance(r, itemChance)) drops.push({ type: "item", item: generateItem(r, ilvl + (mob.elite ? 1 : 0), luck, mob.elite ? 1 : 0) });
-  if (chance(r, 0.12)) drops.push({ type: "potion", id: chance(r, 0.3) ? "manatrank" : "heiltrank", qty: 1 });
+  if (chance(r, 0.05)) drops.push({ type: "potion", id: chance(r, 0.35) ? "manatrank" : "heiltrank", qty: 1 });
   return drops;
 }

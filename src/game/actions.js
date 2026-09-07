@@ -26,8 +26,11 @@ export function buyPotion(P, id) {
   addToInventory(P, makePotion(id, 1));
   return true;
 }
+/* Händler zahlen ein Viertel des Werts */
+export const SELL_SHARE = 0.25;
+export function sellPrice(it) { return Math.max(1, Math.round(it.value * SELL_SHARE)); }
 export function sellItem(P, it) {
-  const val = it.value;
+  const val = sellPrice(it);
   if (it.kind === "trank") { it.qty -= 1; if (it.qty <= 0) P.inventory = P.inventory.filter(i => i !== it); }
   else P.inventory = P.inventory.filter(i => i !== it);
   P.gold += val;
