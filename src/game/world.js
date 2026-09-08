@@ -109,7 +109,7 @@ export function buildVillage(screen, r, vill, regId) {
     for (let dx = 0; dx < 3; dx++) { const py = h.y === 1 ? h.y + 2 : h.y - 1; if (tiles[idx(h.x + dx, py)] !== T.PATH) tiles[idx(h.x + dx, py)] = T.PATH; }
     for (let yy = Math.min(doorY, 5); yy <= Math.max(doorY, 5); yy++) tiles[idx(h.x + 1, yy)] = tiles[idx(h.x + 1, yy)] === T.DOOR ? T.DOOR : T.PATH;
   }
-  tiles[idx(6, 4)] = T.WATER; tiles[idx(8, 4)] = T.WATER;   // kleine Brunnen
+  tiles[idx(7, 4)] = T.WELL;   // der Dorfbrunnen in der Mitte, Ziel jedes Überfalls
   tiles[idx(8, 9)] = T.SIGN; screen.doors["8,9"] = "sign";
   // Bewohner
   for (const n of NPCS_BY_VILLAGE[screen.key] || []) {

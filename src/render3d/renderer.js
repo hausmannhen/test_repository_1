@@ -125,9 +125,19 @@ export class Renderer3D {
     fov = THREE.MathUtils.clamp(fov, 35, 62);
     this.camera.fov = fov;
     const tanV = Math.tan(THREE.MathUtils.degToRad(fov) / 2);
-    this.camDist = Math.max(BASE_DIST, 11.5 / (2 * tanV * this.camera.aspect));
-    this.halfW = this.camDist * tanV * this.camera.aspect;
-    this.halfH = this.camDist * tanV * 0.75;
+    this.camDist = Math.max(BASE_DIST, 12.5 / (2 * tanV * this.camera.aspect));
+    // Der Boden am unteren Bildrand liegt näher an der Kamera und ist schmaler als in der Bildmitte.
+    // Die Klammern für das Kameraziel rechnen mit der tatsächlichen Bodenbreite unten und den Bodenabständen oben und unten,
+    // sonst bleiben die unteren Ecken unsichtbar.
+    const tanHalfW = tanV * this.camera.aspect;
+    const elev = Math.atan2(CAM_DIR.y, Math.hypot(CAM_DIR.x, CAM_DIR.z));
+    const half = THREE.MathUtils.degToRad(fov) / 2;
+    const hcam = this.camDist * Math.sin(elev);
+    const botAng = Math.min(Math.PI / 2 - 0.01, elev + half), topAng = Math.max(0.08, elev - half);
+    this.halfW = Math.min(this.camDist * tanHalfW, tanHalfW * hcam / Math.sin(botAng));
+    this.offBottom = hcam * (1 / Math.tan(elev) - 1 / Math.tan(botAng));
+    this.offTop = hcam * (1 / Math.tan(topAng) - 1 / Math.tan(elev));
+    this.halfH = Math.min(this.offBottom, this.offTop);
     this.camera.updateProjectionMatrix();
     if (this.current) this.applyEnvironment(this.current.screen);
   }
@@ -240,9 +250,10 @@ export class Renderer3D {
 
   /* ---------- Kamera ---------- */
   clampedTarget(px, pz) {
-    const hw = this.halfW || 6, hh = this.halfH || 4;
+    const hw = this.halfW || 6;
     const x = hw * 2 >= VW ? VW / 2 : THREE.MathUtils.clamp(px, hw, VW - hw);
-    const z = hh * 2 >= VH ? VH / 2 : THREE.MathUtils.clamp(pz, hh, VH - hh);
+    const zmin = this.offTop || 4, zmax = VH - (this.offBottom || 4);
+    const z = zmin >= zmax ? VH / 2 : THREE.MathUtils.clamp(pz, zmin, zmax);   // passt alles ins Bild, bleibt die Mitte
     return this._v.set(x, 0, z);
   }
   groundY(x, z) {

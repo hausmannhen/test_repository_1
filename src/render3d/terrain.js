@@ -11,7 +11,7 @@ const GROUND = {
   [T.GRASS]: ["#4f9a4a", "#559f4f"], [T.FLOWER]: ["#4f9a4a", "#559f4f"], [T.SAND]: ["#d9c27a", "#d1ba72"], [T.PATH]: ["#b59a6a", "#ae9363"],
   [T.SNOW]: ["#e8eef5", "#e0e7ef"], [T.ICE]: ["#bfe0f5", "#b3d8f0"], [T.SWAMP]: ["#4a6a3a", "#425f34"], [T.ASH]: ["#5a4a48", "#514240"],
   [T.DOOR]: ["#b59a6a", "#b59a6a"], [T.SIGN]: ["#4f9a4a", "#559f4f"], [T.ENTRANCE]: ["#6a5a4a", "#6a5a4a"],
-  [T.WATER]: ["#2c4f7a", "#2a4a72"], [T.LAVA]: ["#3a1a10", "#3a1a10"],
+  [T.WATER]: ["#2c4f7a", "#2a4a72"], [T.LAVA]: ["#3a1a10", "#3a1a10"], [T.WELL]: ["#b59a6a", "#ae9363"],
 };
 
 export function groundColors(screen, t) {

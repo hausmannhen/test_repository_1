@@ -276,6 +276,16 @@ export function hurtPlayer(G, amount) {
   if (P.hp <= 0) { P.hp = 0; G.dead = true; if (raidActive(G)) endRaid(G, false); }
   G.dirty = true;
 }
+/* Nach dem Bosssieg: ein Sog trägt den Spieler in den Eingangsraum, direkt an die Treppe */
+export function beamToExit(G) {
+  const P = G.P;
+  if (P.area === "over") return false;
+  enterScreen(G, P.area, DUNGEON_ENTRY.x, DUNGEON_ENTRY.y, 7 * TS + 8, (VH - 3) * TS + 8, false);
+  G.banner = { text: "Der Sog", sub: "Ein Windzug trägt dich zurück zum Ausgang", t: 3 };
+  G.fx.push({ kind: "ring", x: P.x, y: P.y, r: 30, color: "#e9dcb8", t: 0.6, maxT: 0.6 });
+  G.invT = 1; emit(G, "fanfare");
+  return true;
+}
 export function respawn(G) {
   const P = G.P;
   const d = derive(P);

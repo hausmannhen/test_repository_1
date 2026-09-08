@@ -5,7 +5,7 @@ import { makeMob } from "./monsters.js";
 import { emit } from "./player.js";
 import { onRaidEnd } from "./quests.js";
 
-export const WELL = { x: 7 * TS + 8, y: 4 * TS + 8 };          // Dorfmitte zwischen den zwei Brunnen
+export const WELL = { x: 7 * TS + 8, y: 4 * TS + 8 };          // der Brunnen in der Dorfmitte
 export const GATES = [                                          // Ausgänge, dort spawnen die Wellen
   { x: 7 * TS + 8, y: 1 * TS + 8 }, { x: 7 * TS + 8, y: (VH - 2) * TS + 8 },
   { x: 1 * TS + 8, y: 5 * TS + 8 }, { x: (VW - 2) * TS + 8, y: 5 * TS + 8 },

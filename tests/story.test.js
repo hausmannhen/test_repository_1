@@ -180,3 +180,20 @@ describe("Tod im Dungeon", () => {
     assert.equal(G.P.area, "over"); assert.equal(`${G.P.sx},${G.P.sy}`, "4,5");
   });
 });
+
+describe("Sog zum Ausgang", () => {
+  it("bringt den Spieler nach dem Bosssieg in den Eingangsraum, draußen passiert nichts", async () => {
+    const { beamToExit } = await import("../src/game/engine.js");
+    const { DUNGEON_ENTRY } = await import("../src/game/world.js");
+    const G = startGame(createGame("sog"));
+    assert.equal(beamToExit(G), false);
+    const d = genDungeon(G.seed, DUNGEONS[1]);
+    const bossKey = Object.keys(d.rooms).find(k => d.rooms[k].dungeonRoom.type === "boss");
+    const [bx, by] = bossKey.split(",").map(Number);
+    enterScreen(G, "d1", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    assert.equal(beamToExit(G), true);
+    assert.equal(G.P.area, "d1"); assert.equal(G.P.sx, DUNGEON_ENTRY.x); assert.equal(G.P.sy, DUNGEON_ENTRY.y);
+    assert.equal(G.screen.dungeonRoom.type, "entry");
+    assert.match(G.banner.text, /Sog/);
+  });
+});

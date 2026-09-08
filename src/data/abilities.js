@@ -19,4 +19,5 @@ export const BOSS_ABILITIES = {
 /* Zwischenbosse: eine Fähigkeit */
 export const MINI_ABILITIES = {
   alpha: ["sprung"], spinnenmutter: ["ruf"], felsbrecher: ["stampfer"], matriarchin: ["wurzeln"], grelda: ["ruf"], frostfuerst: ["frost"], glutfuerst: ["odem"],
+  rattenkoenig: ["ruf"], moosgeist: ["wurzeln"], steinschwinge: ["sprung"], hauptmann: ["sprung"], moorkoenig: ["stampfer"], eisfang: ["frost"], aschebrut: ["odem"],
 };

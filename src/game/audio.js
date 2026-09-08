@@ -24,7 +24,7 @@ const MOODS = {
 export class GameAudio {
   constructor() {
     this.ctx = null; this.settings = loadSettings();
-    this.mood = null; this.chordI = 0; this.nextChordAt = 0; this.voices = [];
+    this.mood = null; this.chordI = 0; this.nextChordAt = 0; this.voices = []; this.nextPluckAt = 0; this.pluckI = 0; this.chord = null;
     this.lastSfx = {};
   }
   /* Muss aus einer Nutzeraktion heraus aufgerufen werden (Tipp, Taste) */
@@ -36,14 +36,14 @@ export class GameAudio {
     this.master = this.ctx.createGain(); this.master.connect(this.ctx.destination);
     this.musicGain = this.ctx.createGain(); this.musicGain.connect(this.master);
     this.sfxGain = this.ctx.createGain(); this.sfxGain.connect(this.master);
-    this.filter = this.ctx.createBiquadFilter(); this.filter.type = "lowpass"; this.filter.frequency.value = 900; this.filter.connect(this.musicGain);
+    this.filter = this.ctx.createBiquadFilter(); this.filter.type = "lowpass"; this.filter.frequency.value = 2400; this.filter.connect(this.musicGain);
     this.applySettings();
   }
   applySettings(s = this.settings) {
     this.settings = s; saveSettings(s);
     if (!this.ctx) return;
     this.master.gain.value = s.muted ? 0 : 1;
-    this.musicGain.gain.value = s.music * 0.28;
+    this.musicGain.gain.value = s.music * 0.55;
     this.sfxGain.gain.value = s.sfx * 0.9;
   }
   setMood(name) {
@@ -53,21 +53,33 @@ export class GameAudio {
   /* pro Frame: Akkorde weiterschalten */
   update(time) {
     if (!this.ctx || !this.mood || this.settings.muted) return;
+    if (this.ctx.state === "suspended") { this.ctx.resume(); return; }
     const m = MOODS[this.mood] || MOODS.wiese;
-    if (time < this.nextChordAt) return;
-    this.nextChordAt = time + m.tempo;
-    const chord = m.chords[this.chordI % m.chords.length]; this.chordI++;
     const now = this.ctx.currentTime;
-    for (const v of this.voices) { v.g.gain.setTargetAtTime(0, now, 1.2); v.o.stop(now + 4); }
-    this.voices = [];
-    chord.forEach((semi, i) => {
+    if (time >= this.nextChordAt) {
+      this.nextChordAt = time + m.tempo;
+      const chord = m.chords[this.chordI % m.chords.length]; this.chordI++; this.chord = chord;
+      for (const v of this.voices) { v.g.gain.setTargetAtTime(0, now, 1.2); v.o.stop(now + 4); }
+      this.voices = [];
+      // Fläche: Grundlage eine Oktave höher als früher, Handylautsprecher geben unter 200 Hz kaum etwas wieder
+      chord.forEach((semi, i) => {
+        const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+        o.type = m.wave; o.frequency.value = m.root * Math.pow(2, semi / 12);
+        o.detune.value = (i - 1) * 6;
+        g.gain.value = 0; g.gain.setTargetAtTime(0.4 / chord.length, now, 1.5);
+        o.connect(g); g.connect(this.filter); o.start(now);
+        this.voices.push({ o, g });
+      });
+    }
+    // Zupfstimme: alle halben Takte ein Akkordton eine Oktave höher, kurz und leise
+    if (this.chord && time >= this.nextPluckAt) {
+      this.nextPluckAt = time + m.tempo / 8;
+      const semi = this.chord[this.pluckI % this.chord.length]; this.pluckI++;
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = m.wave; o.frequency.value = m.root * Math.pow(2, semi / 12) * (i === 0 ? 0.5 : 1);
-      o.detune.value = (i - 1) * 6;
-      g.gain.value = 0; g.gain.setTargetAtTime(0.5 / chord.length, now, 1.5);
-      o.connect(g); g.connect(this.filter); o.start(now);
-      this.voices.push({ o, g });
-    });
+      o.type = "sine"; o.frequency.value = m.root * 2 * Math.pow(2, semi / 12);
+      g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(0.22, now + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
+      o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + 1);
+    }
   }
   /* kurzer Effekt */
   sfx(type, data = {}) {

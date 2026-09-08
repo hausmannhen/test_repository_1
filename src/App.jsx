@@ -1,6 +1,6 @@
 /* Titel, Spiel, Panels. Spielschleife: Engine-Update, 3D-Render, HUD-Sync. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createGame, startGame, update, respawn, locationName } from "./game/engine.js";
+import { createGame, startGame, update, respawn, beamToExit, locationName } from "./game/engine.js";
 import { derive, xpNeed, usePotion, useManaPotion } from "./game/player.js";
 import { knownSpells, freePoints } from "./game/skills.js";
 import { selectSpell, cycleSpell } from "./game/magic.js";
@@ -56,6 +56,7 @@ export default function App() {
     const G = gRef.current;
     if (G && G.panelReturn) { G.P.x = G.panelReturn.x; G.P.y = G.panelReturn.y; G.panelReturn = null; G.trigCd = 0.5; }
     if (panelRef.current === "geschichte") markStoryRead(G);
+    if (G && typeof panelRef.current === "string" && panelRef.current.startsWith("epilog:")) beamToExit(G);
     setPanel(null);
     if (G) persist(G);
   }, [persist]);

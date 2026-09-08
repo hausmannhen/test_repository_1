@@ -153,6 +153,17 @@ export function buildDecor(screen, heights) {
         batch.add(G.box(0.8, 0.12, 0.8), lambert("#ffffff"), compose(cx, 1.26, cz), new THREE.Color(dr ? dr.wall : "#2a2a30"));
         break;
       }
+      case T.WELL: {
+        // kleiner Brunnen: Steinring, Wasser, zwei Pfosten, Querbalken mit Eimer, kleines Dach
+        batch.add(G.cyl(0.42, 0.46, 0.4, 12), lambert("#8a8478"), compose(cx, h + 0.2, cz));
+        batch.add(G.cyl(0.34, 0.34, 0.06, 12), basic("#2c4f7a"), compose(cx, h + 0.38, cz));
+        batch.add(G.box(0.08, 1.0, 0.08), lambert("#6b4a2e"), compose(cx - 0.36, h + 0.8, cz));
+        batch.add(G.box(0.08, 1.0, 0.08), lambert("#6b4a2e"), compose(cx + 0.36, h + 0.8, cz));
+        batch.add(G.box(0.86, 0.07, 0.07), lambert("#6b4a2e"), compose(cx, h + 1.2, cz));
+        batch.add(G.box(0.14, 0.16, 0.14), lambert("#5a4a3a"), compose(cx, h + 0.95, cz));
+        batch.add(G.box(1.0, 0.08, 0.7), lambert("#7a4a2a"), compose(cx, h + 1.32, cz));
+        break;
+      }
       case T.SIGN: {
         batch.add(G.box(0.08, 0.7, 0.08), lambert("#6b4a2e"), compose(cx, h, cz));
         batch.add(G.box(0.6, 0.3, 0.06), lambert("#a07a4a"), compose(cx, h + 0.45, cz + 0.05));
