@@ -1,7 +1,7 @@
 /* Spieler: Erstellung, abgeleitete Werte, Inventar, Tränke, Mana */
 import { TS, START_VILLAGE } from "./constants.js";
 import { rngFor } from "./rng.js";
-import { generateItem, makePotion, effectiveStats, POTIONS, BASE_BY_ID } from "./items.js";
+import { generateItem, makePotion, effectiveStats, POTIONS, BASE_BY_ID, offhandKind, offhandFits, SHIELD_RATE_PENALTY } from "./items.js";
 import { skillBonuses } from "./skills.js";
 
 export const INVENTORY_MAX = 30;
@@ -30,10 +30,20 @@ export function derive(P) {
     crit: 5, spd: 0, luck: 0, reach: 12, mag: 2 + P.level, maxMana: 30 + (P.level - 1) * 4 + b.mana, manaRegen: 2 + b.manaRegen,
     weaponType: "nah", range: 0, rate: 0.5, projSpeed: 200, proj: "pfeil", blood: 0,
   };
-  for (const slot in P.equip) {
+  // Waffe zuerst, damit die Nebenhand weiß, womit sie zusammenarbeitet
+  const slots = Object.keys(P.equip).sort((a, b) => (a === "waffe" ? -1 : b === "waffe" ? 1 : 0));
+  for (const slot of slots) {
     const it = P.equip[slot];
     if (!it) continue;
-    const es = effectiveStats(it);
+    let es = effectiveStats(it);
+    if (slot === "schild") {
+      const kind = offhandKind(it);
+      const fits = offhandFits(it, s.weaponType);
+      if (!fits) es = { def: es.def || 0 };                               // falsche Klasse: nur der Schutz bleibt
+      else if (kind === "fern") s.rate *= 0.95;                             // Köcher: 5 % schneller schießen
+      else if (kind === "fokus") s.manaRegen += 0.5;                        // Zauberbuch: Mana fließt schneller
+      else if (s.weaponType === "fern") s.rate *= SHIELD_RATE_PENALTY;      // Schild mit Bogen: beide Hände fehlen
+    }
     for (const k in es) {
       if (k === "hp") s.maxHp += es[k];
       else if (k === "mana") s.maxMana += es[k];

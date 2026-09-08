@@ -124,7 +124,7 @@ export function buildPlayerModel() {
     }
     if (P.activeSpell && SPELLS[P.activeSpell]) { const el = ELEMENTS[SPELLS[P.activeSpell].element]; orbMat.emissive.set(el.color); orbMat.color.set(el.color2); }
     // Ausrüstung
-    shield.visible = !!P.equip.schild && d.weaponType !== "fern";
+    shield.visible = !!P.equip.schild && d.weaponType !== "fern" && !/koecher|zauberbuch/.test(P.equip.schild.baseId || "");
     if (P.equip.kopf) { helm.visible = true; hairTop.visible = false; helmMat.color.set(RARITY_BY_ID[P.equip.kopf.rarity].color); }
     else { helm.visible = false; hairTop.visible = true; }
   }

@@ -9,7 +9,7 @@ export const RARITIES = [
   { id: "episch",        name: "Episch",       color: "#c77dff", mult: 1.95, statMult: 1.3, affixes: 3, weight: 2.2 },
   { id: "legendaer",     name: "Legendär",     color: "#ffb347", mult: 2.5,  statMult: 1.4, affixes: 4, weight: 0.4 },
 ];
-export const SLOTS = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Schild", amulett: "Amulett", ring: "Ring" };
+export const SLOTS = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Nebenhand", amulett: "Amulett", ring: "Ring" };
 export const SLOT_ORDER = ["waffe", "kopf", "rumpf", "schild", "amulett", "ring"];
 export const STAT_NAMES = { atk: "Angriff", def: "Verteidigung", hp: "Leben", crit: "Krit", spd: "Tempo", luck: "Glück", mag: "Magie", mana: "Mana" };
 export const STAT_KEYS = ["atk", "def", "hp", "crit", "spd", "luck", "mag", "mana"];
@@ -50,11 +50,12 @@ export const BASES = [
   { id: "robe",         name: "Robe", g: "f",          slot: "rumpf", def: 2, hp: 12, mag: 4, mana: 10 },
   { id: "jaegermantel", name: "Jägermantel", g: "m",   slot: "rumpf", def: 4, crit: 5, spd: 1 },
   // Schild
-  { id: "holzschild",   name: "Holzschild", g: "m",    slot: "schild", def: 2, hp: 6 },
-  { id: "rundschild",   name: "Rundschild", g: "m",    slot: "schild", def: 4, hp: 8 },
-  { id: "turmschild",   name: "Turmschild", g: "m",    slot: "schild", def: 7, hp: 12, spd: -3 },
-  { id: "zauberbuch",   name: "Zauberbuch", g: "n",    slot: "schild", def: 1, mag: 5, mana: 15 },
-  { id: "koecher",      name: "Köcher", g: "m",        slot: "schild", def: 1, atk: 3, crit: 3 },
+  // Nebenhand: Schilde für alle (mit Fernwaffe 20 % langsamer schießen), Köcher nur mit Fernwaffe, Zauberbuch nur mit Stab; sonst zählt nur die Verteidigung
+  { id: "holzschild",   name: "Holzschild", g: "m",    slot: "schild", off: "schild", def: 2, hp: 6 },
+  { id: "rundschild",   name: "Rundschild", g: "m",    slot: "schild", off: "schild", def: 4, hp: 8 },
+  { id: "turmschild",   name: "Turmschild", g: "m",    slot: "schild", off: "schild", def: 7, hp: 12, spd: -3 },
+  { id: "zauberbuch",   name: "Zauberbuch", g: "n",    slot: "schild", off: "fokus", def: 1, mag: 6, mana: 20 },
+  { id: "koecher",      name: "Köcher", g: "m",        slot: "schild", off: "fern", def: 1, atk: 4, crit: 4 },
   // Amulett
   { id: "talisman",     name: "Talisman", g: "m",      slot: "amulett", hp: 10, luck: 3 },
   { id: "anhaenger",    name: "Anhänger", g: "m",      slot: "amulett", crit: 5, atk: 2 },

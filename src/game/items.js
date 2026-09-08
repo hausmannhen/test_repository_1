@@ -69,6 +69,10 @@ export function effectiveStats(item) {
   for (const k in item.stats) out[k] = item.stats[k] > 0 ? Math.round(item.stats[k] * m) : item.stats[k];   // Abzüge wachsen beim Aufwerten nicht mit
   return out;
 }
+/* Nebenhand: Köcher braucht Fernwaffe, Zauberbuch Stab, Schilde gehen immer */
+export function offhandKind(item) { const b = item && BASE_BY_ID[item.baseId]; return b ? (b.off || "schild") : "schild"; }
+export function offhandFits(item, weaponTypeId) { const k = offhandKind(item); return k === "schild" || k === weaponTypeId; }
+export const SHIELD_RATE_PENALTY = 1.2;   // Schild mit Fernwaffe: langsamer schießen
 export function weaponType(item) { return item && item.slot === "waffe" ? (item.type || "nah") : null; }
 export function upgradeCost(item) { return Math.round((item.value * 0.6 + 20) * Math.pow(1.7, item.upg)); }
 export function makePotion(id, qty = 1) { return { uid: "p_" + id, kind: "trank", potId: id, name: POTIONS[id].name, qty, value: Math.round(POTIONS[id].price * 0.45) }; }

@@ -131,3 +131,30 @@ describe("Verkauf", () => {
     assert.equal(P.gold, sellPrice(it)); assert.equal(P.inventory.length, 0);
   });
 });
+
+describe("Nebenhand", () => {
+  const off = (id) => { const it = generateItem(rngFor("off", id), 5, 0, 0, "schild"); const b = BASES.find(x => x.id === id); Object.assign(it, { baseId: id, name: b.name, stats: { def: b.def, ...(b.hp ? { hp: b.hp } : {}), ...(b.atk ? { atk: b.atk } : {}), ...(b.crit ? { crit: b.crit } : {}), ...(b.mag ? { mag: b.mag } : {}), ...(b.mana ? { mana: b.mana } : {}) } }); return it; };
+  const wpn = (id) => { const b = BASES.find(x => x.id === id); const it = generateItem(rngFor("w", id), 5, 0, 0, "waffe"); Object.assign(it, { baseId: id, type: b.type, range: b.range, rate: b.rate, projSpeed: b.projSpeed, proj: b.proj, reach: b.reach || 0, stats: { atk: b.atk || 3, ...(b.mag ? { mag: b.mag } : {}) } }); delete it.blood; return it; };
+  it("Köcher nur mit Fernwaffe, Zauberbuch nur mit Stab, Schild bremst Fernwaffen", async () => {
+    const { derive, newPlayer } = await import("../src/game/player.js");
+    const P = newPlayer("nh");
+    P.equip.waffe = wpn("langschwert"); P.equip.schild = null;
+    const base = derive(P);
+    P.equip.schild = off("koecher");
+    const wrong = derive(P);
+    assert.equal(wrong.atk, base.atk, "Köcher gibt Angriff ohne Bogen"); assert.equal(wrong.crit, base.crit); assert.equal(wrong.def, base.def + 1);
+    P.equip.waffe = wpn("langbogen");
+    const bowOnly = { ...P.equip, schild: null }; const saved = P.equip; P.equip = bowOnly; const bow = derive(P); P.equip = saved;
+    const right = derive(P);
+    assert.equal(right.atk, bow.atk + 4); assert.equal(right.crit, bow.crit + 4);
+    assert.ok(Math.abs(right.rate - bow.rate * 0.95) < 1e-9, "Köcher beschleunigt nicht");
+    P.equip.schild = off("rundschild");
+    assert.ok(Math.abs(derive(P).rate - bow.rate * 1.2) < 1e-9, "Schild bremst nicht");
+    P.equip.waffe = wpn("kristallstab"); P.equip.schild = off("zauberbuch");
+    const staffOnly = { ...P.equip, schild: null }; P.equip = staffOnly; const staff = derive(P); P.equip = saved; P.equip.schild = off("zauberbuch");
+    const book = derive(P);
+    assert.equal(book.mag, staff.mag + 6); assert.equal(book.maxMana, staff.maxMana + 20); assert.equal(book.manaRegen, staff.manaRegen + 0.5);
+    P.equip.waffe = wpn("langschwert");
+    assert.equal(derive(P).mag, derive({ ...P, equip: { ...P.equip, schild: null } }).mag, "Zauberbuch wirkt ohne Stab");
+  });
+});

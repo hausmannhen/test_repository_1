@@ -52,4 +52,4 @@ export function ItemRow({ item, selected, onClick, right, children, tag }) {
     </div>
   );
 }
-const SLOT_LABEL = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Schild", amulett: "Amulett", ring: "Ring" };
+const SLOT_LABEL = { waffe: "Waffe", kopf: "Kopf", rumpf: "Rumpf", schild: "Nebenhand", amulett: "Amulett", ring: "Ring" };

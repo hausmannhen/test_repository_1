@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { WORLD_W, WORLD_H, VILLAGES, DUNGEON_BY_SCREEN, DUNGEONS, REGIONS, REGION_MAP_COLORS, regionAt } from "../game/constants.js";
 import { MINIBOSS_BY_SCREEN, MINIBOSSES } from "../data/minibosses.js";
-import { SLOTS, SLOT_ORDER, effectiveStats, sumStats } from "../game/items.js";
+import { SLOTS, SLOT_ORDER, effectiveStats, sumStats, offhandKind, offhandFits } from "../game/items.js";
 import { derive, xpNeed, drinkItem, INVENTORY_MAX } from "../game/player.js";
 import { POTIONS } from "../game/items.js";
 import { freePoints } from "../game/skills.js";
@@ -24,6 +24,12 @@ export function ItemDetail({ P, item, actions }) {
       {item.kind === "gear" && <StatLine stats={effectiveStats(item)} compare={compare ? effectiveStats(other) : null} />}
       {compare && <div className="detail-sub" style={{ marginTop: 6 }}>Vergleich mit angelegtem {SLOTS[item.slot]}: <ItemName item={other} />. Grün ist besser, Rot schlechter.</div>}
       {item.kind === "gear" && item.type === "fern" && <div className="detail-sub">Reichweite {item.range}, alle {item.rate} s ein Schuss</div>}
+      {item.kind === "gear" && item.slot === "schild" && (() => {
+        const kind = offhandKind(item), wt = derive(P).weaponType;
+        if (kind === "fern") return <div className={offhandFits(item, wt) ? "detail-sub green" : "detail-sub red"}>Köcher: Angriff, Krit und 5 % Feuerrate nur mit Fernwaffe, sonst nur Verteidigung.</div>;
+        if (kind === "fokus") return <div className={offhandFits(item, wt) ? "detail-sub green" : "detail-sub red"}>Zauberbuch: Magie, Mana und Manafluss nur mit Stab, sonst nur Verteidigung.</div>;
+        return wt === "fern" ? <div className="detail-sub red">Schild mit Fernwaffe: 20 % langsamer schießen.</div> : null;
+      })()}
       <div className="detail-sub" style={{ margin: "6px 0 8px" }}>Wert: {item.value} Gold, Händler zahlt {sellPrice(item)}</div>
       <div className="row">{actions}</div>
     </div>
