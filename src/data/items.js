@@ -54,8 +54,8 @@ export const BASES = [
   { id: "holzschild",   name: "Holzschild", g: "m",    slot: "schild", off: "schild", def: 2, hp: 6 },
   { id: "rundschild",   name: "Rundschild", g: "m",    slot: "schild", off: "schild", def: 4, hp: 8 },
   { id: "turmschild",   name: "Turmschild", g: "m",    slot: "schild", off: "schild", def: 7, hp: 12, spd: -3 },
-  { id: "zauberbuch",   name: "Zauberbuch", g: "n",    slot: "schild", off: "fokus", def: 1, mag: 6, mana: 20 },
-  { id: "koecher",      name: "Köcher", g: "m",        slot: "schild", off: "fern", def: 1, atk: 4, crit: 4 },
+  { id: "zauberbuch",   name: "Zauberbuch", g: "n",    slot: "schild", off: "fokus", weight: 1.5, def: 1, mag: 6, mana: 20 },
+  { id: "koecher",      name: "Köcher", g: "m",        slot: "schild", off: "fern", weight: 1.5, def: 1, atk: 4, crit: 4 },
   // Amulett
   { id: "talisman",     name: "Talisman", g: "m",      slot: "amulett", hp: 10, luck: 3 },
   { id: "anhaenger",    name: "Anhänger", g: "m",      slot: "amulett", crit: 5, atk: 2 },

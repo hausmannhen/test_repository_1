@@ -9,6 +9,12 @@ export const BASE_BY_ID = Object.fromEntries(BASES.map(b => [b.id, b]));
 let itemCounter = 1;
 function statScale(v, ilvl) { return v * (1 + ilvl * 0.13); }
 
+function pickWeighted(r, list) {
+  const total = list.reduce((a, b) => a + (b.weight || 1), 0);
+  let x = r() * total;
+  for (const b of list) { x -= (b.weight || 1); if (x <= 0) return b; }
+  return list[list.length - 1];
+}
 export function rollRarity(r, ilvl, luck, minIdx = 0) {
   const boost = 1 + luck * 0.04 + ilvl * 0.01;
   const weights = RARITIES.map((ra, i) => i < minIdx ? 0 : ra.weight * (i > 0 ? boost : 1));
@@ -34,7 +40,11 @@ function weaponProps(base) {
 
 export function generateItem(r, ilvl, luck = 0, minRarity = 0, forcedSlot = null) {
   const bases = forcedSlot ? BASES.filter(b => b.slot === forcedSlot) : BASES;
-  const base = pick(r, bases);
+  const base = pickWeighted(r, bases);
+  // Affixe, die zur Waffe passen: kein Magie-Affix auf Schwert oder Bogen, kein Angriffs-Affix auf dem Stab. Nebenhand ebenso.
+  const kind = base.type || base.off || null;
+  const fits = (a) => !kind || kind === "schild" || (kind === "fokus" ? a.stat !== "atk" : (a.stat !== "mag" && a.stat !== "mana"));
+  const prefixes = PREFIXES.filter(fits), suffixes = SUFFIXES.filter(fits);
   const rIdx = rollRarity(r, ilvl, luck, minRarity);
   const rar = RARITIES[rIdx];
   const stats = {};
@@ -52,9 +62,9 @@ export function generateItem(r, ilvl, luck = 0, minRarity = 0, forcedSlot = null
     const val = Math.max(1, Math.round(baseVal * a.v * (0.85 + r() * 0.3)));
     bonus[a.stat] = (bonus[a.stat] || 0) + val;
   };
-  if (affixes >= 1) { prefix = pick(r, PREFIXES); applyAffix(prefix); }
-  if (affixes >= 2) { suffix = pick(r, SUFFIXES); applyAffix(suffix); }
-  for (let i = 2; i < affixes; i++) applyAffix(pick(r, [...PREFIXES, ...SUFFIXES]));
+  if (affixes >= 1) { prefix = pick(r, prefixes); applyAffix(prefix); }
+  if (affixes >= 2) { suffix = pick(r, suffixes); applyAffix(suffix); }
+  for (let i = 2; i < affixes; i++) applyAffix(pick(r, [...prefixes, ...suffixes]));
   for (const k in bonus) stats[k] = (stats[k] || 0) + bonus[k];
   const statSum = Object.values(stats).reduce((a, b) => a + b, 0);
   const value = Math.round((ilvl * 3 + statSum * 2.2) * rar.mult);

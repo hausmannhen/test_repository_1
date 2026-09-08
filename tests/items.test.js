@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { rngFor, mulberry32 } from "../src/game/rng.js";
-import { BASES, RARITIES, PREFIXES, generateItem, effectiveStats, upgradeCost, makePotion } from "../src/game/items.js";
+import { BASES, RARITIES, PREFIXES, SUFFIXES, generateItem, effectiveStats, upgradeCost, makePotion } from "../src/game/items.js";
 import { MOBS, makeMob, rollDrops } from "../src/game/monsters.js";
 
 describe("Items", () => {
@@ -156,5 +156,25 @@ describe("Nebenhand", () => {
     assert.equal(book.mag, staff.mag + 6); assert.equal(book.maxMana, staff.maxMana + 20); assert.equal(book.manaRegen, staff.manaRegen + 0.5);
     P.equip.waffe = wpn("langschwert");
     assert.equal(derive(P).mag, derive({ ...P, equip: { ...P.equip, schild: null } }).mag, "Zauberbuch wirkt ohne Stab");
+  });
+});
+
+describe("Affixe nach Waffentyp", () => {
+  it("Schwert und Bogen ohne Magie, Stab ohne Angriff, Köcher und Buch häufiger", () => {
+    const r = rngFor("test", "affix");
+    let koecher = 0, buch = 0, schild = 0;
+    for (let i = 0; i < 4000; i++) {
+      const it = generateItem(r, 15, 0, 3);
+      // Affixe erkennt man am Namen; Grundwerte der Basis (Stab hat etwas Angriff) zählen nicht
+      const magNames = [...PREFIXES, ...SUFFIXES].filter(a => a.stat === "mag" || a.stat === "mana").map(a => a.name);
+      const atkNames = [...PREFIXES, ...SUFFIXES].filter(a => a.stat === "atk").map(a => a.name);
+      const hasAffix = (names) => names.some(n => it.name.startsWith(n) || it.name.includes(" " + n));
+      if (it.slot === "waffe" && it.type !== "fokus") assert.ok(!hasAffix(magNames), it.name);
+      if (it.slot === "waffe" && it.type === "fokus") assert.ok(!hasAffix(atkNames), it.name);
+      if (it.baseId === "koecher") { koecher++; assert.ok(!hasAffix(magNames), it.name); }
+      if (it.baseId === "zauberbuch") { buch++; assert.ok(!hasAffix(atkNames), it.name); }
+      if (it.baseId === "rundschild") schild++;
+    }
+    assert.ok(koecher > schild * 1.2 && buch > schild * 1.2, `${koecher} ${buch} ${schild}`);
   });
 });
