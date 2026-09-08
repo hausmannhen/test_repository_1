@@ -288,3 +288,17 @@ describe("Sonderangriffe und Waffenvorteil", () => {
     assert.ok(P.hp <= d.maxHp - cost + cost, "mehr geheilt als gekostet");
   });
 });
+
+describe("Sturmangriff am Bildschirmrand", () => {
+  it("endet am Rand und wechselt nie den Bildschirm", () => {
+    const G = arena("rand");
+    const P = G.P; P.level = 6; learn(P, "kraft"); learn(P, "sturmangriff");
+    P.equip.waffe = weapon("langschwert"); selectSpell(P, "sturmangriff");
+    P.x = 230; P.y = 5 * TS + 8; G.aim = { x: 1, y: 0 }; P.dir = "right";
+    const sx = P.sx, sy = P.sy;
+    assert.ok(castSpell(G));
+    for (let i = 0; i < 30; i++) update(G, 1 / 60, idle);
+    assert.equal(P.sx, sx); assert.equal(P.sy, sy);
+    assert.ok(P.x <= 240 - 4 + 0.01 && P.x > 230, "nicht am Rand gestoppt: " + P.x);
+  });
+});

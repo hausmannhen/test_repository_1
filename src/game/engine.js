@@ -239,7 +239,7 @@ export function killMob(G, m) {
     emit(G, "fanfare");
   }
   gainXp(G, m.xp);
-  if (m.boss) {
+  if (m.boss && G.screen.dungeonRoom) {
     const dId = G.screen.dungeonRoom.d.id;
     P.cleared[dId] = true; P.hearts += 1; P.hp = derive(P).maxHp;
     G.banner = { text: m.name + " besiegt", sub: "Herzcontainer erhalten", t: 4 };
@@ -355,6 +355,7 @@ export function update(G, dt, input) {
     // Sturmangriff: Vorstoß mit Kollision, jeder Gegner auf dem Weg wird einmal getroffen
     const ds = G.dash; ds.t -= dt;
     moveWithCollision(tiles, P, ds.dx * ds.speed * dt, ds.dy * ds.speed * dt, 5, 5);
+    P.x = clamp(P.x, 4, W - 4); P.y = clamp(P.y, 4, H - 4);   // der Vorstoß endet am Bildschirmrand, er wechselt nie den Bildschirm
     for (const m of G.mobs) {
       if (m.dead || m.spawnDelay > 0 || ds.hit.has(m.id)) continue;
       if (Math.hypot(m.x - P.x, m.y - P.y) < m.size / 2 + d.reach) { ds.hit.add(m.id); applyHit(G, m, { dmg: ds.dmg, critChance: ds.critChance, knock: ds.knock }, ds.dx, ds.dy); }
