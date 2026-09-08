@@ -302,3 +302,23 @@ describe("Sturmangriff am Bildschirmrand", () => {
     assert.ok(P.x <= 240 - 4 + 0.01 && P.x > 230, "nicht am Rand gestoppt: " + P.x);
   });
 });
+
+describe("Eigener Knopf für den Sonderangriff", () => {
+  it("special-Eingabe löst den zur Waffe passenden Sonderangriff aus, Zauberleiste bleibt ohne ihn", async () => {
+    const { specialFor, barSpells } = await import("../src/game/magic.js");
+    const G = arena("knopf");
+    const P = G.P; P.level = 9;
+    learn(P, "kraft"); learn(P, "sturmangriff"); learn(P, "feuer");
+    assert.equal(P.activeSpell, "feuerball", "Sonderangriff wurde aktiver Zauber");
+    assert.deepEqual(barSpells(P), ["feuerball"]);
+    P.equip.waffe = weapon("langschwert");
+    assert.equal(specialFor(P), "sturmangriff");
+    P.equip.waffe = weapon("kurzbogen");
+    assert.equal(specialFor(P), null);
+    P.equip.waffe = weapon("langschwert");
+    G.aim = { x: 1, y: 0 };
+    update(G, 1 / 60, { ...idle, special: true });
+    assert.ok(G.dash, "kein Vorstoß über den Sonderknopf");
+    assert.ok(G.spellCd.sturmangriff > 0);
+  });
+});

@@ -35,7 +35,7 @@ export function learn(P, id) {
   if (s.spell) {
     if (!P.spells) P.spells = [];
     if (!P.spells.includes(s.spell)) P.spells.push(s.spell);
-    if (!P.activeSpell) P.activeSpell = s.spell;
+    if (!P.activeSpell && !SPELLS[s.spell].element.match(/^(krieger|jaeger)$/)) P.activeSpell = s.spell;   // Sonderangriffe haben ihren eigenen Knopf
   }
   return true;
 }

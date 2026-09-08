@@ -5,7 +5,7 @@ import { generateItem, makePotion, POTIONS, RARITY_BY_ID } from "./items.js";
 import { rollDrops, makeMob as makeMobFn } from "./monsters.js";
 import { genOverworldScreen, genDungeon, spawnMobsFor, DUNGEON_ENTRY } from "./world.js";
 import { newPlayer, derive, xpNeed, addToInventory, flash, emit, POTION_MAX } from "./player.js";
-import { castSpell, aimDir, ELEMENTS } from "./magic.js";
+import { castSpell, aimDir, ELEMENTS, specialFor, isSpecial, barSpells } from "./magic.js";
 import { onKill as questKill, gateOpen, gateFor, resetStaleRaids, QUESTS } from "./quests.js";
 import { raidActive, updateRaid, raidTarget, endRaid } from "./raid.js";
 export { startRaid, raidActive } from "./raid.js";
@@ -36,6 +36,7 @@ export function startGame(G) {
   const P = G.P;
   resetStaleRaids(P);
   if (!P.hints) P.hints = {};
+  if (P.activeSpell && isSpecial(P.activeSpell)) P.activeSpell = barSpells(P)[0] || null;   // alte Spielstände: Sonderangriff war aktiver Zauber
   enterScreen(G, P.area, P.sx, P.sy, P.x, P.y, true);
   const fresh = P.kills === 0 && !Object.keys(P.quests || {}).length;
   // Geschichte: neue Spieler sehen sie als Fenster, bevor sie sich bewegen; wer schon unterwegs ist, findet sie im Menü
@@ -386,8 +387,9 @@ export function update(G, dt, input) {
     return;
   }
 
-  // --- Zauber ---
+  // --- Zauber und Sonderangriff (eigener Knopf, passend zur Waffe) ---
   if (input.cast) castSpell(G);
+  if (input.special) { const id = specialFor(P); if (id) castSpell(G, id); else if (G.trigCd <= 0) { G.trigCd = 1; flash(G, "Kein Sonderangriff für diese Waffe gelernt", "#ffb347"); } }
 
   // --- Angriff: Nahkampf oder Fernkampf ---
   G.attack.t = Math.max(-1, G.attack.t - dt);

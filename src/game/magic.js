@@ -9,6 +9,10 @@ export function isSpecial(spellId) { const sp = SPELLS[spellId]; return !!sp && 
 export function weaponFits(P, spellId) { const sp = SPELLS[spellId]; if (!sp) return false; const want = WEAPON_FOR[sp.element] || "fokus"; return derive(P).weaponType === want; }
 /* Sonderangriffe gehen nur mit ihrer Waffe, Zauber ohne Stab mit 60 % */
 export function weaponMult(P, spellId) { return weaponFits(P, spellId) || isSpecial(spellId) ? 1 : WEAPON_OFF; }
+/* Der Sonderangriff, der zur Waffe passt und gelernt ist: Schwert → Sturmangriff, Bogen → Pfeilhagel */
+export function specialFor(P) { const wt = derive(P).weaponType; const want = Object.keys(WEAPON_FOR).find(el => WEAPON_FOR[el] === wt); if (!want) return null; return knownSpells(P).find(id => SPELLS[id].element === want) || null; }
+/* Zauber für die Leiste: ohne Sonderangriffe, die haben ihren eigenen Knopf */
+export function barSpells(P) { return knownSpells(P).filter(id => !isSpecial(id)); }
 export function weaponNeeded(spellId) { const sp = SPELLS[spellId]; return sp && WEAPON_FOR[sp.element] === "nah" ? "Braucht Nahkampfwaffe" : sp && WEAPON_FOR[sp.element] === "fern" ? "Braucht Fernwaffe" : null; }
 
 export function spellDamage(P, spellId) {
@@ -35,12 +39,12 @@ export function canCast(G, spellId) {
   return null;
 }
 export function selectSpell(P, spellId) {
-  if (!knownSpells(P).includes(spellId)) return false;
+  if (!knownSpells(P).includes(spellId) || isSpecial(spellId)) return false;   // Sonderangriffe liegen auf dem eigenen Knopf
   P.activeSpell = spellId;
   return true;
 }
 export function cycleSpell(P, dir = 1) {
-  const list = knownSpells(P);
+  const list = barSpells(P);
   if (!list.length) return null;
   const i = Math.max(0, list.indexOf(P.activeSpell));
   P.activeSpell = list[(i + dir + list.length) % list.length];

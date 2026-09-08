@@ -1,12 +1,12 @@
 /* Eingabe: Tastatur und Touch-Pad schreiben in ein gemeinsames Objekt, die Engine liest es pro Frame. */
 export function createInput() {
-  return { x: 0, y: 0, attack: false, cast: false, keys: {} };
+  return { x: 0, y: 0, attack: false, cast: false, special: false, keys: {} };
 }
 export function readInput(inp) {
   const k = inp.keys;
   const kx = (k["arrowright"] || k["d"] ? 1 : 0) - (k["arrowleft"] || k["a"] ? 1 : 0);
   const ky = (k["arrowdown"] || k["s"] ? 1 : 0) - (k["arrowup"] || k["w"] ? 1 : 0);
-  return { x: inp.x || kx, y: inp.y || ky, attack: inp.attack, cast: inp.cast };
+  return { x: inp.x || kx, y: inp.y || ky, attack: inp.attack, cast: inp.cast, special: inp.special };
 }
 /* handlers: { potion, manaPotion, inventory, escape, selectSpell(index), cycleSpell } */
 export function bindKeyboard(inp, handlers) {
@@ -16,6 +16,7 @@ export function bindKeyboard(inp, handlers) {
     if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(key)) e.preventDefault();
     if (key === " " || key === "j") inp.attack = true;
     if (key === "q" || key === "shift" || key === "l") inp.cast = true;
+    if (key === "f" || key === "control") inp.special = true;
     if ((key === "e" || key === "k") && handlers.potion) handlers.potion();
     if (key === "r" && handlers.manaPotion) handlers.manaPotion();
     if (/^[1-9]$/.test(key) && handlers.selectSpell) handlers.selectSpell(+key - 1);
@@ -29,8 +30,9 @@ export function bindKeyboard(inp, handlers) {
     inp.keys[key] = false;
     if (key === " " || key === "j") inp.attack = false;
     if (key === "q" || key === "shift" || key === "l") inp.cast = false;
+    if (key === "f" || key === "control") inp.special = false;
   };
-  const blur = () => { inp.keys = {}; inp.attack = false; inp.cast = false; inp.x = 0; inp.y = 0; };
+  const blur = () => { inp.keys = {}; inp.attack = false; inp.cast = false; inp.special = false; inp.x = 0; inp.y = 0; };
   window.addEventListener("keydown", down); window.addEventListener("keyup", up); window.addEventListener("blur", blur);
   return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); };
 }

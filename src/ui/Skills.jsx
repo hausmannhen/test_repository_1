@@ -1,6 +1,7 @@
 /* Fertigkeiten: Skilltree in drei Zweigen, Zauberwahl */
 import React from "react";
 import { SKILLS, SKILL_ORDER, skillRank, freePoints, whyNot, learn, knownSpells, levelForRank } from "../game/skills.js";
+import { barSpells, specialFor } from "../game/magic.js";
 import { BRANCHES } from "../data/skills.js";
 import { SPELLS, ELEMENTS, WEAPON_FOR, WEAPON_OFF } from "../data/spells.js";
 import { weaponFits } from "../game/magic.js";
@@ -19,7 +20,8 @@ export function SpellChip({ P, id, active, onSelect, small }) {
 export default function Skills({ G, rerender }) {
   const P = G.P;
   const free = freePoints(P);
-  const spells = knownSpells(P);
+  const spells = barSpells(P);
+  const special = specialFor(P);
   return (
     <div>
       <div className="box">
@@ -27,6 +29,12 @@ export default function Skills({ G, rerender }) {
         <div className="dim" style={{ fontSize: 12, marginTop: 4 }}>Ein Punkt alle drei Stufen (3, 6, 9 …). Höhere Ränge brauchen je fünf Stufen mehr. Die Weise nimmt gegen Gold alle Punkte zurück.</div>
       </div>
 
+      {knownSpells(P).some(id => id === "sturmangriff" || id === "pfeilhagel") && (
+        <div className="box">
+          <div className="section" style={{ marginTop: 0 }}>Sonderangriff</div>
+          <div className="dim" style={{ fontSize: 12 }}>{special ? `${SPELLS[special].name} liegt auf dem eigenen Knopf neben „Zauber“, Abklingzeit ${SPELLS[special].cd} s.` : "Gelernt, aber die Waffe passt nicht: Sturmangriff braucht eine Nahkampfwaffe, Pfeilhagel eine Fernwaffe."}</div>
+        </div>
+      )}
       {spells.length > 0 && (
         <div className="box">
           <div className="section" style={{ marginTop: 0 }}>Aktiver Zauber</div>

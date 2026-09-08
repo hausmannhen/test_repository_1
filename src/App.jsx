@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createGame, startGame, update, respawn, beamToExit, locationName } from "./game/engine.js";
 import { derive, xpNeed, usePotion, useManaPotion } from "./game/player.js";
 import { knownSpells, freePoints } from "./game/skills.js";
-import { selectSpell, cycleSpell } from "./game/magic.js";
+import { selectSpell, cycleSpell, barSpells, specialFor } from "./game/magic.js";
 import { SPELLS, ELEMENTS } from "./data/spells.js";
 import { POTIONS } from "./game/items.js";
 import { saveGame, listAccounts, makeSlot, writeSlot, deleteSlot, renameSlot } from "./game/save.js";
@@ -130,10 +130,13 @@ export default function App() {
       const P = G.P, d = derive(P);
       const pots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].healPct).reduce((a, b) => a + b.qty, 0);
       const manaPots = P.inventory.filter(i => i.kind === "trank" && POTIONS[i.potId] && POTIONS[i.potId].manaPct).reduce((a, b) => a + b.qty, 0);
-      const spells = knownSpells(P);
+      const spells = barSpells(P);
       const sp = P.activeSpell && SPELLS[P.activeSpell] ? SPELLS[P.activeSpell] : null;
+      const cdOf = (id) => id && SPELLS[id] ? { left: Math.max(0, G.spellCd[id] || 0), max: SPELLS[id].cd } : null;
+      const specialId = specialFor(P);
+      const special = specialId ? { id: specialId, name: SPELLS[specialId].name, color: ELEMENTS[SPELLS[specialId].element].color, cd: cdOf(specialId) } : null;
       const next = { hp: P.hp, maxHp: d.maxHp, mana: Math.floor(P.mana), maxMana: d.maxMana, level: P.level, xp: P.xp, need: xpNeed(P.level), gold: P.gold, pots, manaPots, points: freePoints(P),
-        spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null,
+        spells, activeSpell: P.activeSpell, spell: sp ? sp.name : null, spellColor: sp ? ELEMENTS[sp.element].color : null, castCd: cdOf(P.activeSpell), special,
         loc: locationName(G), quest: trackerText(P), msg: G.msg, banner: G.banner, dead: G.dead, buff: P.buffT > 0,
         talk: G.nearNpc && NPCS[G.nearNpc] ? NPCS[G.nearNpc].name : G.nearSign ? "Wegweiser" : null,
         area: P.area, pos: [P.sx, P.sy], visited: Object.keys(P.visits).filter(k => /^\d+,\d+$/.test(k)), cleared: P.cleared,
@@ -204,7 +207,7 @@ export default function App() {
           )}
         </div>
         <Controls input={inputRef.current} onPotion={drinkPotion} onManaPotion={drinkMana} onMenu={toggleInventory} pots={ui ? ui.pots : 0} manaPots={ui ? ui.manaPots : 0}
-          menuOpen={panel === "inventar"} spells={ui ? ui.spells : []} activeSpell={ui ? ui.activeSpell : null} onSelectSpell={pickSpell} talk={ui ? ui.talk : null} />
+          menuOpen={panel === "inventar"} spells={ui ? ui.spells : []} activeSpell={ui ? ui.activeSpell : null} onSelectSpell={pickSpell} talk={ui ? ui.talk : null} castCd={ui ? ui.castCd : null} special={ui ? ui.special : null} />
         {renderPanel()}
       </div>
     </div>
