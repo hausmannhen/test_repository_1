@@ -236,9 +236,9 @@ describe("Sonderangriffe und Waffenvorteil", () => {
     P.equip.waffe = weapon("langschwert");
     assert.equal(canCast(G, "sturmangriff"), null); assert.equal(spellDamage(P, "sturmangriff"), full);
     const m = makeMob("wolf", 1, P.x + 40, P.y); m.spd = 0; m.maxHp = m.hp = 5000; G.mobs = [m];
-    P.dir = "right"; G.aim = { x: 1, y: 0 }; selectSpell(P, "sturmangriff");
+    P.dir = "right"; G.aim = { x: 1, y: 0 };
     const x0 = P.x;
-    assert.ok(castSpell(G));
+    assert.ok(castSpell(G, "sturmangriff"));
     assert.ok(G.dash, "kein Vorstoß");
     for (let i = 0; i < 20; i++) update(G, 1 / 60, idle);
     assert.ok(P.x > x0 + 30, "nicht vorgestoßen");
@@ -255,8 +255,8 @@ describe("Sonderangriffe und Waffenvorteil", () => {
     assert.equal(canCast(G, "pfeilhagel"), "Braucht Fernwaffe");
     P.equip.waffe = weapon("kurzbogen");
     assert.equal(weaponMult(P, "pfeilhagel"), 1);
-    selectSpell(P, "pfeilhagel"); G.aim = { x: 0, y: -1 }; G.pprojs = [];
-    assert.ok(castSpell(G));
+    G.aim = { x: 0, y: -1 }; G.pprojs = [];
+    assert.ok(castSpell(G, "pfeilhagel"));
     assert.equal(G.pprojs.length, 5);
     assert.ok(G.pprojs.some(p => p.vx < -20) && G.pprojs.some(p => p.vx > 20), "kein Fächer");
     assert.ok(G.pprojs.every(p => p.vy < 0));
@@ -293,10 +293,10 @@ describe("Sturmangriff am Bildschirmrand", () => {
   it("endet am Rand und wechselt nie den Bildschirm", () => {
     const G = arena("rand");
     const P = G.P; P.level = 6; learn(P, "kraft"); learn(P, "sturmangriff");
-    P.equip.waffe = weapon("langschwert"); selectSpell(P, "sturmangriff");
+    P.equip.waffe = weapon("langschwert");
     P.x = 230; P.y = 5 * TS + 8; G.aim = { x: 1, y: 0 }; P.dir = "right";
     const sx = P.sx, sy = P.sy;
-    assert.ok(castSpell(G));
+    assert.ok(castSpell(G, "sturmangriff"));
     for (let i = 0; i < 30; i++) update(G, 1 / 60, idle);
     assert.equal(P.sx, sx); assert.equal(P.sy, sy);
     assert.ok(P.x <= 240 - 4 + 0.01 && P.x > 230, "nicht am Rand gestoppt: " + P.x);
