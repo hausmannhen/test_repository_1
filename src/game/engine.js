@@ -24,7 +24,7 @@ export function createGame(seed, P = null, slot = null) {
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
     pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
-    hintQueue: [], aim: null, epilog: null,
+    hintQueue: [], aim: null, epilog: null, dash: null,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     intro: false,      // Geschichte-Fenster beim ersten Start noch offen
@@ -204,7 +204,8 @@ export function applyHit(G, m, hit, dx, dy) {
   damageMob(G, m, dmg, crit, dx * k, dy * k, el ? el.color : null);
   if (hit.burn) { m.burnT = Math.max(m.burnT || 0, hit.burn); m.burnDps = Math.max(m.burnDps || 0, dmg * 0.2); }
   if (hit.slow) m.slowT = Math.max(m.slowT || 0, hit.slow);
-  const heal = Math.round(dmg * ((hit.leech || 0) + (hit.heal || 0)));
+  let heal = Math.round(dmg * ((hit.leech || 0) + (hit.heal || 0)));
+  if (hit.healCap !== undefined) { heal = Math.max(0, Math.min(heal, hit.healCap - (hit.healed || 0))); hit.healed = (hit.healed || 0) + heal; }
   if (heal > 0) { const d = derive(P); P.hp = Math.min(d.maxHp, P.hp + heal); G.fx.push({ kind: "num", x: P.x, y: P.y - 14, rise: 0, text: "+" + heal, color: "#6fe28a", t: 0.8, small: true }); }
   return dmg;
 }
@@ -350,6 +351,17 @@ export function update(G, dt, input) {
   }
   const onSwamp = tiles[idx(clamp(Math.floor(P.x / TS), 0, VW - 1), clamp(Math.floor(P.y / TS), 0, VH - 1))] === T.SWAMP;
   let speed = 68 * (1 + d.spd / 100) * (onSwamp ? 0.6 : 1) * (G.attack.t > 0 ? 0.35 : 1) * (P.slowT > 0 ? 0.55 : 1);
+  if (G.dash && G.dash.t > 0) {
+    // Sturmangriff: Vorstoß mit Kollision, jeder Gegner auf dem Weg wird einmal getroffen
+    const ds = G.dash; ds.t -= dt;
+    moveWithCollision(tiles, P, ds.dx * ds.speed * dt, ds.dy * ds.speed * dt, 5, 5);
+    for (const m of G.mobs) {
+      if (m.dead || m.spawnDelay > 0 || ds.hit.has(m.id)) continue;
+      if (Math.hypot(m.x - P.x, m.y - P.y) < m.size / 2 + d.reach) { ds.hit.add(m.id); applyHit(G, m, { dmg: ds.dmg, critChance: ds.critChance, knock: ds.knock }, ds.dx, ds.dy); }
+    }
+    if (ds.t <= 0) G.dash = null;
+    ix = 0; iy = 0;
+  }
   moveWithCollision(tiles, P, ix * speed * dt, iy * speed * dt, 5, 5);
   G.walkT = len > 0.2 ? G.walkT + dt : 0;
   // Nähe zu Bewohnern und Wegweisern: Schwert-Knopf spricht bzw. liest, statt zu schlagen

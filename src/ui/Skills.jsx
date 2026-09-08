@@ -2,7 +2,8 @@
 import React from "react";
 import { SKILLS, SKILL_ORDER, skillRank, freePoints, whyNot, learn, knownSpells, levelForRank } from "../game/skills.js";
 import { BRANCHES } from "../data/skills.js";
-import { SPELLS, ELEMENTS } from "../data/spells.js";
+import { SPELLS, ELEMENTS, WEAPON_FOR, WEAPON_OFF } from "../data/spells.js";
+import { weaponFits } from "../game/magic.js";
 import { spellCost, spellDamage, selectSpell } from "../game/magic.js";
 import { Btn } from "./bits.jsx";
 
@@ -35,7 +36,8 @@ export default function Skills({ G, rerender }) {
           {P.activeSpell && SPELLS[P.activeSpell] && (() => {
             const sp = SPELLS[P.activeSpell], c = spellCost(P, P.activeSpell);
             return <div className="dim" style={{ fontSize: 12, marginTop: 8 }}>
-              {sp.desc} Schaden etwa {Math.round(spellDamage(P, P.activeSpell))}, kostet {c.mana !== undefined ? `${c.mana} Mana` : `${c.hp} Leben`}, Abklingzeit {sp.cd} s.
+              {sp.desc} Schaden etwa {Math.round(spellDamage(P, P.activeSpell))}, {c.mana !== undefined ? `kostet ${c.mana} Mana` : c.hp !== undefined ? `kostet ${c.hp} Leben` : "kostet nichts"}, Abklingzeit {sp.cd} s.
+              {!weaponFits(P, P.activeSpell) && <span className="red"> Ohne passende Waffe ({WEAPON_FOR[sp.element] === "nah" ? "Nahkampf" : WEAPON_FOR[sp.element] === "fern" ? "Fernkampf" : "Stab"}) nur {Math.round(WEAPON_OFF * 100)} % Wirkung.</span>}
             </div>;
           })()}
         </div>

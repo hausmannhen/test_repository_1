@@ -81,7 +81,7 @@ export const SUFFIXES = [
 ];
 export const POTIONS = {
   heiltrank: { name: "Heiltrank", healPct: 0.3, price: 25, color: "#ff2f4f" },
-  manatrank: { name: "Manatrank", manaPct: 0.5, price: 22, color: "#5aa7ff" },
+  manatrank: { name: "Manatrank", manaPct: 0.35, price: 22, color: "#5aa7ff" },
 };
 /* Alte Trank-IDs aus früheren Spielständen */
 export const LEGACY_POTIONS = { heiltrank_k: "heiltrank", heiltrank_m: "heiltrank", heiltrank_g: "heiltrank", elixier: "heiltrank" };

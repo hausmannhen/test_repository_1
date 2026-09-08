@@ -6,7 +6,7 @@ import { derive, newPlayer } from "../src/game/player.js";
 import { makeMob } from "../src/game/monsters.js";
 import { BASES, generateItem, BASE_BY_ID } from "../src/game/items.js";
 import { rngFor } from "../src/game/rng.js";
-import { SKILLS, learn, canLearn, whyNot, freePoints, respec, spellRankMult } from "../src/game/skills.js";
+import { SKILLS, learn, canLearn, whyNot, freePoints, respec, spellRankMult, knownSpells } from "../src/game/skills.js";
 import { SPELLS, spellCost, spellDamage, canCast, selectSpell, cycleSpell } from "../src/game/magic.js";
 import { migrate, SAVE_VERSION } from "../src/game/save.js";
 
@@ -215,5 +215,72 @@ describe("Rangschwellen", () => {
     assert.deepEqual([1, 2, 3].map(r => levelForRank("feuer", r)), [1, 10, 20]);
     assert.deepEqual([1, 2, 3].map(r => levelForRank("blutmagie", r)), [8, 14, 20]);
     assert.deepEqual([1, 2, 3].map(r => levelForRank("aderlass", r)), [12, 18, 24]);
+  });
+});
+
+describe("Sonderangriffe und Waffenvorteil", () => {
+  it("Sturmangriff: lernbar, kostenlos, stößt vor und trifft auf dem Weg, mit Schwert voll, ohne 60 %", async () => {
+    const { weaponMult, isSpecial } = await import("../src/game/magic.js");
+    const G = arena("sturm");
+    const P = G.P; P.level = 6;
+    assert.ok(learn(P, "kraft")); assert.ok(learn(P, "sturmangriff"));
+    assert.ok(knownSpells(P).includes("sturmangriff")); assert.ok(isSpecial("sturmangriff"));
+    assert.deepEqual(spellCost(P, "sturmangriff"), {});
+    P.equip.waffe = weapon("langschwert");
+    assert.equal(weaponMult(P, "sturmangriff"), 1);
+    const full = spellDamage(P, "sturmangriff");
+    P.equip.waffe = weapon("kurzbogen");
+    assert.equal(weaponMult(P, "sturmangriff"), 0.6);
+    assert.ok(spellDamage(P, "sturmangriff") < full);
+    P.equip.waffe = weapon("langschwert");
+    const m = makeMob("wolf", 1, P.x + 40, P.y); m.spd = 0; m.maxHp = m.hp = 5000; G.mobs = [m];
+    P.dir = "right"; G.aim = { x: 1, y: 0 }; selectSpell(P, "sturmangriff");
+    const x0 = P.x;
+    assert.ok(castSpell(G));
+    assert.ok(G.dash, "kein Vorstoß");
+    for (let i = 0; i < 20; i++) update(G, 1 / 60, idle);
+    assert.ok(P.x > x0 + 30, "nicht vorgestoßen");
+    assert.ok(m.hp < 5000, "Gegner nicht getroffen");
+    assert.equal(G.dash, null);
+    assert.equal(canCast(G, "sturmangriff"), "Abklingzeit");
+  });
+  it("Pfeilhagel: fünf Geschosse im Fächer, mit Bogen voll, Zauber ohne Stab 60 %", async () => {
+    const { weaponMult } = await import("../src/game/magic.js");
+    const G = arena("hagel");
+    const P = G.P; P.level = 9;
+    assert.ok(learn(P, "zielen")); assert.ok(learn(P, "pfeilhagel"));
+    P.equip.waffe = weapon("kurzbogen");
+    assert.equal(weaponMult(P, "pfeilhagel"), 1);
+    selectSpell(P, "pfeilhagel"); G.aim = { x: 0, y: -1 }; G.pprojs = [];
+    assert.ok(castSpell(G));
+    assert.equal(G.pprojs.length, 5);
+    assert.ok(G.pprojs.some(p => p.vx < -20) && G.pprojs.some(p => p.vx > 20), "kein Fächer");
+    assert.ok(G.pprojs.every(p => p.vy < 0));
+    // Zauber ohne Stab
+    assert.ok(learn(P, "feuer"));
+    assert.equal(weaponMult(P, "feuerball"), 0.6);
+    P.equip.waffe = weapon("kristallstab");
+    assert.equal(weaponMult(P, "feuerball"), 1);
+  });
+  it("Blutmagie: Schaden hängt nicht vom Angriff ab, Aderlass heilt höchstens die Kosten", async () => {
+    const { applyHit } = await import("../src/game/engine.js");
+    const G = arena("blut");
+    const P = G.P; P.level = 20;
+    for (const id of ["blutmagie", "blutmagie", "aderlass"]) assert.ok(learn(P, id));
+    P.equip.waffe = weapon("kristallstab");
+    const d1 = spellDamage(P, "blutpfeil");
+    P.equip.waffe = { ...weapon("kristallstab"), stats: { ...weapon("kristallstab").stats, atk: 500 } };
+    assert.equal(spellDamage(P, "blutpfeil"), d1, "Angriff zählt noch");
+    P.equip.waffe = weapon("kristallstab");
+    const d = derive(P); P.hp = d.maxHp; P.mana = d.maxMana;
+    const cost = spellCost(P, "aderlass").hp;
+    const mobs = [0, 1, 2].map(i => { const m = makeMob("golem", 5, P.x + 20 + i * 5, P.y); m.maxHp = m.hp = 100000; return m; });
+    G.mobs = mobs; selectSpell(P, "aderlass"); G.aim = { x: 1, y: 0 };
+    assert.ok(castSpell(G));
+    assert.equal(P.hp, d.maxHp - cost);
+    update(G, 1 / 60, idle);   // Nova wird aufgelöst, drei Treffer mit Heilung
+    assert.ok(P.hp <= d.maxHp, "über Maximum");
+    assert.ok(P.hp >= d.maxHp - cost, "Heilung unter null");
+    assert.ok(P.hp <= d.maxHp - cost + cost, "mehr geheilt als gekostet");
   });
 });
