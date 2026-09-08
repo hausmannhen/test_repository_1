@@ -1,4 +1,4 @@
-/* Monster-Shapes: blob, quad, ghost, bat, golem, skel, human. Farben aus MOBS. */
+/* Monster-Shapes: blob, quad, ghost, bat, golem, skel, human, drache. Farben aus MOBS. */
 import * as THREE from "three";
 import { lambert, basic, G } from "./materials.js";
 import { ELITES } from "../data/elites.js";
@@ -71,6 +71,41 @@ export function buildMobModel(m) {
         pivot.add(wing); parts.body.add(pivot); parts.wings.push(pivot);
       }
       group.add(parts.body);
+      break;
+    }
+    case "drache": {
+      // Drache: langer Leib, Hals mit Kopf und Hörnern, zwei Schwingen, Schwanz, vier Beine. Kopf zeigt nach -z.
+      const eye = basic("#ffd23f");
+      const body = mesh(G.capsule(0.3, 0.7), c1, 0, 0.62 * s, 0.05 * s); body.rotation.x = Math.PI / 2; body.scale.setScalar(s);
+      group.add(body);
+      const belly = mesh(G.box(0.36 * s, 0.22 * s, 0.7 * s), c2, 0, 0.45 * s, 0.05 * s); group.add(belly);
+      const neck = new THREE.Group(); neck.position.set(0, 0.8 * s, -0.5 * s); neck.rotation.x = 0.7;
+      const neckMesh = mesh(G.capsule(0.13, 0.45), c1, 0, 0.25 * s, 0); neckMesh.scale.setScalar(s); neck.add(neckMesh);
+      group.add(neck); parts.neck = neck;
+      const head = new THREE.Group(); head.position.set(0, 1.18 * s, -0.86 * s);
+      head.add(mesh(G.box(0.3 * s, 0.24 * s, 0.34 * s), c1, 0, 0, 0));
+      head.add(mesh(G.box(0.22 * s, 0.14 * s, 0.3 * s), c1, 0, -0.06 * s, -0.3 * s));   // Schnauze
+      head.add(mesh(G.box(0.06 * s, 0.06 * s, 0.03), eye, -0.1 * s, 0.06 * s, -0.17 * s));
+      head.add(mesh(G.box(0.06 * s, 0.06 * s, 0.03), eye, 0.1 * s, 0.06 * s, -0.17 * s));
+      for (const side of [-1, 1]) { const horn = mesh(G.box(0.05 * s, 0.26 * s, 0.05 * s), c2, side * 0.1 * s, 0.2 * s, 0.08 * s); horn.rotation.x = -0.6; head.add(horn); }
+      group.add(head); parts.head = head;
+      parts.wings = [];
+      for (const side of [-1, 1]) {
+        const pivot = new THREE.Group(); pivot.position.set(side * 0.22 * s, 0.85 * s, -0.05 * s);
+        const arm = mesh(G.box(0.7 * s, 0.05 * s, 0.08 * s), c2, side * 0.35 * s, 0.05 * s, 0);
+        const membrane = mesh(G.box(0.68 * s, 0.02, 0.5 * s), c2, side * 0.36 * s, 0, 0.22 * s);
+        pivot.add(arm, membrane); group.add(pivot); parts.wings.push(pivot);
+      }
+      const tail = new THREE.Group(); tail.position.set(0, 0.6 * s, 0.55 * s);
+      const tailMesh = mesh(G.capsule(0.09, 0.6), c1, 0, 0, 0.3 * s); tailMesh.rotation.x = Math.PI / 2; tailMesh.scale.setScalar(s);
+      tail.add(tailMesh); tail.add(mesh(G.box(0.14 * s, 0.14 * s, 0.14 * s), c2, 0, 0, 0.66 * s));
+      group.add(tail); parts.tail = tail;
+      parts.legs = [];
+      for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        const leg = new THREE.Group(); leg.position.set(sx * 0.28 * s, 0.4 * s, sz * 0.28 * s);
+        leg.add(mesh(G.box(0.14 * s, 0.4 * s, 0.16 * s), c2, 0, -0.2 * s, 0));
+        group.add(leg); parts.legs.push(leg);
+      }
       break;
     }
     case "golem": {
@@ -159,7 +194,7 @@ export function buildMobModel(m) {
   bar.visible = true;
   bar.userData.ownMaterial = true;
   const barMats = [barEdge.material, barBg.material, barFg.material];
-  const height = m.shape === "bat" ? 1.3 : m.shape === "golem" ? 1.5 * s : m.shape === "ghost" ? 1.5 * s : 1.2 * s;
+  const height = m.shape === "bat" ? 1.3 : m.shape === "golem" ? 1.5 * s : m.shape === "drache" ? 1.7 * s : m.shape === "ghost" ? 1.5 * s : 1.2 * s;
 
   const state = { rot: Math.PI, lastX: m.x, lastY: m.y };
   function update(m, time, dt, pos) {
@@ -192,6 +227,14 @@ export function buildMobModel(m) {
       parts.body.position.y = 0.9 + Math.sin(time * 5 + m.t) * 0.12;
       const f = Math.sin(time * 18 + m.t) * 0.7;
       parts.wings[0].rotation.z = f; parts.wings[1].rotation.z = -f;
+    } else if (m.shape === "drache") {
+      // Schwingen schlagen langsam, beim Laufen schneller; Kopf nickt, Schwanz pendelt, Beine gehen
+      const f = Math.sin(time * (moving ? 7 : 3) + m.t) * 0.45;
+      parts.wings[0].rotation.z = 0.25 + f; parts.wings[1].rotation.z = -0.25 - f;
+      parts.head.rotation.x = Math.sin(time * 2 + m.t) * 0.12 + (m.tele ? -0.35 : 0);
+      parts.tail.rotation.y = Math.sin(time * 3 + m.t) * 0.35;
+      const sw = moving ? Math.sin(time * 10 + m.t) * 0.4 : 0;
+      parts.legs.forEach((l, i) => { l.rotation.x = i % 2 ? sw : -sw; });
     } else {
       const sw = moving ? Math.sin(time * 12 + m.t) * 0.5 : 0;
       if (parts.legs) parts.legs.forEach((l, i) => { l.rotation.x = i % 2 ? sw : -sw; });

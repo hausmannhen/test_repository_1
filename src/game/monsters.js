@@ -22,7 +22,7 @@ export const MOBS = {
   eiswolf:     { name: "Eiswolf",       hp: 275, atk: 31, spd: 52, size: 12, shape: "quad", color: "#cfe6f5", color2: "#6f9fbf", ai: "chase",   xp: 125, gold: [15, 36] },
   schamane:    { name: "Frostschamane", hp: 260, atk: 33, spd: 24, size: 11, shape: "human", color: "#6f8fd0", color2: "#2f3f70", ai: "ranged", xp: 135, gold: [18, 42] },
   feuerteufel: { name: "Feuerteufel",   hp: 330, atk: 38, spd: 46, size: 11, shape: "ghost", color: "#ff8a3a", color2: "#b8300c", ai: "erratic", xp: 175, gold: [20, 50] },
-  drache:      { name: "Jungdrache",    hp: 450, atk: 44, spd: 30, size: 15, shape: "golem", color: "#b02a2a", color2: "#5a1010", ai: "ranged",  xp: 250, gold: [40, 90] },
+  drache:      { name: "Jungdrache",    hp: 450, atk: 44, spd: 30, size: 15, shape: "drache", color: "#b02a2a", color2: "#5a1010", ai: "ranged",  xp: 250, gold: [40, 90] },
 };
 export const BOSSES = {
   0: { base: "waldgeist", name: "Eichenkönig",        hpMult: 14, atkMult: 2.2, size: 20, color: "#5aa06a", color2: "#1f4a2a" },
