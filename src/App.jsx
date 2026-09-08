@@ -1,6 +1,6 @@
 /* Titel, Spiel, Panels. Spielschleife: Engine-Update, 3D-Render, HUD-Sync. */
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { createGame, startGame, update, respawn, beamToExit, locationName } from "./game/engine.js";
+import { createGame, startGame, update, respawn, startBeam, locationName } from "./game/engine.js";
 import { derive, xpNeed, usePotion, useManaPotion } from "./game/player.js";
 import { knownSpells, freePoints } from "./game/skills.js";
 import { selectSpell, cycleSpell, barSpells, specialFor } from "./game/magic.js";
@@ -23,7 +23,7 @@ import Sage from "./ui/Sage.jsx";
 import Death from "./ui/Death.jsx";
 import Npc from "./ui/Npc.jsx";
 import { trackerText } from "./game/quests.js";
-import { GameAudio } from "./game/audio.js";
+import { GameAudio, moodFor } from "./game/audio.js";
 import { NPCS } from "./data/npcs.js";
 import { CloudClient } from "./game/cloud.js";
 
@@ -56,7 +56,7 @@ export default function App() {
     const G = gRef.current;
     if (G && G.panelReturn) { G.P.x = G.panelReturn.x; G.P.y = G.panelReturn.y; G.panelReturn = null; G.trigCd = 0.5; }
     if (panelRef.current === "geschichte") markStoryRead(G);
-    if (G && typeof panelRef.current === "string" && panelRef.current.startsWith("epilog:")) beamToExit(G);
+    if (G && typeof panelRef.current === "string" && panelRef.current.startsWith("epilog:")) startBeam(G);
     setPanel(null);
     if (G) persist(G);
   }, [persist]);
@@ -123,7 +123,7 @@ export default function App() {
       const au = audioRef.current;
       if (au) {
         for (const ev of G.events) au.sfx(ev.type, ev);
-        au.setMood(G.screen.dungeonRoom ? "dungeon" : G.screen.region);
+        au.setMood(moodFor(G));
         au.update(G.time);
       }
       G.events.length = 0;

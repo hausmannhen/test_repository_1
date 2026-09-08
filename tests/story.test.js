@@ -196,4 +196,49 @@ describe("Sog zum Ausgang", () => {
     assert.equal(G.screen.dungeonRoom.type, "entry");
     assert.match(G.banner.text, /Sog/);
   });
+  it("setzt erst nach 3 Sekunden ein und nimmt die Beute mit", async () => {
+    const { startBeam, BEAM_DELAY } = await import("../src/game/engine.js");
+    assert.equal(BEAM_DELAY, 3);
+    const G = startGame(createGame("sog2"));
+    assert.equal(startBeam(G), false, "draußen kein Sog");
+    const d = genDungeon(G.seed, DUNGEONS[1]);
+    const bossKey = Object.keys(d.rooms).find(k => d.rooms[k].dungeonRoom.type === "boss");
+    const [bx, by] = bossKey.split(",").map(Number);
+    enterScreen(G, "d1", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    G.mobs = []; G.arenaLock = false;
+    const P = G.P, gold0 = P.gold, inv0 = P.inventory.length;
+    G.drops.push({ type: "gold", amount: 50, x: P.x + 120, y: P.y, vx: 0, vy: 0, t: 1 });
+    G.drops.push({ type: "item", item: { id: "x", name: "Testklinge", kind: "gear", slot: "waffe", rarity: "gewoehnlich", base: "schwert", stats: { atk: 3 }, upg: 0 }, x: P.x - 120, y: P.y, vx: 0, vy: 0, t: 1 });
+    assert.equal(startBeam(G), true);
+    assert.equal(startBeam(G), false, "läuft schon");
+    for (let i = 0; i < 70; i++) update(G, 1 / 60, idle);   // gut 1 s
+    assert.equal(G.screen.dungeonRoom.type, "boss", "zu früh gesogen");
+    assert.match(G.msg.text, /Sog erwacht in 2/);
+    for (let i = 0; i < 115; i++) update(G, 1 / 60, idle);   // > 3 s insgesamt
+    assert.equal(G.screen.dungeonRoom.type, "entry");
+    assert.equal(G.beamT, null);
+    assert.equal(P.gold, gold0 + 50, "Gold nicht mitgenommen");
+    assert.equal(P.inventory.length, inv0 + 1, "Ausrüstung nicht mitgenommen");
+  });
+});
+
+describe("Musik im Bossraum", () => {
+  it("wählt die Boss-Stimmung nur bei lebendem Wächter, sie ist schneller und hat Schlagwerk", async () => {
+    const { MOODS, moodFor } = await import("../src/game/audio.js");
+    const { DUNGEON_ENTRY } = await import("../src/game/world.js");
+    assert.ok(MOODS.boss.tempo < MOODS.dungeon.tempo / 3 && MOODS.boss.beat);
+    const G = startGame(createGame("bossmusik"));
+    assert.equal(moodFor(G), G.screen.region);
+    const d = genDungeon(G.seed, DUNGEONS[0]);
+    const bossKey = Object.keys(d.rooms).find(k => d.rooms[k].dungeonRoom.type === "boss");
+    const [bx, by] = bossKey.split(",").map(Number);
+    enterScreen(G, "d0", DUNGEON_ENTRY.x, DUNGEON_ENTRY.y, 7 * TS + 8, 8 * TS + 8, false);
+    assert.equal(moodFor(G), "dungeon");
+    enterScreen(G, "d0", bx, by, 7 * TS + 8, 8 * TS + 8, false);
+    assert.equal(moodFor(G), "boss");
+    const boss = G.mobs.find(m => m.boss);
+    for (const m of G.mobs) m.spawnDelay = 0;
+    killMob(G, boss);
+    assert.equal(moodFor(G), "dungeon");
+  });
 });

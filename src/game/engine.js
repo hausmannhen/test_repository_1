@@ -24,7 +24,7 @@ export function createGame(seed, P = null, slot = null) {
     world: { screens: {}, dungeons: {} }, screen: null, mobs: [], projs: [], drops: [], fx: [],
     attack: { t: 0, dir: "down", hit: new Set(), maxT: 0.2, ranged: false },
     pprojs: [], pending: [], spellCd: {}, castT: 0, shootCd: 0, events: [], raid: null, arenaLock: false, nearNpc: null, nearSign: false, attackHeld: false,
-    hintQueue: [], aim: null, epilog: null, dash: null,
+    hintQueue: [], aim: null, epilog: null, dash: null, beamT: null,
     invT: 0, shake: 0, msg: null, banner: null, time: 0, walkT: 0, trigCd: 1, dead: false, dirty: true,
     panelReturn: null, transition: null,
     intro: false,      // Geschichte-Fenster beim ersten Start noch offen
@@ -278,8 +278,28 @@ export function hurtPlayer(G, amount) {
   if (P.hp <= 0) { P.hp = 0; G.dead = true; if (raidActive(G)) endRaid(G, false); }
   G.dirty = true;
 }
+/* Ein Fundstück aufheben (Gold, Trank, Ausrüstung) */
+export function collectDrop(G, dr) {
+  const P = G.P;
+  if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; emit(G, "gold"); }
+  else if (dr.type === "potion") { if (addToInventory(P, makePotion(dr.id, dr.qty))) { flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); emit(G, "pickup"); } else flash(G, `Höchstens ${POTION_MAX} ${POTIONS[dr.id].name} im Beutel`, "#e9dcb8"); dr.done = true; }
+  else if (dr.type === "item") {
+    if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); hint(G, "beute", "Neue Ausrüstung im Beutel: Menü, antippen, „Anlegen“. Grün heißt besser als das Angelegte."); }
+    else if (!dr.warned) { flash(G, "Inventar voll", "#ff5f6d"); dr.warned = true; }
+  }
+  G.dirty = true;
+}
+/* Der Sog kündigt sich an: erst nach BEAM_DELAY Sekunden geht es zum Ausgang, solange zieht er die Beute heran */
+export const BEAM_DELAY = 3;
+export function startBeam(G) {
+  if (G.P.area === "over" || G.beamT !== null) return false;
+  G.beamT = BEAM_DELAY;
+  return true;
+}
 /* Nach dem Bosssieg: ein Sog trägt den Spieler in den Eingangsraum, direkt an die Treppe */
 export function beamToExit(G) {
+  G.beamT = null;
+  for (const dr of G.drops) if (!dr.done) collectDrop(G, dr);   // liegen gebliebene Beute kommt mit
   const P = G.P;
   if (P.area === "over") return false;
   enterScreen(G, P.area, DUNGEON_ENTRY.x, DUNGEON_ENTRY.y, 7 * TS + 8, (VH - 3) * TS + 8, false);
@@ -332,6 +352,12 @@ export function update(G, dt, input) {
     P.epilogs[id] = true; G.dirty = true;
     G.panelReturn = null;
     G.openPanel && G.openPanel("epilog:" + id);
+  }
+  // Sog: Countdown, dann ab zum Ausgang
+  if (G.beamT !== null) {
+    G.beamT -= dt;
+    if (G.beamT <= 0) { beamToExit(G); return; }
+    G.msg = { text: `Der Sog erwacht in ${Math.ceil(G.beamT)} … sammle die Beute`, color: "#e9dcb8", t: 0.3 };
   }
   // Arena aufgelöst?
   if (G.arenaLock && !G.mobs.some(m => !m.dead)) {
@@ -572,15 +598,8 @@ export function update(G, dt, input) {
     dr.x = clamp(dr.x, 4, W - 4); dr.y = clamp(dr.y, 4, H - 4);
     const dist = Math.hypot(dr.x - P.x, dr.y - P.y);
     if (dr.type === "gold" && dist < 36 && dr.t > 0.3) { dr.x += (P.x - dr.x) * 8 * dt; dr.y += (P.y - dr.y) * 8 * dt; }
-    if (dist < 19 && dr.t > 0.3) {
-      if (dr.type === "gold") { P.gold += dr.amount; G.fx.push({ kind: "num", x: dr.x, y: dr.y - 6, rise: 0, text: "+" + dr.amount + "G", color: "#ffd23f", t: 0.8, small: true }); dr.done = true; emit(G, "gold"); }
-      else if (dr.type === "potion") { if (addToInventory(P, makePotion(dr.id, dr.qty))) { flash(G, POTIONS[dr.id].name + " erhalten", POTIONS[dr.id].color); emit(G, "pickup"); } else flash(G, `Höchstens ${POTION_MAX} ${POTIONS[dr.id].name} im Beutel`, "#e9dcb8"); dr.done = true; }
-      else if (dr.type === "item") {
-        if (addToInventory(P, dr.item)) { flash(G, dr.item.name, RARITY_BY_ID[dr.item.rarity].color); dr.done = true; emit(G, "pickup", { rarity: dr.item.rarity }); hint(G, "beute", "Neue Ausrüstung im Beutel: Menü, antippen, „Anlegen“. Grün heißt besser als das Angelegte."); }
-        else if (!dr.warned) { flash(G, "Inventar voll", "#ff5f6d"); dr.warned = true; }
-      }
-      G.dirty = true;
-    }
+    if (G.beamT !== null && dist > 2) { dr.x += (P.x - dr.x) * 3 * dt; dr.y += (P.y - dr.y) * 3 * dt; }   // der Sog zieht die Beute zum Spieler
+    if (dist < 19 && dr.t > 0.3) collectDrop(G, dr);
   }
   G.drops = G.drops.filter(dr => !dr.done);
 

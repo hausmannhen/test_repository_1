@@ -19,12 +19,23 @@ const MOODS = {
   eis:    { root: 262, chords: [[0, 7, 14], [2, 9, 16], [0, 7, 14], [9, 16, 23]], wave: "sine", tempo: 8 },
   vulkan: { root: 147, chords: [[0, 6, 12], [1, 7, 13], [0, 6, 12], [4, 10, 16]], wave: "sawtooth", tempo: 5 },
   dungeon:{ root: 131, chords: [[0, 3, 7], [0, 1, 7], [0, 3, 7], [11, 14, 18]], wave: "sine", tempo: 10 },
+  // Bossraum: kurze Takte, Tritonus, Sägezahn, dazu Schlagwerk und ein schneller Lauf
+  boss:   { root: 147, chords: [[0, 3, 6], [1, 4, 7], [0, 3, 6], [6, 9, 13], [0, 3, 7], [1, 4, 8]], wave: "sawtooth", tempo: 2.4, pluckDiv: 12, beat: true },
 };
+export { MOODS };
+
+/* Welche Stimmung passt zur Lage: Bossraum mit lebendem Wächter, sonst Dungeon oder Region */
+export function moodFor(G) {
+  const room = G.screen && G.screen.dungeonRoom;
+  if (!room) return G.screen ? G.screen.region : "wiese";
+  if (room.type === "boss" && G.mobs.some(m => m.boss && !m.dead)) return "boss";
+  return "dungeon";
+}
 
 export class GameAudio {
   constructor() {
     this.ctx = null; this.settings = loadSettings();
-    this.mood = null; this.chordI = 0; this.nextChordAt = 0; this.voices = []; this.nextPluckAt = 0; this.pluckI = 0; this.chord = null;
+    this.mood = null; this.chordI = 0; this.nextChordAt = 0; this.voices = []; this.nextPluckAt = 0; this.pluckI = 0; this.chord = null; this.nextBeatAt = 0; this.beatI = 0;
     this.lastSfx = {};
   }
   /* Muss aus einer Nutzeraktion heraus aufgerufen werden (Tipp, Taste) */
@@ -48,7 +59,7 @@ export class GameAudio {
   }
   setMood(name) {
     if (this.mood === name) return;
-    this.mood = name; this.chordI = 0; this.nextChordAt = 0;
+    this.mood = name; this.chordI = 0; this.nextChordAt = 0; this.nextBeatAt = 0; this.beatI = 0;
   }
   /* pro Frame: Akkorde weiterschalten */
   update(time) {
@@ -59,27 +70,55 @@ export class GameAudio {
     if (time >= this.nextChordAt) {
       this.nextChordAt = time + m.tempo;
       const chord = m.chords[this.chordI % m.chords.length]; this.chordI++; this.chord = chord;
-      for (const v of this.voices) { v.g.gain.setTargetAtTime(0, now, 1.2); v.o.stop(now + 4); }
+      for (const v of this.voices) { v.g.gain.setTargetAtTime(0, now, m.beat ? 0.2 : 1.2); v.o.stop(now + 4); }
       this.voices = [];
       // Fläche: Grundlage eine Oktave höher als früher, Handylautsprecher geben unter 200 Hz kaum etwas wieder
       chord.forEach((semi, i) => {
         const o = this.ctx.createOscillator(), g = this.ctx.createGain();
         o.type = m.wave; o.frequency.value = m.root * Math.pow(2, semi / 12);
         o.detune.value = (i - 1) * 6;
-        g.gain.value = 0; g.gain.setTargetAtTime(0.4 / chord.length, now, 1.5);
+        g.gain.value = 0; g.gain.setTargetAtTime((m.beat ? 0.5 : 0.4) / chord.length, now, m.beat ? 0.25 : 1.5);
         o.connect(g); g.connect(this.filter); o.start(now);
         this.voices.push({ o, g });
       });
     }
     // Zupfstimme: alle halben Takte ein Akkordton eine Oktave höher, kurz und leise
     if (this.chord && time >= this.nextPluckAt) {
-      this.nextPluckAt = time + m.tempo / 8;
-      const semi = this.chord[this.pluckI % this.chord.length]; this.pluckI++;
+      const div = m.pluckDiv || 8, dur = m.beat ? 0.35 : 0.9;
+      this.nextPluckAt = time + m.tempo / div;
+      // im Bossraum läuft die Stimme über zwei Oktaven auf und ab
+      const run = m.beat ? [...this.chord, this.chord[0] + 12, this.chord[2], this.chord[1]] : this.chord;
+      const semi = run[this.pluckI % run.length]; this.pluckI++;
       const o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = "sine"; o.frequency.value = m.root * 2 * Math.pow(2, semi / 12);
-      g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(0.22, now + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.9);
-      o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + 1);
+      o.type = m.beat ? "square" : "sine"; o.frequency.value = m.root * 2 * Math.pow(2, semi / 12);
+      g.gain.setValueAtTime(0.0001, now); g.gain.exponentialRampToValueAtTime(m.beat ? 0.14 : 0.22, now + 0.03); g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.1);
     }
+    // Schlagwerk: Pauke auf jedem Schlag, Rassel dazwischen, Schnarre auf 2 und 4
+    if (m.beat && time >= this.nextBeatAt) {
+      this.nextBeatAt = time + m.tempo / 8;
+      const i = this.beatI++;
+      if (i % 2 === 0) this.drum(now, 150, 0.16, 0.5);
+      if (i % 4 === 2) this.rattle(now, 0.12, 0.22, 1800);
+      else this.rattle(now, 0.04, 0.08, 6000);
+    }
+  }
+  /* Pauke: tiefer Ton, der schnell abfällt */
+  drum(now, freq, dur, vol) {
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(freq, now); o.frequency.exponentialRampToValueAtTime(45, now + dur);
+    g.gain.setValueAtTime(vol, now); g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    o.connect(g); g.connect(this.musicGain); o.start(now); o.stop(now + dur + 0.02);
+  }
+  /* Rassel und Schnarre: kurzes, gefiltertes Rauschen */
+  rattle(now, dur, vol, freq) {
+    const buf = this.ctx.createBuffer(1, Math.ceil(this.ctx.sampleRate * dur), this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const src = this.ctx.createBufferSource(); src.buffer = buf;
+    const f = this.ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = 0.7;
+    const g = this.ctx.createGain(); g.gain.value = vol;
+    src.connect(f); f.connect(g); g.connect(this.musicGain); src.start(now);
   }
   /* kurzer Effekt */
   sfx(type, data = {}) {
