@@ -37,7 +37,7 @@ export default function Skills({ G, rerender }) {
             const sp = SPELLS[P.activeSpell], c = spellCost(P, P.activeSpell);
             return <div className="dim" style={{ fontSize: 12, marginTop: 8 }}>
               {sp.desc} Schaden etwa {Math.round(spellDamage(P, P.activeSpell))}, {c.mana !== undefined ? `kostet ${c.mana} Mana` : c.hp !== undefined ? `kostet ${c.hp} Leben` : "kostet nichts"}, Abklingzeit {sp.cd} s.
-              {!weaponFits(P, P.activeSpell) && <span className="red"> Ohne passende Waffe ({WEAPON_FOR[sp.element] === "nah" ? "Nahkampf" : WEAPON_FOR[sp.element] === "fern" ? "Fernkampf" : "Stab"}) nur {Math.round(WEAPON_OFF * 100)} % Wirkung.</span>}
+              {!weaponFits(P, P.activeSpell) && <span className="red"> {WEAPON_FOR[sp.element] ? `Nur mit ${WEAPON_FOR[sp.element] === "nah" ? "Nahkampfwaffe" : "Fernwaffe"} einsetzbar.` : `Ohne Stab nur ${Math.round(WEAPON_OFF * 100)} % Wirkung.`}</span>}
             </div>;
           })()}
         </div>

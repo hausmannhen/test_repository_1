@@ -230,9 +230,11 @@ describe("Sonderangriffe und Waffenvorteil", () => {
     assert.equal(weaponMult(P, "sturmangriff"), 1);
     const full = spellDamage(P, "sturmangriff");
     P.equip.waffe = weapon("kurzbogen");
-    assert.equal(weaponMult(P, "sturmangriff"), 0.6);
-    assert.ok(spellDamage(P, "sturmangriff") < full);
+    assert.equal(canCast(G, "sturmangriff"), "Braucht Nahkampfwaffe");
+    assert.equal(castSpell(G, "sturmangriff"), false);
+    assert.equal(G.dash, null);
     P.equip.waffe = weapon("langschwert");
+    assert.equal(canCast(G, "sturmangriff"), null); assert.equal(spellDamage(P, "sturmangriff"), full);
     const m = makeMob("wolf", 1, P.x + 40, P.y); m.spd = 0; m.maxHp = m.hp = 5000; G.mobs = [m];
     P.dir = "right"; G.aim = { x: 1, y: 0 }; selectSpell(P, "sturmangriff");
     const x0 = P.x;
@@ -249,6 +251,8 @@ describe("Sonderangriffe und Waffenvorteil", () => {
     const G = arena("hagel");
     const P = G.P; P.level = 9;
     assert.ok(learn(P, "zielen")); assert.ok(learn(P, "pfeilhagel"));
+    P.equip.waffe = weapon("langschwert");
+    assert.equal(canCast(G, "pfeilhagel"), "Braucht Fernwaffe");
     P.equip.waffe = weapon("kurzbogen");
     assert.equal(weaponMult(P, "pfeilhagel"), 1);
     selectSpell(P, "pfeilhagel"); G.aim = { x: 0, y: -1 }; G.pprojs = [];

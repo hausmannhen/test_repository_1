@@ -30,6 +30,6 @@ export const SPELLS = {
   blutpfeil:    { id: "blutpfeil",    name: "Blutpfeil",    element: "blut",     kind: "bolt",  bloodCost: 0.10, dmg: 2.6, speed: 260, range: 160, cd: 1.0, desc: "Kostet 10 % deines Lebens, dafür großer Schaden." },
   aderlass:     { id: "aderlass",     name: "Aderlass",     element: "blut",     kind: "nova",  bloodCost: 0.15, dmg: 3.0, radius: 56, cd: 2.2, leech: 0.2, healCap: true, desc: "Kostet 15 % deines Lebens. Trifft alle um dich herum, heilt je Treffer ein Fünftel des Schadens, höchstens die Kosten." },
 };
-SPELLS.sturmangriff = { id: "sturmangriff", name: "Sturmangriff", element: "krieger", kind: "dash", dmg: 2.2, dist: 64, cd: 6, knock: 1.4, desc: "Vorstoß in Stockrichtung, trifft alles auf dem Weg. Kostet nichts. Mit Nahkampfwaffe voller Schaden." };
-SPELLS.pfeilhagel   = { id: "pfeilhagel",   name: "Pfeilhagel",   element: "jaeger",  kind: "fan",  dmg: 1.2, count: 5, spread: 0.55, range: 150, speed: 260, cd: 6, desc: "Fünf Geschosse im Fächer. Kostet nichts. Mit Fernwaffe voller Schaden." };
+SPELLS.sturmangriff = { id: "sturmangriff", name: "Sturmangriff", element: "krieger", kind: "dash", dmg: 2.2, dist: 64, cd: 6, knock: 1.4, desc: "Vorstoß in Stockrichtung, trifft alles auf dem Weg. Kostet nichts. Nur mit Nahkampfwaffe." };
+SPELLS.pfeilhagel   = { id: "pfeilhagel",   name: "Pfeilhagel",   element: "jaeger",  kind: "fan",  dmg: 1.2, count: 5, spread: 0.55, range: 150, speed: 260, cd: 6, desc: "Fünf Geschosse im Fächer. Kostet nichts. Nur mit Fernwaffe." };
 export const SPELL_ORDER = Object.keys(SPELLS);

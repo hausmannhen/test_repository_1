@@ -7,7 +7,9 @@ export { SPELLS, ELEMENTS, WEAPON_FOR, WEAPON_OFF };
 /* Passt die Waffe zum Zauber? Stab für Magie, Nahkampfwaffe für Krieger, Fernwaffe für Jäger. Sonst nur 60 % Wirkung. */
 export function isSpecial(spellId) { const sp = SPELLS[spellId]; return !!sp && !!WEAPON_FOR[sp.element]; }
 export function weaponFits(P, spellId) { const sp = SPELLS[spellId]; if (!sp) return false; const want = WEAPON_FOR[sp.element] || "fokus"; return derive(P).weaponType === want; }
-export function weaponMult(P, spellId) { return weaponFits(P, spellId) ? 1 : WEAPON_OFF; }
+/* Sonderangriffe gehen nur mit ihrer Waffe, Zauber ohne Stab mit 60 % */
+export function weaponMult(P, spellId) { return weaponFits(P, spellId) || isSpecial(spellId) ? 1 : WEAPON_OFF; }
+export function weaponNeeded(spellId) { const sp = SPELLS[spellId]; return sp && WEAPON_FOR[sp.element] === "nah" ? "Braucht Nahkampfwaffe" : sp && WEAPON_FOR[sp.element] === "fern" ? "Braucht Fernwaffe" : null; }
 
 export function spellDamage(P, spellId) {
   const sp = SPELLS[spellId], d = derive(P);
@@ -26,6 +28,7 @@ export function canCast(G, spellId) {
   const P = G.P, sp = SPELLS[spellId];
   if (!sp || !knownSpells(P).includes(spellId)) return "Nicht gelernt";
   if ((G.spellCd[spellId] || 0) > 0) return "Abklingzeit";
+  if (isSpecial(spellId) && !weaponFits(P, spellId)) return weaponNeeded(spellId);
   const c = spellCost(P, spellId);
   if (c.mana !== undefined && P.mana < c.mana) return "Zu wenig Mana";
   if (c.hp !== undefined && P.hp <= c.hp) return "Zu wenig Leben";
